@@ -28,7 +28,6 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     init {
         curUser = userRepository.currentUser
-        curUser?.let { getUserDetail(it) }
     }
 
     fun updateOnlineStatus(userId: String, isOnline: Boolean) {
@@ -61,7 +60,7 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
         }
     }
 
-    fun getUserDetail(userId: String) {
+     fun getUserDetail(userId: String) {
         viewModelScope.launch {
             userRepository.getUserDetail(userId)
                 .catch { exception ->

@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -150,7 +151,7 @@ fun AddStoryItem() {
 @Composable
 fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
     val chatList by viewModel.chatList.collectAsState()
-
+    Log.d("chatsSection", chatList.toString())
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp), // Avoid spacing issues

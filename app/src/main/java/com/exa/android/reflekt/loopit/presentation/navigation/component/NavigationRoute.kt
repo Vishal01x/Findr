@@ -1,5 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.navigation.component
 
+import android.net.Uri
+import com.google.gson.Gson
+
 sealed class AuthRoute(val route : String){
     object Login : AuthRoute("login")
     object Register : AuthRoute("register")
@@ -23,6 +26,18 @@ sealed class HomeRoute(val route : String){
         fun createRoute(imageId: Int): String = "zoomImage/$imageId"
     }
 }
+
+sealed class MeetingRoute(val route: String) {
+    data object LobbyScreen : MeetingRoute("meeting_lobby/{usersJson}") {
+        fun createRoute(users: List<String>): String {
+            val usersJson = Uri.encode(Gson().toJson(users))  // Convert list to JSON & encode
+            return "meeting_lobby/$usersJson"  // Corrected the mismatch
+        }
+    }
+
+    data object CallScreen : MeetingRoute("meeting_call")
+}
+
 
 sealed class ChatInfo(val route : String){
     object ProfileScreen : ChatInfo("profile")

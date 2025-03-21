@@ -16,7 +16,11 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.SearchScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.ZoomPhoto
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ChatInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
-import io.getstream.meeting.room.compose.ui.meetingRoomNavGraph
+import com.exa.android.reflekt.loopit.presentation.navigation.component.MeetingRoute
+import com.google.gson.Gson
+import io.getstream.meeting.room.compose.ui.AppScreens
+import io.getstream.meeting.room.compose.ui.call.CallScreen
+import io.getstream.meeting.room.compose.ui.lobby.LobbyScreen
 
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
@@ -42,10 +46,9 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
             })
         ) {backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")
-            DetailChat(navController, userId!!){
-                navController.navigate("meeting_room")
+            DetailChat(navController, userId!!){users->
+                navController.navigate(MeetingRoute.LobbyScreen.createRoute(users))
             }
-
         }
 
         composable(HomeRoute.SearchScreen.route){
@@ -53,7 +56,18 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
             SearchScreen(navController,viewModel)
         }
 
-        meetingRoomNavGraph(navController)
+        composable(
+            route = MeetingRoute.LobbyScreen.route,
+            arguments = listOf(navArgument("usersJson") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val usersJson = backStackEntry.arguments?.getString("usersJson") ?: "[]"
+            val users = Gson().fromJson(usersJson, Array<String>::class.java).toList()
+            LobbyScreen(navController = navController, users = users)
+        }
+
+        composable(MeetingRoute.CallScreen.route) {
+            CallScreen(navController = navController)
+        }
 
         chatInfoNavGraph(navController)
     }

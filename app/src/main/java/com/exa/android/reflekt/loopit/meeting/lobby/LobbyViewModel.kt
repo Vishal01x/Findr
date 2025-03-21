@@ -33,7 +33,7 @@ import javax.inject.Inject
 import kotlin.random.Random
 
 @HiltViewModel
-class MainViewModel @Inject constructor() : ViewModel() {
+class LobbyViewModel @Inject constructor() : ViewModel() {
 
   private val _uiState: MutableStateFlow<LobbyUiState> = MutableStateFlow(LobbyUiState.Loading)
   val uiState: StateFlow<LobbyUiState> = _uiState

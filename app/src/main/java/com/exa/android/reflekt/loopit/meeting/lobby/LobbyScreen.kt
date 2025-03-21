@@ -55,6 +55,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.util.model.User
 import io.getstream.meeting.room.compose.ui.AppScreens
 import io.getstream.meeting.room.compose.ui.MeetingRoomTheme
 import io.getstream.meeting.room.compose.ui.component.StreamButton
@@ -70,7 +71,8 @@ import io.getstream.video.android.mock.previewCall
 @Composable
 fun LobbyScreen(
   navController: NavHostController,
-  mainViewModel: MainViewModel = hiltViewModel(),
+  users : List<String> = emptyList(),
+  mainViewModel: LobbyViewModel = hiltViewModel(),
 ) {
   val uiState by mainViewModel.uiState.collectAsStateWithLifecycle()
 

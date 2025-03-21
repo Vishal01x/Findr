@@ -22,7 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import io.getstream.meeting.room.compose.ui.call.CallScreen
 import io.getstream.meeting.room.compose.ui.lobby.LobbyScreen
-
+/*
 fun NavGraphBuilder.meetingRoomNavGraph(
   navController: NavHostController,
   startDestination: String = AppScreens.Main.destination,
@@ -43,7 +43,7 @@ fun NavGraphBuilder.meetingRoomNavGraph(
       CallScreen(navController = navController)
     }
   }
-}
+}*/
 
 enum class AppScreens(val destination: String) {
   Main("meeting_main"),

@@ -63,17 +63,21 @@ class FirestoreService @Inject constructor(
 
     suspend fun createChatAndSendMessage(userId2: String, text: String) {
         val userId1 = auth.currentUser?.uid
+        val chatId = generateChatId(userId1!!, userId2)
         val message = Message(
-            senderId = userId1!!,
-            message = text
+            chatId = chatId,
+            senderId = userId1,
+            receiverId = userId2,
+            message = text,
+            members = listOf(userId1, userId2)
         )
         try {
-            val chatId = generateChatId(userId1, userId2)
+
             updateUserList(userId1, userId2)
             updateUserList(userId2, userId1)
             val messageRef = chatCollection.document(chatId).collection("messages")
 
-            messageRef.add(message)
+            messageRef.document(message.messageId).set(message)
                 .addOnSuccessListener {
                     Log.d(
                         "FireStoreService",
@@ -134,6 +138,54 @@ class FirestoreService @Inject constructor(
             .addOnFailureListener { e -> println("Error updating user chats: ${e.message}") }
     }
 
+    suspend fun updateMessage(message: Message, newText: String) {
+        val chatId = message.chatId
+        val batch = db.batch()
+        val messageRef =
+            chatCollection.document(chatId).collection("messages").document(message.messageId)
+        try {
+            batch.update(messageRef, mapOf("message" to newText))
+            batch.commit().await()
+            Log.d("FireStore Operation", "Messages Edited Successfully")
+        } catch (e: Exception) {
+            Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
+        }
+    }
+
+
+    suspend fun deleteMessages(
+        messages: List<String>,
+        chatId: String,
+        deleteFor: Int = 1,
+        onCleared: () -> Unit
+    ) {
+
+        val chatRef = chatCollection.document(chatId).collection("messages")
+
+        val batch = db.batch()
+        try {
+            for (messageId in messages) {
+                val messageRef = chatRef.document(messageId)
+                if (deleteFor == 2) {
+                    batch.update(messageRef, mapOf("message" to "deleted"))
+                } else {
+                    batch.update(
+                        messageRef,
+                        mapOf("members" to FieldValue.arrayRemove(currentUser))
+                    )
+                    val members = messageRef.get().await().get("members") as List<String>
+                    if (members.isEmpty()) batch.delete(messageRef)
+                }
+            }
+            batch.commit().await()
+
+            Log.d("FireStore Operation", "Messages Deleted Successfully")
+            onCleared()
+        } catch (e: Exception) {
+            Log.d("FireStore Operation", "Error in Message Deletion - ${e.message}")
+        }
+    }
+
     fun getMessages(user1Id: String, user2Id: String): Flow<Response<List<Message>>> = flow {
         emit(Response.Loading)
 
@@ -167,7 +219,7 @@ class FirestoreService @Inject constructor(
     suspend fun getChatList(userId: String): Flow<Response<List<ChatList>>> = callbackFlow {
         trySend(Response.Loading)
 
-        val userDocument = userCollection.document(userId)
+        val userDocument = userCollection.document(currentUser!!)
         val chatListeners = mutableListOf<ListenerRegistration>()
         val chatList = mutableListOf<ChatList>()
 
@@ -183,7 +235,8 @@ class FirestoreService @Inject constructor(
             }
 
             val userIds = userSnapshot?.get("user_list") as? List<String> ?: emptyList()
-
+            Log.d("FireStoreService", "Document data: ${userSnapshot?.data}")
+            Log.d("FireStoreService", "users -  $userIds")
             if (userIds.isEmpty()) {
                 trySend(Response.Success(emptyList())).isFailure
             } else {
@@ -237,6 +290,9 @@ class FirestoreService @Inject constructor(
 
                                             val sortedChatList =
                                                 chatList.sortedByDescending { it.lastMessageTimestamp.toDate() }
+
+                                            Log.d("FireStoreService", sortedChatList.toString())
+
                                             // Send the updated chat list to the flow
                                             trySend(Response.Success(sortedChatList)).isFailure
                                         }

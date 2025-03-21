@@ -29,6 +29,7 @@ import com.exa.android.reflekt.loopit.application.NetworkCallbackReceiver
 import com.exa.android.reflekt.loopit.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.mvvm.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
+import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
 import com.exa.android.reflekt.ui.navigation.MainNavigation
@@ -123,15 +124,25 @@ fun OnBackPressed(navController: NavController) {
 
     // Listen for the back press event
     BackHandler {
-        // If on Profile screen, navigate back to Home
-        if (currentRoute == MainRoute.Profile.route) {
-            navController.navigate(HomeRoute.ChatList.route) {
-                // Ensure no back stack history, so user can't navigate back from Home to Profile
-                popUpTo(HomeRoute.ChatList.route) { inclusive = true }
+        when (currentRoute) {
+            MainRoute.Profile.route -> { // it helps to get rid of loops for home and profile screen
+                navController.navigate(HomeRoute.ChatList.route) {
+                    popUpTo(HomeRoute.ChatList.route) { inclusive = true }
+                }
             }
-        } else if (currentRoute == HomeRoute.ChatList.route) {
-            // If on Home screen, finish the activity to close the app
-            (context as? Activity)?.finish()
+            HomeRoute.ChatList.route -> {
+                // Close the app only if we are on the Home screen
+                (context as? Activity)?.finish()
+            }
+            AuthRoute.Login.route -> {
+                // Allow default back button behavior for login screen (closing app)
+                (context as? Activity)?.finish()
+            }
+            else -> {
+                // If on other screens, navigate back normally
+                navController.popBackStack()
+            }
         }
     }
+
 }

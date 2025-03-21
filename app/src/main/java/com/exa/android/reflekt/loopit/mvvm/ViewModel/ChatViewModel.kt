@@ -69,6 +69,21 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun deleteMessages(
+        messages: List<String>,
+        chatId: String,
+        deleteFor: Int,
+        onCleared: () -> Unit
+    ) {
+        viewModelScope.launch {
+            repo.deleteMessages(messages, chatId, deleteFor) {
+                onCleared()
+            }
+
+        }
+    }
+
+
     fun getChatList() {
         viewModelScope.launch {
             repo.getChatList(curUser.value).collect { response ->
@@ -76,4 +91,11 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+
+    fun updateMessage(message : Message, newText : String){
+        viewModelScope.launch {
+            repo.updateMessage(message,newText)
+        }
+    }
+
 }

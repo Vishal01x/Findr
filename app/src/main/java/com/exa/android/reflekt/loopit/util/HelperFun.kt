@@ -1,6 +1,9 @@
 package com.exa.android.reflekt.loopit.util
 
 import android.content.Context
+import android.os.Build
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -114,4 +117,20 @@ fun Context.createImageFile(): File {
 
 fun generateChatId(user1: String, user2: String): String {
     return if (user1 > user2) "$user1-$user2" else "$user2-$user1"
+}
+
+
+fun getVibrator(context : Context) : Vibrator? {
+    val vibratorManager =
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        }else{
+            null
+        }
+
+    return  if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+        vibratorManager ?. defaultVibrator
+    }else{
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
 }

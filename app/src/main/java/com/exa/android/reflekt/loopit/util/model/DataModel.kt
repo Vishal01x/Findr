@@ -1,6 +1,7 @@
 package com.exa.android.reflekt.loopit.util.model
 
 import com.google.firebase.Timestamp
+import java.util.UUID
 
 data class User(
     val userId : String = "",
@@ -11,13 +12,19 @@ data class User(
 
 
 
+
 data class Message(
+    val messageId: String = UUID.randomUUID().toString(),
+    val chatId : String = "",
     val senderId: String = "",
-    val receiverId : String = "",
+    val receiverId: String = "",
     val message: String = "",
     val timestamp: Timestamp = Timestamp.now(),
-    val status: String = "sent" // Status could be "sent", "delivered", or "read"
+    val status: String = "sent", // Status could be "sent", "delivered", or "read"
+    val replyTo: Message? = null,
+    val members: List<String?> = emptyList()
 )
+
 
 
 //data class User(
@@ -55,6 +62,6 @@ data class ChatList(
 
 data class Status(
     val isOnline: Boolean = false,
-    val lastSeen : Timestamp? = Timestamp.now(),
-    val typingTo : String = ""
+    val lastSeen: Long? = null,
+    val typingTo: String = ""
 )
