@@ -1,9 +1,8 @@
-package com.exa.android.reflekt.data.repository
+package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
-import com.exa.android.reflekt.data.local.LinkMetadataDao
-import com.exa.android.reflekt.domain.LinkMetadata
+import com.exa.android.reflekt.loopit.data.local.LinkMetadataDao
+import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import java.net.URL

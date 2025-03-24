@@ -1,21 +1,16 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component
 
-import android.os.Build
-import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -25,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -57,6 +51,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.LinkPreview
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.LinkPreviewCard
+import com.exa.android.reflekt.loopit.util.LinkUtils
 import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.getVibrator
 import com.exa.android.reflekt.loopit.util.model.Message
@@ -151,7 +148,8 @@ fun MessageBubble(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isSelected) Color.Yellow else Color.Transparent)
+            .background(if (isSelected) Color(0xFF007AFF
+            ).copy(alpha = .2f) else Color.Transparent)
             .pointerInput(selectedMessagesSize) { // selectedMessagesSize is used for Key as it change it enables to call
                 detectTapGestures(
                     onTap = { if (selectedMessagesSize > 0) onTapOrLongPress() },
@@ -214,7 +212,7 @@ fun MessageBubble(
         ) {
             val bubbleColor = if (curUserId == message.senderId) Color(
                 0xFF007AFF
-            ) else Color(0xFFf6f6f6)
+            ).copy(alpha = .6f) else Color(0xFFf6f6f6)
             Column(
                 modifier = Modifier
                     .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp) // occupy 70% of screen only
@@ -222,7 +220,7 @@ fun MessageBubble(
                         color = if (isHighlighted) bubbleColor.copy(alpha = 0.6f) else bubbleColor,
                         shape = RoundedCornerShape(12.dp)
                     )
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
             ) {
                 Box(modifier = Modifier
                     //.fillMaxWidth()
@@ -254,12 +252,16 @@ fun MessageBubble(
                         fontStyle = FontStyle.Italic
                     )
                 } else {
-                    Text(
-                        text = message.message,
-                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                        color = if (curUserId == message.senderId) Color.White else Color.Black,
-                        fontWeight = FontWeight.Medium
-                    )
+                    if(LinkUtils.containsLink(text = message.message)){
+                        LinkPreview(message.message, message.senderId == curUserId)
+                    }else {
+                        Text(
+                            text = message.message,
+                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                            color = if (curUserId == message.senderId) Color.White else Color.Black,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
                 }
 
                 Row(
@@ -270,6 +272,7 @@ fun MessageBubble(
                     Text(
                         text = formatTimestamp(timestampInMillis), // generate timeStamp like hrs, yesterday
                         style = MaterialTheme.typography.labelSmall,
+                        fontStyle = FontStyle.Italic,
                         color = if (curUserId == message.senderId) Color.White else Color.Gray
                     )
                     if (curUserId == message.senderId && message.message != "deleted") {

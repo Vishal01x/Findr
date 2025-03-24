@@ -1,10 +1,10 @@
-package com.exa.android.reflekt.loopit.mvvm.ViewModel
+package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.exa.android.reflekt.loopit.mvvm.Repository.UserRepository
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
 import com.exa.android.reflekt.loopit.util.model.Status
 import com.exa.android.reflekt.loopit.util.model.User
 import com.exa.android.reflekt.loopit.util.Response

@@ -1,8 +1,8 @@
-package com.exa.android.reflekt.loopit.authentication.vm
+package com.exa.android.reflekt.loopit.data.remote.authentication.vm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.exa.android.reflekt.loopit.authentication.repo.AuthRepository
+import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
 import com.exa.android.reflekt.loopit.util.Response
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

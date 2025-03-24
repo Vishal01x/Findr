@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.showToast
@@ -137,10 +137,13 @@ fun ForgetPasswordScreen(navController: NavController) {
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done
                 ),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    focusedTextColor = Color.White
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedIndicatorColor = Color.White,
+                    unfocusedIndicatorColor = Color.White
                 )
             )
 

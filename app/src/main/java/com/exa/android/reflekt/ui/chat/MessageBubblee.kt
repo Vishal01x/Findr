@@ -32,12 +32,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.model.Message
-import com.exa.android.reflekt.ui.components.LinkPreviewCard
 import com.exa.android.reflekt.ui.viewmodel.ChatViewModel
 import com.exa.android.reflekt.ui.viewmodel.LinkState
 
 @Composable
-fun MessageBubblee(message: Message) {
+fun MessageBubblee(message: Message, isLink: Boolean = false) {
     val isSentByMe = message.isSent
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
@@ -77,60 +76,61 @@ fun MessageBubblee(message: Message) {
             .padding(vertical = 4.dp),
         contentAlignment = if (isSentByMe) Alignment.CenterEnd else Alignment.CenterStart
     ) {
-
         Column(modifier = Modifier.padding(12.dp)) {
-            when (val state = linkState) {
-                is LinkState.Loading -> LinkPreviewLoading()
-                is LinkState.Success -> state.metadata?.let {
-                    LinkPreviewCard(
-                        metadata = it,
+            if (isLink) {
+
+                when (val state = linkState) {
+                    is LinkState.Loading -> LinkPreviewLoading()
+                    is LinkState.Success -> state.metadata?.let {
+                        LinkPreviewCard(
+                            metadata = it,
+                            onRetry = { viewModel.refreshMetadata(message.text) }
+                        )
+                    }
+
+                    is LinkState.Error -> LinkPreviewError(
+                        message = state.message,
                         onRetry = { viewModel.refreshMetadata(message.text) }
                     )
                 }
 
-                is LinkState.Error -> LinkPreviewError(
-                    message = state.message,
-                    onRetry = { viewModel.refreshMetadata(message.text) }
-                )
-            }
-
-            //Text(
+                //Text(
 //                    text = message.text,
 //                    style = MaterialTheme.typography.bodyLarge.copy(
 //                        color = if (isSentByMe) Color.White else MaterialTheme.colorScheme.onSurface
 //                    )
 //                )
-            ClickableText(
-                text = annotatedString,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = if (isSentByMe) Color.White else MaterialTheme.colorScheme.onSurface
-                ),
-                onClick = { offset ->
-                    annotatedString.getStringAnnotations("URL", offset, offset)
-                        .firstOrNull()
-                        ?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
-            )
-
-            Text(
-                text = message.timestamp,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = if (isSentByMe) Color.White.copy(alpha = 0.8f)
-                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                ),
-                modifier = Modifier.align(Alignment.End)
-            )
+                ClickableText(
+                    text = annotatedString,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = if (isSentByMe) Color.White else MaterialTheme.colorScheme.onSurface
+                    ),
+                    onClick = { offset ->
+                        annotatedString.getStringAnnotations("URL", offset, offset)
+                            .firstOrNull()
+                            ?.let { annotation ->
+                                uriHandler.openUri(annotation.item)
+                            }
+                    }
+                )
+            } else {
+                Text(
+                    text = message.text,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = if (isSentByMe) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                Text(
+                    text = message.timestamp,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = if (isSentByMe) Color.White.copy(alpha = 0.8f)
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    ),
+                    modifier = Modifier.align(Alignment.End)
+                )
+            }
         }
 
-//        // Show link preview if metadata exists
-//        linkMetadata?.let { metadata ->
-//            LinkPreviewCard(
-//                metadata = metadata,
-//                modifier = Modifier.padding(top = 4.dp)
-//            )
-//        }
     }
 }
 

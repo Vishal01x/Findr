@@ -44,7 +44,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.UserViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.util.AudioWaveForm
 import com.exa.android.reflekt.loopit.util.model.Message
 import kotlinx.coroutines.CoroutineScope

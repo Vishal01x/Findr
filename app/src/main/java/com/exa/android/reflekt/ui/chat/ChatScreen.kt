@@ -165,7 +165,8 @@ private fun MessagesList(messages: List<Message>, modifier: Modifier = Modifier)
         reverseLayout = true
     ) {
         items(messages.reversed()) { message ->
-            MessageBubblee(message = message)
+            val isLink = LinkUtils.isValidUrl(message.text)
+            MessageBubblee(message = message, isLink)
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -308,12 +309,12 @@ private fun MessageBubble(message: Message) {
             }
 
             // Show link preview if metadata exists
-            linkMetadata?.let { metadata ->
-                LinkPreviewCard(
-                    metadata = metadata,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
+//            linkMetadata?.let { metadata ->
+//                LinkPreviewCard(
+//                    metadata = metadata,
+//                    modifier = Modifier.padding(top = 4.dp)
+//                )
+//            }
         }
     }
 }
@@ -374,6 +375,17 @@ object LinkUtils {
         }
         return matches
     }
+
+    fun isValidUrl(text: String): Boolean {
+        return try {
+            val url = java.net.URL(text)
+            url.toURI() // Ensures it's a valid URI
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 
     data class LinkSpan(val url: String, val start: Int, val end: Int)
 }

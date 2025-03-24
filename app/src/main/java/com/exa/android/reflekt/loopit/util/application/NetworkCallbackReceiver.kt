@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.loopit.application
+package com.exa.android.reflekt.loopit.util.application
 
 
 import android.content.Context

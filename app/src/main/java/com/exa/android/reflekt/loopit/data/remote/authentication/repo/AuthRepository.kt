@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.loopit.authentication.repo
+package com.exa.android.reflekt.loopit.data.remote.authentication.repo
 
 import com.exa.android.reflekt.loopit.util.Response
 import com.google.firebase.auth.FirebaseAuth

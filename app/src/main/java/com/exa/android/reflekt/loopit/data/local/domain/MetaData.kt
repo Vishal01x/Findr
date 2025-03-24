@@ -1,17 +1,8 @@
-package com.exa.android.reflekt.domain
+package com.exa.android.reflekt.loopit.data.local.domain
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
-//data class LinkMetadata(
-//    val url: String,
-//    val title: String?,
-//    val description: String?,
-//    val imageUrl: String?,
-//    val domain: String,
-//    val favicon: String?
-//)
 
 @Entity(tableName = "link_metadata")
 data class LinkMetadata(

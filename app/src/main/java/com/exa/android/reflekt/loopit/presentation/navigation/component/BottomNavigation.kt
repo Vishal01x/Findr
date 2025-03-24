@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -75,22 +77,45 @@ fun CustomBottomNavigationBar(
         onClick = {
             if (selected != HomeRoute.ChatList.route) {
                 navController.navigate(HomeRoute.ChatList.route) {
+                    // Clear back stack up to start destination
+//                    popUpTo(navController.graph.findStartDestination().id) {
+//                        saveState = true
+//                    }
                     launchSingleTop = true
                     restoreState = true
                 }
             }
-        }), BottomNavItem(route = MainRoute.Profile.route,
+        }),
+        BottomNavItem(route = MainRoute.Profile.route,
         icon = Icons.Default.Person,
         label = "Profile",
         onClick = {
             //  if (selected != MainRoute.Profile.route) {
             Log.d("profile", "2")
             navController.navigate(MainRoute.Profile.route) {
+//                // Clear back stack up to start destination
+//                popUpTo(navController.graph.findStartDestination().id) {
+//                    saveState = true
+//                }
                 launchSingleTop = true
                 restoreState = true
             }
             // }
-        }))
+        }),
+        BottomNavItem(
+            route = MainRoute.Map.route,
+            icon = Icons.Default.LocationOn,
+            label = "Map",
+            onClick = {
+                //  if (selected != MainRoute.Profile.route) {
+                Log.d("Map", "2")
+                navController.navigate("map_graph") {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                // }
+            }
+        ))
 
     // Render the custom navigation bar
     Row(
@@ -150,7 +175,21 @@ fun CustomBottomNavigationBar(
                     .size(32.dp)
             )
         }
-
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable {
+                Log.d("Map", "1")
+                items[2].onClick()
+            }
+        ) {
+            Icon(
+                imageVector = items[2].icon,
+                contentDescription = items[2].label,
+                tint = if (currentDestination?.route == items[2].route) Color.Black else Color.Gray,
+                modifier = Modifier
+                    .size(32.dp)
+            )
+        }
     }
 }
 

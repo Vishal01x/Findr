@@ -8,14 +8,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.DetailChat
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.ProfileScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.HomeScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Map.MapScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.SearchScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.ZoomPhoto
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ChatInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MeetingRoute
 import com.google.gson.Gson
 import io.getstream.meeting.room.compose.ui.AppScreens
@@ -70,6 +72,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
         }
 
         chatInfoNavGraph(navController)
+        mapNavGraph(navController)
     }
 }
 
@@ -77,6 +80,27 @@ fun NavGraphBuilder.chatInfoNavGraph(navController: NavHostController) {
     navigation(startDestination = ChatInfo.ProfileScreen.route, route = "chat") {
         composable(ChatInfo.ProfileScreen.route) {
             ProfileScreen(
+//                "fjidjf",
+//                onMediaClick = { navController.navigate(ChatInfo.ChatMedia.route) },
+//                onCallClick = { navController.navigate(Call.VoiceCall.route) },
+//                onMediaVisibilityClick = { navController.navigate(ChatInfo.MediaVisibility.route) },
+//                onBlockClick = { navController.navigate(ChatInfo.BlockUser.route) }
+            )
+        }
+        /*composable(ChatInfo.ChatMedia.route) { MediaScreen() }
+        composable(ChatInfo.MediaVisibility.route) { MediaVisibilityScreen() }
+        composable(ChatInfo.BlockUser.route) { BlockUserScreen() }
+        composable(Call.VoiceCall.route) { CallScreen() }*/
+    }
+}
+
+fun NavGraphBuilder.mapNavGraph(navController: NavHostController) {
+    navigation(
+        startDestination = MapInfo.MapScreen.route,
+        route = "map_graph"
+    ) {
+        composable(MapInfo.MapScreen.route) {
+            MapScreen(
 //                "fjidjf",
 //                onMediaClick = { navController.navigate(ChatInfo.ChatMedia.route) },
 //                onCallClick = { navController.navigate(Call.VoiceCall.route) },

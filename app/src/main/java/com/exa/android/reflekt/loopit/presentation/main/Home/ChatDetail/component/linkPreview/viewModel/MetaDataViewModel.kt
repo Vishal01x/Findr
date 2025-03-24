@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.ui.viewmodel
+package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel
 
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatViewModel @Inject constructor(
+class MetaDataViewModel @Inject constructor(
     private val metadataRepository: LinkMetadataRepository
 ) : ViewModel() {
     private val _linkStates = mutableStateMapOf<String, LinkState>()

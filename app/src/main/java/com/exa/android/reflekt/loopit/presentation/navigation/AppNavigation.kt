@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.exa.android.reflekt.OnBackPressed
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
@@ -18,6 +19,7 @@ import io.getstream.video.android.compose.theme.VideoTheme
 
 @Composable
 fun AppNavigation(navController: NavHostController, isLoggedIn: Boolean) {
+    //OnBackPressed(navController)
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
     Scaffold(
         bottomBar = {

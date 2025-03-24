@@ -13,6 +13,7 @@ sealed class MainRoute(val route : String){
     object Home : MainRoute("home")
     object Profile : MainRoute("status")
     object Setting : MainRoute("setting")
+    object Map : MainRoute("map")
 }
 
 
@@ -25,6 +26,10 @@ sealed class HomeRoute(val route : String){
     object ZoomImage : HomeRoute("zoomImage/{imageId}") {
         fun createRoute(imageId: Int): String = "zoomImage/$imageId"
     }
+}
+
+sealed class MapInfo(val route:String){
+    object MapScreen : MapInfo("map_screen")
 }
 
 sealed class MeetingRoute(val route: String) {

@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.loopit.mvvm.Repository
+package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.util.Log
 import com.exa.android.reflekt.loopit.util.Response
@@ -8,14 +8,22 @@ import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.User
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -186,6 +194,32 @@ class FirestoreService @Inject constructor(
         }
     }
 
+    private fun updateMessageStatusToSeen(chatId: String, messages: List<Message>) {
+        val batch = db.batch()
+        for (message in messages.reversed()) {
+            if (message.senderId == currentUser || message.status == "seen") break
+            val messageRef = chatCollection
+                .document(chatId)
+                .collection("messages")
+                .document(message.messageId)
+
+            //chatCollection.document(chatId).update("unreadMessages.$currentUser", 0)
+            batch.update(messageRef, "status", "seen")
+        }
+
+        batch.commit().addOnCompleteListener {
+            if (it.isSuccessful) {
+                Log.d("FireStore Operation", "All messages status updated to 'seen'")
+            } else {
+                Log.e("FireStore Operation", "Error updating messages status", it.exception)
+            }
+        }
+    }
+
+    private fun updateUnreadMessages(chatId: String) {
+        chatCollection.document(chatId).update("unreadMessages.$currentUser", 0)
+    }
+
     fun getMessages(user1Id: String, user2Id: String): Flow<Response<List<Message>>> = flow {
         emit(Response.Loading)
 
@@ -200,6 +234,8 @@ class FirestoreService @Inject constructor(
                             trySend(Response.Error(exception.message ?: "Unknown error")).isFailure
                         } else {
                             val messages = snapshot?.toObjects(Message::class.java) ?: emptyList()
+                            updateUnreadMessages(chatId)
+                            updateMessageStatusToSeen(chatId, messages)
                             val result = trySend(Response.Success(messages))
                             if (result.isFailure) {
                                 // Log or handle the failure (optional)
@@ -216,10 +252,10 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    suspend fun getChatList(userId: String): Flow<Response<List<ChatList>>> = callbackFlow {
+    /*suspend fun getChatList(userId: String): Flow<Response<List<ChatList>>> = callbackFlow {
         trySend(Response.Loading)
 
-        val userDocument = userCollection.document(currentUser!!)
+        val userDocument = userCollection.document(userId)
         val chatListeners = mutableListOf<ListenerRegistration>()
         val chatList = mutableListOf<ChatList>()
 
@@ -241,9 +277,9 @@ class FirestoreService @Inject constructor(
                 trySend(Response.Success(emptyList())).isFailure
             } else {
                 // Clear previous listeners to avoid duplicate data
-                chatListeners.forEach { it.remove() }
-                chatListeners.clear()
-                chatList.clear()
+//                chatListeners.forEach { it.remove() }
+//                chatListeners.clear()
+//                chatList.clear()
 
                 // Step 2: Add listeners for each user's chat
                 userIds.forEach { otherUserId ->
@@ -297,13 +333,13 @@ class FirestoreService @Inject constructor(
                                             trySend(Response.Success(sortedChatList)).isFailure
                                         }
                                     }
-                                    .addOnFailureListener {
-                                        trySend(
-                                            Response.Error(
-                                                it.message ?: "Error fetching user details"
-                                            )
-                                        ).isFailure
-                                    }
+//                                    .addOnFailureListener {
+//                                        trySend(
+//                                            Response.Error(
+//                                                it.message ?: "Error fetching user details"
+//                                            )
+//                                        ).isFailure
+//                                    }
                             }
                         }
                     chatListeners.add(chatListener)
@@ -316,6 +352,109 @@ class FirestoreService @Inject constructor(
             userDocumentListener.remove()
             chatListeners.forEach { it.remove() }
         }
+    }*/
+
+    suspend fun getChatList(userId: String): Flow<Response<List<ChatList>>> = callbackFlow {
+        trySend(Response.Loading)
+
+        val userDocument = userCollection.document(userId)
+        val activeListeners = mutableMapOf<String, ListenerRegistration>()
+        val chatCache = mutableMapOf<String, ChatList>()
+        val scope = CoroutineScope(Dispatchers.IO + Job())
+
+        // Listen for user list changes
+        val userListListener = userDocument.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(Response.Error(error.message ?: "User data error"))
+                return@addSnapshotListener
+            }
+
+            val userIds = snapshot?.get("user_list") as? List<String> ?: emptyList()
+            if(userIds.isEmpty()){
+                trySend(Response.Success(emptyList()))
+                return@addSnapshotListener
+            }
+            manageChatListeners(userId, userIds, activeListeners, chatCache, scope, this)
+        }
+
+        awaitClose {
+            userListListener.remove()
+            activeListeners.values.forEach { it.remove() }
+            scope.cancel()
+        }
     }
 
+    private fun manageChatListeners(
+        userId: String,
+        userIds: List<String>,
+        activeListeners: MutableMap<String, ListenerRegistration>,
+        chatCache: MutableMap<String, ChatList>,
+        scope: CoroutineScope,
+        channel: ProducerScope<Response<List<ChatList>>>
+    ) {
+        // Remove listeners for users no longer in the list
+        val removedUsers = activeListeners.keys - userIds.toSet()
+        removedUsers.forEach {
+            activeListeners.remove(it)?.remove()
+            chatCache.remove(it)
+        }
+
+        // Add listeners for new users
+        userIds.forEach { otherUserId ->
+            if (activeListeners.contains(otherUserId)) return@forEach
+
+            val chatId = generateChatId(userId, otherUserId)
+            val chatDoc = chatCollection.document(chatId)
+
+            activeListeners[otherUserId] = chatDoc.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    channel.trySend(Response.Error(error.message ?: "Chat data error"))
+                    return@addSnapshotListener
+                }
+
+                scope.launch {
+                    if (snapshot == null || !snapshot.exists()) return@launch
+
+                    val lastMessage = snapshot.getString("lastMessage") ?: ""
+                    val timestamp = snapshot.getTimestamp("lastMessageTimestamp") ?: Timestamp.now()
+                    val unread = snapshot.getLong("unreadMessages.$userId") ?: 0
+
+                    // Parallel user data fetch
+                    val userData = async { fetchUserData(otherUserId) }
+                    val profileData = userData.await()
+
+                    profileData?.let { (name, profilePic) ->
+                        val chat = ChatList(
+                            userId = otherUserId,
+                            name = name,
+                            profilePicture = profilePic,
+                            lastMessage = lastMessage,
+                            lastMessageTimestamp = timestamp,
+                            unreadMessages = unread
+                        )
+
+                        chatCache[otherUserId] = chat
+                        channel.trySend(Response.Success(chatCache.values.sortedByDescending { it.lastMessageTimestamp }))
+                    }
+                }
+            }
+        }
+
+        // Send updated list immediately if we have cached data
+        if (chatCache.isNotEmpty()) {
+            channel.trySend(Response.Success(chatCache.values.sortedByDescending { it.lastMessageTimestamp }))
+        }
+    }
+
+    private suspend fun fetchUserData(userId: String): Pair<String, String>? {
+        return try {
+            val snapshot = userCollection.document(userId).get().await()
+            val name = snapshot.getString("name") ?: return null
+            val profilePic = snapshot.getString("profilePicture") ?: ""
+            name to profilePic
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
+

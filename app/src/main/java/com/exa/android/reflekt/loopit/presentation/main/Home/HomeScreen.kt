@@ -1,6 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home
 
+import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.motionEventSpy
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -49,13 +52,21 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
+
+    val context = LocalContext.current
+    // Handle back press to exit app when at Home
+    BackHandler(enabled = true) {
+//        if (!navController.popBackStack()) {
+            (context as Activity).finish()
+
+    }
 
     Column(
         modifier = Modifier

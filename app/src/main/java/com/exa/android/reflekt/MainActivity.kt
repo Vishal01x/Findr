@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -24,10 +26,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.exa.android.reflekt.loopit.application.MyLifecycleObserver
-import com.exa.android.reflekt.loopit.application.NetworkCallbackReceiver
-import com.exa.android.reflekt.loopit.authentication.vm.AuthVM
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.UserViewModel
+import com.exa.android.reflekt.loopit.util.application.MyLifecycleObserver
+import com.exa.android.reflekt.loopit.util.application.NetworkCallbackReceiver
+import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
@@ -55,7 +57,7 @@ class MainActivity : ComponentActivity() {
             MeetingRoomTheme{
                 updateStatus(this)
                 App()
-               // MainNavigation()
+               //MainNavigation()
             }
         }
     }
@@ -108,41 +110,22 @@ fun App() {
     val viewModel: AuthVM = hiltViewModel()
     val isLoggedIn = viewModel.authStatus.collectAsState().equals(true)
     val navController = rememberNavController()
-    OnBackPressed(navController = navController)
+    //OnBackPressed(navController = navController)
     AppNavigation(navController, isLoggedIn)
 }
 
 
 @Composable
 fun OnBackPressed(navController: NavController) {
-    // Handle back press based on the current screen
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    // Observe the current destination route
     val currentRoute = currentBackStackEntry?.destination?.route
     val context = LocalContext.current
-    //Log.d("currentBackStackEntry->onBack", currentRoute.toString())
 
-    // Listen for the back press event
-    BackHandler {
-        when (currentRoute) {
-            MainRoute.Profile.route -> { // it helps to get rid of loops for home and profile screen
-                navController.navigate(HomeRoute.ChatList.route) {
-                    popUpTo(HomeRoute.ChatList.route) { inclusive = true }
-                }
-            }
-            HomeRoute.ChatList.route -> {
-                // Close the app only if we are on the Home screen
-                (context as? Activity)?.finish()
-            }
-            AuthRoute.Login.route -> {
-                // Allow default back button behavior for login screen (closing app)
-                (context as? Activity)?.finish()
-            }
-            else -> {
-                // If on other screens, navigate back normally
-                navController.popBackStack()
-            }
+    BackHandler(true) {
+        if(currentRoute == HomeRoute.ChatList.route){
+            (context as? Activity)?.finish()
+        }else{
+            navController.popBackStack()
         }
     }
-
 }

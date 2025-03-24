@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
@@ -60,14 +61,18 @@ fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (userId :St
                 chat.name,
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.Black,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 chat.lastMessage,
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.DarkGray,
-                fontSize = 13.sp
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
         Column(horizontalAlignment = Alignment.End) {

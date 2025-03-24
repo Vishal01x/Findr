@@ -1,6 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.auth
 
-import com.exa.android.reflekt.loopit.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.showToast

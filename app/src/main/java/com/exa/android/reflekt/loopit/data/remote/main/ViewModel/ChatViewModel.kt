@@ -1,15 +1,18 @@
-package com.exa.android.reflekt.loopit.mvvm.ViewModel
+package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.exa.android.reflekt.loopit.mvvm.Repository.FirestoreService
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
 import com.exa.android.reflekt.loopit.util.model.User
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.exa.android.reflekt.loopit.util.model.Message
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -86,9 +89,12 @@ class ChatViewModel @Inject constructor(
 
     fun getChatList() {
         viewModelScope.launch {
-            repo.getChatList(curUser.value).collect { response ->
-                _chatList.value = response
-            }
+            repo.getChatList(curUser.value)
+                .flowOn(Dispatchers.IO)
+                .distinctUntilChanged()
+                .collect { response ->
+                    _chatList.value = response
+                }
         }
     }
 

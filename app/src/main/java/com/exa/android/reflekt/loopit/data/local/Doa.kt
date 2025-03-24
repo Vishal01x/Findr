@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.data.local
+package com.exa.android.reflekt.loopit.data.local
 
 import androidx.room.Dao
 import androidx.room.Database
@@ -6,7 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RoomDatabase
-import com.exa.android.reflekt.domain.LinkMetadata
+import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 
 @Database(entities = [LinkMetadata::class], version = 1)
 abstract class LinkMetadataDatabase : RoomDatabase() {

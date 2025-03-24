@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.domain.LinkMetadata
+import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 
 @Composable
-fun LinkPreviewCard(metadata: LinkMetadata, onRetry: () -> Unit) {
+fun LinkPreviewCard(metadata: LinkMetadata, message : String, onRetry: () -> Unit) {
     val context = LocalContext.current
 
     Card(

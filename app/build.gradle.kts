@@ -39,6 +39,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -96,4 +97,23 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
 
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // map
+    implementation("com.google.maps.android:maps-compose:6.4.1")
+    implementation("com.google.android.gms:play-services-maps:19.1.0")
+
+    // geofire
+    implementation ("com.firebase:geofire-android:3.2.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // image
+    implementation(libs.glide)
+    implementation(libs.landscapist.glide)
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
+
+
+    implementation ("com.google.android.libraries.places:places:3.4.0")
+    implementation ("com.google.maps.android:places-ktx:3.1.1")
+    implementation ("androidx.activity:activity-ktx:1.10.1")
+    implementation ("com.jakewharton.timber:timber:5.0.1")
 }

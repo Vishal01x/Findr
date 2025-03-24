@@ -1,9 +1,9 @@
-package com.exa.android.reflekt.loopit.application
+package com.exa.android.reflekt.loopit.util.application
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.UserViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 
 
 class MyLifecycleObserver(

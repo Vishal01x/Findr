@@ -28,8 +28,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.ChatViewModel
-import com.exa.android.reflekt.loopit.mvvm.ViewModel.UserViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.ChatHeader
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.MessageList
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.NewMessageSection
@@ -192,11 +192,7 @@ private fun copyMessages(
 ) {
     coroutineScope.launch {
         val formattedMessages = selectedMessages.joinToString("\n") {
-            "[${
-                SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(
-                    Date(it.timestamp.seconds * 1000L)
-                )
-            }] ${it.senderId}: ${it.message}"
+            it.message
         }
         clipboardManager.setText(AnnotatedString(formattedMessages))
     }

@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.loopit.mvvm.Repository
+package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.util.Log
 import androidx.lifecycle.LiveData
