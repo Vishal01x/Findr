@@ -30,14 +30,16 @@ class ChatViewModel @Inject constructor(
     private val _chatList = MutableStateFlow<Response<List<ChatList>>>(Response.Loading)
     val chatList: StateFlow<Response<List<ChatList>>> = _chatList
 
-    val curUser = MutableStateFlow("")
+    val curUserId = MutableStateFlow("")
+    val curUser = MutableStateFlow<User?>(null)
 
     init {
         viewModelScope.launch {
             // Set current user and fetch chat list
             repo.currentUser?.let { user ->
-                curUser.value = user
+                curUserId.value = user
                 getChatList()
+                getCurUser()
             } ?: run {
                 _chatList.value = Response.Error("Current user is null")
             }
@@ -58,9 +60,15 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun createChatAndSendMessage(userId: String, message: String) {
+    private fun getCurUser(){
         viewModelScope.launch {
-            repo.createChatAndSendMessage(userId, message)
+            curUser.value = repo.getCurUser()
+        }
+    }
+
+    fun createChatAndSendMessage(userId: String, message: String, receiverToken : String?) {
+        viewModelScope.launch {
+            repo.createChatAndSendMessage(userId, message, receiverToken, curUser.value)
         }
     }
 
@@ -89,7 +97,7 @@ class ChatViewModel @Inject constructor(
 
     fun getChatList() {
         viewModelScope.launch {
-            repo.getChatList(curUser.value)
+            repo.getChatList(curUserId.value)
                 .flowOn(Dispatchers.IO)
                 .distinctUntilChanged()
                 .collect { response ->

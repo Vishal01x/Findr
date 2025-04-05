@@ -5,21 +5,31 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.exa.android.reflekt.OnBackPressed
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
-import io.getstream.meeting.room.compose.ui.MeetingRoomTheme
 import io.getstream.video.android.compose.theme.VideoTheme
 
 @Composable
-fun AppNavigation(navController: NavHostController, isLoggedIn: Boolean) {
+fun AppNavigation(navController: NavHostController, isLoggedIn: Boolean, otherUserId : String ? = null) {
     //OnBackPressed(navController)
+
+    LaunchedEffect(otherUserId) {
+        otherUserId?.let {
+            navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId)) {
+                popUpTo(HomeRoute.ChatList.route) { inclusive = false } // Ensure HomeScreen is in the back stack
+                launchSingleTop = true  // Avoid creating duplicate instances
+            }
+
+        }
+    }
+
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
     Scaffold(
         bottomBar = {

@@ -1,20 +1,5 @@
-/*
- * Copyright (c) 2014-2023 Stream.io Inc. All rights reserved.
- *
- * Licensed under the Stream License;
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://github.com/GetStream/stream-video-android/blob/main/LICENSE
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-package io.getstream.meeting.room.compose.ui.call
+package com.exa.android.reflekt.loopit.data.remote.main.meeting.call
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,10 +11,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CallViewModel @Inject constructor() : ViewModel() {
+class CallViewModel @Inject constructor(
+  private val streamVideo: StreamVideo
+) : ViewModel() {
 
   // step 1 - get the StreamVideo instance and create a call
-  private val streamVideo = StreamVideo.instance()
+//  private val streamVideo = StreamVideo.instance()
   val call = streamVideo.call(Constants.callType, Constants.callId.toString())
 
   private val _uiState: MutableStateFlow<CallUiState> = MutableStateFlow(CallUiState.Loading)

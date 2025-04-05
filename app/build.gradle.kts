@@ -42,6 +42,18 @@ android {
         buildConfig = true
         compose = true
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "mozilla/public-suffix-list.txt"
+        }
+    }
 }
 
 dependencies {
@@ -62,6 +74,7 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.androidx.runner)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.firebase.messaging.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -116,4 +129,18 @@ dependencies {
     implementation ("com.google.maps.android:places-ktx:3.1.1")
     implementation ("androidx.activity:activity-ktx:1.10.1")
     implementation ("com.jakewharton.timber:timber:5.0.1")
+
+    // Retrofit
+    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // Logging for debugging
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0") // Google OAuth2
+
+    implementation("io.github.jan-tennert.supabase:storage-kt:1.4.7")
+
+    implementation("io.ktor:ktor-client-android:2.3.13")
+    implementation("io.ktor:ktor-client-core:2.3.13")
+    implementation("io.ktor:ktor-utils:2.3.13")
+
 }

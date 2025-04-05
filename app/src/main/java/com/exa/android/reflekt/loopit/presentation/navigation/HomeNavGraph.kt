@@ -1,5 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.navigation
 
+import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -7,6 +9,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.DetailChat
@@ -20,15 +23,15 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRout
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MeetingRoute
 import com.google.gson.Gson
-import io.getstream.meeting.room.compose.ui.AppScreens
-import io.getstream.meeting.room.compose.ui.call.CallScreen
-import io.getstream.meeting.room.compose.ui.lobby.LobbyScreen
+import com.exa.android.reflekt.loopit.data.remote.main.meeting.call.CallScreen
+import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyScreen
 
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
+
     navigation(startDestination = HomeRoute.ChatList.route, route = "home") {
         composable(HomeRoute.ChatList.route) {
-            val viewModel : ChatViewModel = hiltViewModel()
+            val viewModel: ChatViewModel = hiltViewModel()
             val chatList = listOf("Vishal", "Kanhaiya", "Joe Tam", "Holder", "Smith Darklew")
             HomeScreen(navController, viewModel)
         }
@@ -43,19 +46,22 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
 
         composable(
             HomeRoute.ChatDetail.route,
-            arguments = listOf(navArgument("userId"){
+            arguments = listOf(navArgument("userId") {
                 type = NavType.StringType
-            })
-        ) {backStackEntry ->
-            val userId = backStackEntry.arguments?.getString("userId")
-            DetailChat(navController, userId!!){users->
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "reflekt://chat/{userId}" })
+        ) { backStackEntry ->
+//            val encodedUserJson = backStackEntry.arguments?.getString("userJson")
+//            val user = Gson().fromJson(URLDecoder.decode(encodedUserJson, "UTF-8"), User::class.java)
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            DetailChat(navController, userId) { users ->
                 navController.navigate(MeetingRoute.LobbyScreen.createRoute(users))
             }
         }
 
-        composable(HomeRoute.SearchScreen.route){
-            val viewModel : ChatViewModel = hiltViewModel()
-            SearchScreen(navController,viewModel)
+        composable(HomeRoute.SearchScreen.route) {
+            val viewModel: ChatViewModel = hiltViewModel()
+            SearchScreen(navController, viewModel)
         }
 
         composable(

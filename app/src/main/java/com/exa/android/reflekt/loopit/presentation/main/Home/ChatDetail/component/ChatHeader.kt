@@ -146,11 +146,11 @@ fun HeaderWithOptions(
 
     getVisibleIcons(selectedMessages, curUser).forEach {
         when (it) {
-            IconsName.REPLY -> endIcons.add(reply)
+            IconsName.REPLY ->{}
             IconsName.COPY -> endIcons.add(copy)
             IconsName.EDIT -> endIcons.add(edit)
             IconsName.DELETE -> endIcons.add(delete)
-            IconsName.FORWARD -> endIcons.add(forward)
+            IconsName.FORWARD -> {}
 
         }
     }

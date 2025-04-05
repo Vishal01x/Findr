@@ -56,6 +56,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
+import com.google.gson.Gson
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
@@ -76,8 +77,8 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     ) {
         HeaderSection(navController)
         Spacer(modifier = Modifier.height(12.dp))
-        StoriesSection()
-        Spacer(modifier = Modifier.height(16.dp))
+        //StoriesSection()
+       // Spacer(modifier = Modifier.height(16.dp))
         ChatsSection(navController, viewModel)
     }
 }
@@ -169,9 +170,9 @@ fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         // Add a title to the chat list
-        item {
-            ChatTitle()
-        }
+//        item {
+//            ChatTitle()
+//        }
 
         // Handle the state of the chat list
         when (val response = chatList) {
@@ -210,8 +211,12 @@ fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
                         zoomImage = { imageId ->
                             navController.navigate("zoomImage/$imageId")
                         },
-                        openChat = { userId ->
-                            navController.navigate(HomeRoute.ChatDetail.createRoute(userId))
+                        openChat = { user ->
+//                            val userJson = Gson().toJson(user)
+//                            val encodedUserJson = java.net.URLEncoder.encode(userJson, "UTF-8")
+//                            navController.navigate(HomeRoute.ChatDetail.createRoute(encodedUserJson))
+
+                             navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId))
                         }
                     )
                 }

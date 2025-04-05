@@ -7,7 +7,8 @@ data class User(
     val userId : String = "",
     val name : String = "",
     val phone : String = "",
-    val profilePicture : String? = ""
+    val profilePicture : String? = "",
+    val fcmToken : String? = ""
 )
 
 
@@ -57,7 +58,8 @@ data class ChatList(
     val lastMessage: String = "",
     val lastMessageTimestamp: Timestamp = Timestamp.now(),
     val profilePicture: String? = "",
-    val unreadMessages : Long = 0
+    val unreadMessages : Long = 0,
+    val fcmToken : String? = ""
 )
 
 data class Status(

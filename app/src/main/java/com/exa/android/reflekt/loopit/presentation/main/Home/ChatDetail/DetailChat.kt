@@ -1,9 +1,13 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -17,6 +21,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -25,24 +30,27 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.AnnotatedString
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.ChatHeader
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.MessageList
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.NewMessageSection
+import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.User
-import io.getstream.meeting.room.compose.ui.lobby.LobbyViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyViewModel
+import com.exa.android.reflekt.loopit.util.clearChatNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 
 @Composable
@@ -56,21 +64,32 @@ fun DetailChat(
     val lobbyVM: LobbyViewModel = hiltViewModel()
 
     val responseChatMessages by remember { chatViewModel.messages }.collectAsState() // all the chats of cur and other User
-    val curUserId by chatViewModel.curUser.collectAsState()  // cur User Id
+    val curUserId by chatViewModel.curUserId.collectAsState()  // cur User Id
     val chatMessages: MutableState<List<Message>> = remember { mutableStateOf(emptyList()) }
-    val responseUserDetail by userViewModel.userDetail.collectAsState()
+    val responseUserDetail by remember {  userViewModel.userDetail}.collectAsState()
     val userDetail: MutableState<User?> = remember { mutableStateOf(User()) }
     val userStatus by userViewModel.userStatus.observeAsState()
 
     var replyMessage by remember { mutableStateOf<Message?>(null) } // to track is message replied
     var editMessage by remember { mutableStateOf<Message?>(null) } // to edit message
     var selectedMessages by remember { mutableStateOf<Set<Message>>(emptySet()) } // to track the Id's of messages selected to operate HeaderWithOptions
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val imePadding = WindowInsets.ime.asPaddingValues() // Adjusts for the keyboard
     val focusRequester = remember { FocusRequester() } // to request focus of keyboard
     val focusManager = LocalFocusManager.current // handling focus like show or not show keyboard
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val chatIdState = rememberUpdatedState(generateChatId(curUserId, otherUserId))
     val coroutineScope =
         rememberCoroutineScope() // to handle asynchronous here for calling viewMode.delete
+
+    BackHandler(true){
+        if(selectedMessages.isEmpty())
+            navController.popBackStack()
+        else selectedMessages = emptySet()
+    }
+//    val otherUserId = otherUser.userId
 
     LaunchedEffect(otherUserId) {
         userViewModel.observeUserStatus(otherUserId)
@@ -78,6 +97,8 @@ fun DetailChat(
         userViewModel.updateUnreadMessages(curUserId, otherUserId)
         userViewModel.getUserDetail(otherUserId)
         userViewModel.updateOnlineStatus(curUserId, true)
+       // activeChatId = generateChatId(curUserId,otherUserId)
+        clearChatNotifications(context,chatIdState.value)
     }
 
     when (val response = responseUserDetail) {
@@ -100,10 +121,39 @@ fun DetailChat(
         is Response.Error -> Text(text = response.message)
         else -> {}
     }
+//
+//    DisposableEffect(key1 = Unit) {// when the user while typing navigate to somewhere eelse then update its typingto null
+//        onDispose {
+//            userViewModel.setTypingStatus(curUserId, "")
+//            activeChatId = null
+//        }
+//    }
 
-    DisposableEffect(key1 = Unit) {// when the user while typing navigate to somewhere eelse then update its typingto null
+
+// ✅ Lifecycle Observer: Ensures activeChatId updates when app resumes
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    activeChatId = chatIdState.value // Update chat ID when app resumes
+                    Log.d("ChatScreen", "App Resumed: ActiveChatId updated to $activeChatId")
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    activeChatId = null // Reset chat when app goes to background
+                    Log.d("ChatScreen", "App in Background: ActiveChatId Cleared")
+                }
+                else -> {}
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             userViewModel.setTypingStatus(curUserId, "")
+            activeChatId = null // Reset when leaving chat screen
+
+            //keyboardController?.hide()
         }
     }
 
@@ -150,7 +200,8 @@ fun DetailChat(
                     }else {
                         chatViewModel.createChatAndSendMessage(
                             otherUserId,
-                            text
+                            text,
+                            userDetail.value?.fcmToken
                         )
                     }
                 },

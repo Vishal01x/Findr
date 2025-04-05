@@ -2,7 +2,7 @@
     <string name="app_name">Reflekt</string>
 
     <string name="stream_video">Stream Video</string>
-    <string name="PLACE_API_KEY">""</string>
+    <string name="PLACE_API_KEY">"AIzaSyAG71oZoh5EI4bfro8Kct2wySMflLwOR6k"</string>
     <string name="call_lobby_description">Try out a video call in this demo powered by Stream\'s video SDK</string>
     <string name="join_call_description">You are about to join a call. %d more people are in the call.</string>
     <string name="join_call">Join Call</string>

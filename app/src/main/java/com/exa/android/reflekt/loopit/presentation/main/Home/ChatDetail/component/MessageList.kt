@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -76,9 +77,9 @@ fun MessageList(
     var highlightedIndex by remember { mutableStateOf<Int?>(null) }
     val renderedIndex = remember { mutableStateMapOf<String, Int>() }
 
-    LaunchedEffect(messages.size) {
-        //  listState.animateScrollToItem(messages.lastIndex)
-    }
+//    LaunchedEffect(messages.size) {
+//          listState.animateScrollToItem(messages.lastIndex)
+//    }
 
     Log.d("Chat Messages1234", "Messages - ${messages.toString()}")
 
@@ -120,6 +121,9 @@ fun MessageList(
                 }
             )
             }
+        }
+        item{
+            Spacer(Modifier.height(4.dp))
         }
     }
 
@@ -253,7 +257,7 @@ fun MessageBubble(
                     )
                 } else {
                     if(LinkUtils.containsLink(text = message.message)){
-                        LinkPreview(message.message, message.senderId == curUserId)
+                        LinkPreview(message.message, message.senderId == curUserId, selectedMessagesSize)
                     }else {
                         Text(
                             text = message.message,

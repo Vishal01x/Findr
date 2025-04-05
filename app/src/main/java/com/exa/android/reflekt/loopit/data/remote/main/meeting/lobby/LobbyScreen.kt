@@ -1,20 +1,5 @@
-/*
- * Copyright (c) 2014-2023 Stream.io Inc. All rights reserved.
- *
- * Licensed under the Stream License;
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://github.com/GetStream/stream-video-android/blob/main/LICENSE
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-package io.getstream.meeting.room.compose.ui.lobby
+package com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -55,10 +40,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.util.model.User
-import io.getstream.meeting.room.compose.ui.AppScreens
-import io.getstream.meeting.room.compose.ui.MeetingRoomTheme
-import io.getstream.meeting.room.compose.ui.component.StreamButton
+import com.exa.android.reflekt.loopit.data.remote.main.meeting.AppScreens
+import com.exa.android.reflekt.loopit.data.remote.main.meeting.MeetingRoomTheme
+import com.exa.android.reflekt.loopit.data.remote.main.meeting.component.StreamButton
 import io.getstream.video.android.compose.theme.VideoTheme
 import io.getstream.video.android.compose.ui.components.avatar.UserAvatar
 import io.getstream.video.android.compose.ui.components.call.lobby.CallLobby

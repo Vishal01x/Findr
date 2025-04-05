@@ -1,6 +1,15 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import android.content.Context
 import android.util.Log
+import com.exa.android.reflekt.loopit.data.remote.main.api.FCMRequest
+import com.exa.android.reflekt.loopit.data.remote.main.api.FCMResponse
+import com.exa.android.reflekt.loopit.data.remote.main.api.MessageData
+import com.exa.android.reflekt.loopit.data.remote.main.api.NotificationData
+import com.exa.android.reflekt.loopit.data.remote.main.api.RetrofitInstance
+import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper
+import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
+import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.ChatList
@@ -12,6 +21,9 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,11 +37,15 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
 import javax.inject.Inject
 
 class FirestoreService @Inject constructor(
     private val auth: FirebaseAuth,
-    private val db: FirebaseFirestore
+    private val db: FirebaseFirestore,
+    @ApplicationContext private val context: Context
 ) {
     private val userCollection = db.collection("users")
     private val chatCollection = db.collection("chats")
@@ -51,6 +67,10 @@ class FirestoreService @Inject constructor(
         }
     }
 
+    suspend fun getCurUser(): User? {
+        val user = userCollection.document(currentUser!!).get().await()
+        return user.toObject(User::class.java)
+    }
 
     fun insertUser(userName: String, phone: String) {
         val userId = auth.currentUser?.uid
@@ -62,16 +82,39 @@ class FirestoreService @Inject constructor(
         )
         try {
             userCollection.document(user.userId).set(user)
-                .addOnSuccessListener { Log.d("FireStoreService", "New user added Successfully") }
+                .addOnSuccessListener {
+                    registerFCMToken()
+                    Log.d("FireStoreService", "New user added Successfully")
+                }
                 .addOnFailureListener { Log.d("FireStoreService", "New user added Failed") }
         } catch (e: Exception) {
             // handel Exception
         }
     }
 
-    suspend fun createChatAndSendMessage(userId2: String, text: String) {
-        val userId1 = auth.currentUser?.uid
-        val chatId = generateChatId(userId1!!, userId2)
+    fun registerFCMToken() {
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                Log.d("FCM", "Token: $token")
+                updateToken(token) // Store in Firestore
+            }
+            .addOnFailureListener {
+                Log.e("FCM", "Failed to get token", it)
+            }
+    }
+
+    fun updateToken(token: String?) {
+        if(token.isNullOrEmpty() || currentUser.isNullOrEmpty())return
+        val userRef = userCollection.document(currentUser)
+
+        userRef.update("fcmToken", token)
+            .addOnSuccessListener { Log.d("FCM", "Token updated in Firestore") }
+            .addOnFailureListener { Log.e("FCM", "Failed to update token", it) }
+    }
+
+    suspend fun createChatAndSendMessage(userId2: String, text: String, receiverToken: String?, curUser: User?) {
+        val userId1 = auth.currentUser?.uid ?: return
+        val chatId = generateChatId(userId1, userId2)
         val message = Message(
             chatId = chatId,
             senderId = userId1,
@@ -79,65 +122,92 @@ class FirestoreService @Inject constructor(
             message = text,
             members = listOf(userId1, userId2)
         )
+
+        Log.d("FireStore Operation", "receiver Token - $receiverToken")
+
         try {
+            withContext(Dispatchers.IO) {
+                updateUserList(userId1, userId2)
+                updateUserList(userId2, userId1)
 
-            updateUserList(userId1, userId2)
-            updateUserList(userId2, userId1)
-            val messageRef = chatCollection.document(chatId).collection("messages")
+                val messageRef = chatCollection.document(chatId).collection("messages")
+                messageRef.document(message.messageId).set(message).await()
 
-            messageRef.document(message.messageId).set(message)
-                .addOnSuccessListener {
-                    Log.d(
-                        "FireStoreService",
-                        "New message added Successfully"
-                    )
+                // Update last message and timestamp in the chat document
+                val chatDoc = chatCollection.document(chatId)
+                val snapshot = chatDoc.get().await()
+
+                if (snapshot.exists()) {
+                    chatDoc.update(
+                        mapOf(
+                            "lastMessage" to message.message,
+                            "lastMessageTimestamp" to message.timestamp,
+                            "unreadMessages.$userId2" to FieldValue.increment(1),
+                            "unreadMessages.$userId1" to 0
+                        )
+                    ).await()
+                } else {
+                    chatDoc.set(
+                        mapOf(
+                            "lastMessage" to message.message,
+                            "lastMessageTimestamp" to message.timestamp,
+                            "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
+                        )
+                    ).await()
                 }
-                .addOnFailureListener { Log.d("FireStoreService", "New message added Failed") }
 
-            // Update last message and timestamp in the chat document
-            val chatDoc = chatCollection.document(chatId)
-            val snapshot = chatDoc.get().await()
-
-            if (snapshot.exists()) {
-                // Document exists, perform update
-                chatDoc.update(
-                    "lastMessage", message.message,
-                    "lastMessageTimestamp", message.timestamp,
-                    "unreadMessages.$userId2", FieldValue.increment(1),
-                    "unreadMessages.$userId1", 0
-                ).await()
-            } else {
-                // Document does not exist, create it with initial values
-                val data = chatDoc.set(
-                    mapOf(
-                        "lastMessage" to message.message,
-                        "lastMessageTimestamp" to message.timestamp,
-                        "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
-                    )
-
-                ).await()
-                Log.d("FireStore Operation", data.toString())
+                // Insert or update the chat document for both users
+                val chatData = mapOf("users" to listOf(userId1, userId2))
+                chatCollection.document(chatId).set(chatData, SetOptions.merge()).await()
             }
 
+            Log.d("FireStoreService", "New message added Successfully")
 
-            // Insert or update the chat document for both users
-            val chat1 = mapOf("users" to listOf(userId1, userId2))
-            val chat2 = mapOf("users" to listOf(userId2, userId1))
-
-            val chat1Doc = chatCollection.document(chatId).get().await()
-            if (!chat1Doc.exists()) {
-                chatCollection.document(chatId).set(chat1).await()
-            }
-
-            val chat2Doc = chatCollection.document(chatId).get().await()
-            if (!chat2Doc.exists()) {
-                chatCollection.document(chatId).set(chat2).await()
+            // Send push notification outside of the Firestore coroutine scope
+            if (!receiverToken.isNullOrEmpty()) {
+                sendPushNotification(receiverToken, message, curUser)
             }
 
         } catch (e: Exception) {
-            // Handle error
+            Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
         }
     }
+
+    private fun sendPushNotification(receiverToken: String, message: Message, curUser : User?) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val accessToken = getAccessToken(context)
+                val request = FCMRequest(
+                    message = MessageData(
+                        token = receiverToken,
+//                        notification = NotificationData(
+//                            title = "New Message",
+//                            body = message
+//                        )
+                        data = NotificationData(
+                            title = curUser?.name ?: "",
+                            senderId = message.senderId,
+                            chatId = message.chatId,
+                            body = message.message,
+                            imageUrl = curUser?.profilePicture ?: ""
+                        )
+                    )
+                )
+
+                val response = RetrofitInstance.api.sendNotification("Bearer $accessToken", request).execute()
+
+                if (response.isSuccessful) {
+                    Log.d("FireStore Operation", "Notification sent successfully: ${response.body()}")
+                } else {
+                    Log.e("FireStore Operation", "Error sending notification: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                Log.e("FireStore Operation", "FCM Request Failed", e)
+            }
+        }
+    }
+
+
 
     private fun updateUserList(currentUser: String, newUser: String) {
         val userRef = userCollection.document(currentUser)
@@ -234,8 +304,10 @@ class FirestoreService @Inject constructor(
                             trySend(Response.Error(exception.message ?: "Unknown error")).isFailure
                         } else {
                             val messages = snapshot?.toObjects(Message::class.java) ?: emptyList()
-                            updateUnreadMessages(chatId)
-                            updateMessageStatusToSeen(chatId, messages)
+                            if(!activeChatId.isNullOrEmpty()) {
+                                updateUnreadMessages(chatId)
+                                updateMessageStatusToSeen(chatId, messages)
+                            }
                             val result = trySend(Response.Success(messages))
                             if (result.isFailure) {
                                 // Log or handle the failure (optional)
@@ -370,7 +442,7 @@ class FirestoreService @Inject constructor(
             }
 
             val userIds = snapshot?.get("user_list") as? List<String> ?: emptyList()
-            if(userIds.isEmpty()){
+            if (userIds.isEmpty()) {
                 trySend(Response.Success(emptyList()))
                 return@addSnapshotListener
             }
@@ -423,14 +495,15 @@ class FirestoreService @Inject constructor(
                     val userData = async { fetchUserData(otherUserId) }
                     val profileData = userData.await()
 
-                    profileData?.let { (name, profilePic) ->
+                    profileData?.let {
                         val chat = ChatList(
                             userId = otherUserId,
-                            name = name,
-                            profilePicture = profilePic,
+                            name = profileData.name,
+                            profilePicture = profileData.profilePicture,
                             lastMessage = lastMessage,
                             lastMessageTimestamp = timestamp,
-                            unreadMessages = unread
+                            unreadMessages = unread,
+                            fcmToken = profileData.fcmToken
                         )
 
                         chatCache[otherUserId] = chat
@@ -446,12 +519,14 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    private suspend fun fetchUserData(userId: String): Pair<String, String>? {
+    private suspend fun fetchUserData(userId: String): User? {
         return try {
             val snapshot = userCollection.document(userId).get().await()
             val name = snapshot.getString("name") ?: return null
             val profilePic = snapshot.getString("profilePicture") ?: ""
-            name to profilePic
+            val fcmToken = snapshot.getString("fcmToken") ?: ""
+            val user = User(name=name, profilePicture = profilePic, fcmToken = fcmToken)
+            user
         } catch (e: Exception) {
             null
         }

@@ -1,8 +1,13 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,30 +28,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableTarget
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel.LinkState
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel.MetaDataViewModel
+import kotlinx.coroutines.launch
 import java.net.URL
 
 
 @Composable
-fun LinkPreview(message: String, isSentByMe: Boolean) {
+fun LinkPreview(message: String, isSentByMe: Boolean, selectedMessagesSize: Int) {
 
     val metaDataViewModel: MetaDataViewModel = hiltViewModel()
 
     val linkState by metaDataViewModel.getLinkState(message).collectAsState()
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val coroutineScope = rememberCoroutineScope()
+
     val annotatedString = getAnnotatedString(message, isSentByMe)
 
     when (val state = linkState) {
@@ -56,7 +70,9 @@ fun LinkPreview(message: String, isSentByMe: Boolean) {
             LinkPreviewCard(
                 metadata = metaData,
                 isSentByMe = isSentByMe,
-                onRetry = { metaDataViewModel.refreshMetadata(message) }
+                selectedMessagesSize = selectedMessagesSize,
+                onClick = { if (selectedMessagesSize <= 0) openLink(annotatedString, context, 0) }
+                // onRetry = { metaDataViewModel.refreshMetadata(message) }
             )
         }
 
@@ -66,35 +82,44 @@ fun LinkPreview(message: String, isSentByMe: Boolean) {
         )*/
         }
     }
-
-    ClickableText(
-        text = annotatedString,
-        style = MaterialTheme.typography.bodyLarge.copy(
-            // color is set from annotated string
-        ),
-        onClick = { offset ->
-            annotatedString.getStringAnnotations("URL", offset, offset)
-                .firstOrNull()
-                ?.let { annotation ->
-//                    uriHandler.openUri(annotation.item)
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // Opens in the same task
+    SelectionContainer {
+        ClickableText(
+            text = annotatedString,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                // color is set from annotated string
+            ),
+            onClick = { offset ->
+                if (selectedMessagesSize <= 0)
+                    openLink(annotatedString, context, offset)
+            },
+            modifier = Modifier.pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { offset ->
+                        if (selectedMessagesSize <= 0) {
+                            openLink(annotatedString, context, 0)
+                        }
+                    },
+                    onLongPress = { offset ->
+                        val link = getLinkFromText(annotatedString, 0)
+                        link?.let {
+                            coroutineScope.launch {
+                                copyToClipboard(context, it)
+                            }
+                        }
                     }
-                    context.startActivity(intent)
-                }
-
-
-        }
-    )
-
+                )
+            }
+        )
+    }
 }
 
 @Composable
 fun LinkPreviewCard(
     metadata: LinkMetadata,
     isSentByMe: Boolean,
+    selectedMessagesSize: Int,
     modifier: Modifier = Modifier,
-    onRetry: () -> Unit
+    onClick: () -> Unit
 ) {
 //    Card(
 //        modifier = modifier,
@@ -113,6 +138,7 @@ fun LinkPreviewCard(
                 .fillMaxWidth()
                 .height(120.dp)
                 .clip(MaterialTheme.shapes.medium)
+                .clickable(enabled = selectedMessagesSize <= 0) { onClick() }
         )
         Spacer(modifier = Modifier.height(4.dp))
     }
@@ -125,6 +151,7 @@ fun LinkPreviewCard(
                 )
             )
             .padding(4.dp)
+            .clickable(enabled = selectedMessagesSize <= 0) { onClick() }
     ) {
 
         Text(
@@ -199,4 +226,27 @@ private fun LinkPreviewError(message: String, onRetry: () -> Unit) {
             }
         }
     }
+}
+
+fun openLink(annotatedString: AnnotatedString, context: Context, offset: Int) {
+    annotatedString.getStringAnnotations("URL", offset, annotatedString.length)
+        .firstOrNull()
+        ?.let { annotation ->
+//                    uriHandler.openUri(annotation.item)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // Opens in the same task
+            }
+            context.startActivity(intent)
+        }
+}
+
+private fun getLinkFromText(annotatedString: AnnotatedString, offset: Int): String? {
+    return annotatedString.getStringAnnotations("URL", offset, offset)
+        .firstOrNull()?.item
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clipData = ClipData.newPlainText("Copied Link", text)
+    clipboardManager.setPrimaryClip(clipData)
 }

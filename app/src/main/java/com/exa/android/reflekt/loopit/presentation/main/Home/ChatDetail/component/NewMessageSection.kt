@@ -178,7 +178,7 @@ fun SendTFMessage(
         elevation = CardDefaults.cardElevation(8.dp),
         colors = CardDefaults.cardColors(Color.White),
         shape = RectangleShape,
-        modifier = Modifier.padding(bottom = 8.dp)
+        //modifier = Modifier.padding(bottom = 8.dp)
     ) {
         Row(
             modifier = Modifier
@@ -232,6 +232,7 @@ fun SendTFMessage(
                             if (text.isNotEmpty())
                                 onSendClick(text)
                             textFieldValue = TextFieldValue("") // Clear text after sending
+                            onTyping("")
                         }
                     )
                 )

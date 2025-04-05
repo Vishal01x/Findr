@@ -86,4 +86,25 @@ class AuthRepository @Inject constructor(
             emit(Response.Error(e.localizedMessage ?: "Reset Password Failed"))
         }
     }
+/*
+    fun registerFCMToken() {
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                Log.d("FCM", "Token: $token")
+                updateToken(token) // Store in Firestore
+            }
+            .addOnFailureListener {
+                Log.e("FCM", "Failed to get token", it)
+            }
+    }
+
+    private fun updateToken(token: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val userRef = firestore.collection("users").document(userId)
+
+        userRef.update("fcmToken", token)
+            .addOnSuccessListener { Log.d("FCM", "Token updated in Firestore") }
+            .addOnFailureListener { Log.e("FCM", "Failed to update token", it) }
+    }*/
+
 }

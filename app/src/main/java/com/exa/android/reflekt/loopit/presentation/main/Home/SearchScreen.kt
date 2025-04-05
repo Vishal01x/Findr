@@ -50,6 +50,7 @@ import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.util.Response
+import com.google.gson.Gson
 
 @Composable
 fun SearchScreen(navController: NavController, viewModel: ChatViewModel) {
@@ -114,7 +115,12 @@ fun SearchScreen(navController: NavController, viewModel: ChatViewModel) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 4.dp, vertical = 8.dp)
-                                .clickable { navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId)) }
+                                .clickable {
+//                                    val userJson = Gson().toJson(user)
+//                                    val encodedUserJson = java.net.URLEncoder.encode(userJson, "UTF-8")
+//                                    navController.navigate(HomeRoute.ChatDetail.createRoute(encodedUserJson))
+                                      navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId))
+                                }
                         ) {
                             Image(
                                 painter = painterResource(R.drawable.chat_img3),

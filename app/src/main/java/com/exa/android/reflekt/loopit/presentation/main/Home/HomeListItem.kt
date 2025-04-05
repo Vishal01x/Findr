@@ -32,15 +32,16 @@ import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.model.ChatList
+import com.exa.android.reflekt.loopit.util.model.User
 
 
 @Composable
-fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (userId :String) -> Unit) {
+fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (user : User) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { openChat(chat.userId) }
+            .clickable { openChat(User(userId = chat.userId, name = chat.name, fcmToken = chat.fcmToken)) }
             .padding(horizontal = 4.dp, vertical = 8.dp)
     ) {
         Image(

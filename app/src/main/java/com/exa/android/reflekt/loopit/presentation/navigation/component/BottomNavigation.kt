@@ -139,7 +139,7 @@ fun CustomBottomNavigationBar(
             )
         }
         // Central Button (always unselected but functional)
-        Box(contentAlignment = Alignment.Center,
+        /*Box(contentAlignment = Alignment.Center,
             modifier = Modifier
                 .background(Color.Black, shape = RoundedCornerShape(50))
                 .clickable { onNewChatClick() }
@@ -160,7 +160,7 @@ fun CustomBottomNavigationBar(
                     fontSize = 16.sp
                 )
             }
-        }
+        }*/
 
         Column(horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.clickable {
