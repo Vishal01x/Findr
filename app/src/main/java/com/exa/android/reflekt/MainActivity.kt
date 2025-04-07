@@ -25,6 +25,7 @@ import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
 import com.exa.android.reflekt.loopit.data.remote.main.meeting.MeetingRoomTheme
+
 import com.exa.android.reflekt.loopit.presentation.main.test.MediaScreen
 import com.exa.android.reflekt.loopit.util.clearAllNotifications
 
@@ -46,8 +47,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             MeetingRoomTheme {
                 updateStatus(this)
-                //App()
-                MediaScreen()
+                App()
+                //MediaScreen()
+                //AppNav()
             }
         }
         clearAllNotifications(this)

@@ -80,12 +80,21 @@ import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import timber.log.Timber
 import android.content.Context
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 
 
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
+fun MapScreen(openChat: (String) -> Unit, viewModel: LocationViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid ?: return
@@ -141,7 +150,8 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
     LaunchedEffect(locationPermissionState.status, currentLocation, selectedRole) {
         if (locationPermissionState.status.isGranted && currentLocation != null) {
 
-            Timber.tag("GeoFire").d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
+            Timber.tag("GeoFire")
+                .d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
             viewModel.fetchUserLocations(
                 location = selectedLocation ?: currentLocation!!,
                 radius = radius.toDouble(),
@@ -157,7 +167,8 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                 .addOnSuccessListener { location ->
                     location?.let {
                         currentLocation = LatLng(it.latitude, it.longitude)
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(currentLocation!!, 12f)
+                        cameraPositionState.position =
+                            CameraPosition.fromLatLngZoom(currentLocation!!, 12f)
                     }
                 }
                 .addOnFailureListener { e ->
@@ -187,7 +198,8 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Timber.tag("GeoFire").d("User Locations: $userLocations, $currUserProfile $currentLocation, $selectedLocation $radius $selectedRole")
+            Timber.tag("GeoFire")
+                .d("User Locations: $userLocations, $currUserProfile $currentLocation, $selectedLocation $radius $selectedRole")
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
@@ -195,12 +207,13 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             ) {
                 userLocations.forEach { user ->
                     if (user.uid != userId) {  // Skip the current user
-                        Marker(
-                            state = MarkerState(position = LatLng(user.lat, user.lng)),
-                            title = user.role,
+                        CustomMapMarker(
+                            imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
+                            fullName = user.firstName + " " + user.lastName,
+                            location = LatLng(user.lat, user.lng),
                             onClick = {
                                 selectedUser = user
-                                true // return true to indicate we've handled the event
+                                true
                             }
                         )
                     }
@@ -220,6 +233,9 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             selectedUser?.let { user ->
                 ProfileBottomSheet(
                     user = user,
+                    openChat = {
+                        openChat(user.uid)
+                    },
                     onDismiss = { selectedUser = null }
                 )
             }
@@ -281,7 +297,12 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                             onClick = {
                                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                                     location?.let {
-                                        viewModel.setSelectedLocation(LatLng(it.latitude, it.longitude))
+                                        viewModel.setSelectedLocation(
+                                            LatLng(
+                                                it.latitude,
+                                                it.longitude
+                                            )
+                                        )
                                     }
                                 }
                             },
@@ -306,7 +327,8 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                         // Role Selection
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Select Role", style = MaterialTheme.typography.titleMedium)
-                        val roles = listOf("Software Engineer ", "Software Developer", "Android Developer")
+                        val roles =
+                            listOf("Software Engineer ", "Software Developer", "Android Developer")
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.horizontalScroll(rememberScrollState())
@@ -350,7 +372,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                                                 role = selectedRole
                                             )
                                         }
-                                    }catch (e: Exception) {
+                                    } catch (e: Exception) {
                                         Timber.e(e, "Error applying filters")
                                     }
                                 }
@@ -404,7 +426,8 @@ fun SearchBar(
                     Places.initialize(context, context.getString(R.string.PLACE_API_KEY))
                 }
 
-                val autocompleteAdapter = ArrayAdapter<String>(context, android.R.layout.simple_dropdown_item_1line)
+                val autocompleteAdapter =
+                    ArrayAdapter<String>(context, android.R.layout.simple_dropdown_item_1line)
                 val placesClient = Places.createClient(context)
                 val autocompleteSessionToken = AutocompleteSessionToken.newInstance()
 
@@ -417,20 +440,22 @@ fun SearchBar(
                             .setQuery(query)
                             .build()
 
-                        placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
-                            autocompleteAdapter.clear()
-                            response.autocompletePredictions.forEach { prediction ->
-                                autocompleteAdapter.add(prediction.getFullText(null).toString())
+                        placesClient.findAutocompletePredictions(request)
+                            .addOnSuccessListener { response ->
+                                autocompleteAdapter.clear()
+                                response.autocompletePredictions.forEach { prediction ->
+                                    autocompleteAdapter.add(prediction.getFullText(null).toString())
+                                }
+                                autocompleteAdapter.notifyDataSetChanged()
                             }
-                            autocompleteAdapter.notifyDataSetChanged()
-                        }
                     }
                 }
 
                 setAdapter(autocompleteAdapter)
 
                 setOnItemClickListener { _, _, position, _ ->
-                    val selectedPlace = autocompleteAdapter.getItem(position) ?: return@setOnItemClickListener
+                    val selectedPlace =
+                        autocompleteAdapter.getItem(position) ?: return@setOnItemClickListener
                     onPlaceSelected(selectedPlace)
                 }
             }
@@ -443,7 +468,8 @@ fun SearchBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
+fun ProfileBottomSheet(user: profileUser, openChat : () -> Unit,
+                       onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -532,7 +558,7 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { /* Handle message action */ },
+                    onClick = { openChat() },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Send Message")
@@ -604,7 +630,8 @@ fun MapScreenn(viewModel: LocationViewModel = hiltViewModel()) {
                 .addOnSuccessListener { location ->
                     if (location != null) {
                         val currentLatLng = LatLng(location.latitude, location.longitude)
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(currentLatLng, 12f)
+                        cameraPositionState.position =
+                            CameraPosition.fromLatLngZoom(currentLatLng, 12f)
                     }
                 }
                 .addOnFailureListener { e ->
@@ -636,5 +663,75 @@ fun MapScreenn(viewModel: LocationViewModel = hiltViewModel()) {
     } else {
         // Show a message if location permission is not granted
         Text("Location permission is required to use this feature.")
+    }
+}
+
+@Composable
+fun CustomMapMarker(
+    imageUrl: String?,
+    fullName: String,
+    location: LatLng,
+    onClick: () -> Unit
+) {
+    val markerState = remember { MarkerState(position = location) }
+    val context = LocalContext.current
+
+    val painter = rememberAsyncImagePainter(
+        ImageRequest.Builder(LocalContext.current)
+            .data(imageUrl)
+            .allowHardware(false)
+            .build()
+    )
+
+    MarkerComposable(
+        keys = arrayOf(fullName, painter.state),
+        state = markerState,
+        title = fullName,
+        anchor = Offset(0.5f, 1f),
+        onClick = {
+            onClick()
+            true
+        }
+    ) {
+        Box(
+            modifier = Modifier
+                .wrapContentSize()
+                .padding(bottom = 4.dp) // Adjusts position relative to marker
+        ) {
+            // Marker Base Icon
+            Image(
+                painter = painterResource(id = R.drawable.img), // Your marker base icon
+                contentDescription = "Map Marker",
+                modifier = Modifier.size(60.dp)
+            )
+
+            // Profile Image Positioned on Top
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .align(Alignment.TopCenter)
+                    .offset(y = 2.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.White, CircleShape)
+                    .background(Color.Gray),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!imageUrl.isNullOrEmpty()) {
+                    Image(
+                        painter = painter,
+                        contentDescription = "Profile Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(
+                        text = fullName.take(1).uppercase(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+        }
     }
 }

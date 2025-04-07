@@ -143,4 +143,7 @@ dependencies {
     implementation("io.ktor:ktor-client-core:2.3.13")
     implementation("io.ktor:ktor-utils:2.3.13")
 
+    // new dependency
+    implementation ("androidx.compose.material:material-icons-extended:1.7.0")
+
 }

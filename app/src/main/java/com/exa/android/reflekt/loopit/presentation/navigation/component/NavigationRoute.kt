@@ -14,6 +14,7 @@ sealed class MainRoute(val route: String) {
     object Profile : MainRoute("status")
     object Setting : MainRoute("setting")
     object Map : MainRoute("map")
+    object Project : MainRoute("project")
 }
 
 
@@ -35,6 +36,25 @@ sealed class HomeRoute(val route: String) {
 
 sealed class MapInfo(val route: String) {
     object MapScreen : MapInfo("map_screen")
+}
+
+sealed class ProjectRoute(val route: String) {
+    object ProjectList : ProjectRoute("project_list")
+    object ProjectDetail : ProjectRoute("project_detail/{projectId}") {
+        fun createRoute(projectId: String): String = "project_detail/${projectId}"
+    }
+    object CreateProject : ProjectRoute("create_project")
+    object EditProject : ProjectRoute("edit_project/{projectId}") {
+        fun createRoute(projectId: String): String = "edit_project/${projectId}"
+    }
+    fun withArgs(vararg args: String): String {
+        return buildString {
+            append(route)
+            args.forEach { arg ->
+                append("/$arg")
+            }
+        }
+    }
 }
 
 sealed class MeetingRoute(val route: String) {

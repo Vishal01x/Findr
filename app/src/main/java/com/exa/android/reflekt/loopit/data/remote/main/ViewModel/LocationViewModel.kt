@@ -69,4 +69,25 @@ class LocationViewModel @Inject constructor(
             }
         }
     }
+
+
+    private val _requestedUserLocations = MutableStateFlow<List<profileUser>>(emptyList())
+    val requestedUserLocations: StateFlow<List<profileUser>> get() = _requestedUserLocations
+
+    init {
+        viewModelScope.launch {
+            locationRepository.requestedUserLocations.collect { users ->
+                _requestedUserLocations.value = users
+            }
+        }
+    }
+
+    fun fetchRequestedUserLocations(userIds: List<String>) {
+        locationRepository.fetchRequestedUserLocations(userIds)
+    }
+
+    override fun onCleared() {
+        locationRepository.clearRequestedUserLocations()
+        super.onCleared()
+    }
 }

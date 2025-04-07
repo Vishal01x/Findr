@@ -10,9 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.ProjectCard
+import com.exa.android.reflekt.loopit.presentation.main.Home.Map.MapScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import io.getstream.video.android.compose.theme.VideoTheme
 
@@ -34,7 +38,9 @@ fun AppNavigation(navController: NavHostController, isLoggedIn: Boolean, otherUs
     Scaffold(
         bottomBar = {
             if (currentDestination == HomeRoute.ChatList.route ||
-                currentDestination == MainRoute.Profile.route) {
+                currentDestination == MainRoute.Profile.route ||
+                currentDestination == MapInfo.MapScreen.route ||
+                currentDestination == ProjectRoute.ProjectList.route) {
                 CustomBottomNavigationBar(navController) {
                     bottomSheet = true
                 }

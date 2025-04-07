@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.DetailChat
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.ProfileScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.HomeScreen
@@ -25,6 +26,13 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.MeetingR
 import com.google.gson.Gson
 import com.exa.android.reflekt.loopit.data.remote.main.meeting.call.CallScreen
 import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.CreateProjectScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.EditProjectScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.ListedProjectsScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.ProjectDetailScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.RequestedPersonMapScreen
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
+import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
@@ -79,6 +87,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
 
         chatInfoNavGraph(navController)
         mapNavGraph(navController)
+        projectNavGraph(navController)
     }
 }
 
@@ -112,12 +121,84 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController) {
 //                onCallClick = { navController.navigate(Call.VoiceCall.route) },
 //                onMediaVisibilityClick = { navController.navigate(ChatInfo.MediaVisibility.route) },
 //                onBlockClick = { navController.navigate(ChatInfo.BlockUser.route) }
+                openChat = { userId ->
+                    navController.navigate(HomeRoute.ChatDetail.createRoute(userId))
+                }
             )
         }
         /*composable(ChatInfo.ChatMedia.route) { MediaScreen() }
         composable(ChatInfo.MediaVisibility.route) { MediaVisibilityScreen() }
         composable(ChatInfo.BlockUser.route) { BlockUserScreen() }
         composable(Call.VoiceCall.route) { CallScreen() }*/
+    }
+}
+
+
+fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
+    navigation(
+        startDestination = ProjectRoute.ProjectList.route,
+        route = "project_graph"
+    ) {
+        composable(ProjectRoute.ProjectList.route) {
+            ListedProjectsScreen(
+                navController = navController,
+                onProjectClick = { projectId ->
+                    navController.navigate(ProjectRoute.ProjectDetail.createRoute(projectId))
+                }
+            )
+        }
+
+        composable(ProjectRoute.ProjectDetail.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            ProjectDetailScreen(
+                projectId = projectId,
+                navController = navController
+            )
+        }
+
+        composable(ProjectRoute.CreateProject.route) {
+            val projectViewModel: ProjectListViewModel = hiltViewModel()
+            CreateProjectScreen(
+                onBack = {
+                    navController.popBackStack()
+                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                },
+                onProjectCreated = {
+                    navController.popBackStack()
+                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                },
+                viewModel = hiltViewModel(),
+                navController = navController
+            )
+        }
+        composable(ProjectRoute.EditProject.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val projectViewModel: ProjectListViewModel = hiltViewModel()
+            EditProjectScreen(
+                projectId = projectId,
+                onBack = {
+                    navController.popBackStack()
+                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                },
+                onProjectUpdated = {
+                    navController.popBackStack()
+                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                },
+                viewModel = hiltViewModel(),
+                navController = navController
+            )
+        }
+        // In your navigation graph:
+        composable("map_screen/{userIds}") { backStackEntry ->
+            val userIds = backStackEntry.arguments?.getString("userIds") ?: ""
+            RequestedPersonMapScreen(
+                userIds = userIds,
+                navController = navController,
+                openChat = {otherUserId->
+                    navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId))
+                }
+            )
+        }
     }
 }
 
