@@ -141,4 +141,7 @@ dependencies {
     // new dependency
     implementation ("androidx.compose.material:material-icons-extended:1.7.0")
 
+    // new dependency
+    implementation ("androidx.compose.material:material-icons-extended:1.7.0")
+
 }
