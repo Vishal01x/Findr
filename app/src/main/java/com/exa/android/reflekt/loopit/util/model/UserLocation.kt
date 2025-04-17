@@ -6,3 +6,4 @@ data class UserLocation(
     val role: String,
     val uid:String
 )
+

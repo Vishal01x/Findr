@@ -1,15 +1,19 @@
 package com.exa.android.reflekt.loopit.data.remote.main.MapDataSource
-import com.exa.android.reflekt.loopit.util.model.profileUser
+
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
 import com.firebase.geofire.GeoQueryEventListener
+import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 import com.google.firebase.firestore.DocumentSnapshot
+import profileUser
 import java.security.Timestamp
 import timber.log.Timber
 
@@ -65,4 +69,36 @@ class FirebaseDataSource @Inject constructor() {
         query.addGeoQueryEventListener(listener)
         return query
     }
+
+    fun listenToUserLocation(userId: String, onLocationUpdate: (GeoLocation) -> Unit): ValueEventListener {
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                try {
+                    // GeoFire stores locations in a specific format with g (geohash), l (latitude/longitude)
+                    val locationData = snapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                    locationData?.let { data ->
+                        val latLng = data["l"] as? List<*>
+                        latLng?.let {
+                            val latitude = (it[0] as? Double) ?: 0.0
+                            val longitude = (it[1] as? Double) ?: 0.0
+                            onLocationUpdate(GeoLocation(latitude, longitude))
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.tag("GeoFire").e(e, "Error parsing location data")
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Timber.tag("GeoFire").e("Location listener cancelled: ${error.message}")
+            }
+        }
+        database.child(userId).addValueEventListener(listener)
+        return listener
+    }
+
+    fun removeLocationListener(userId: String, listener: ValueEventListener) {
+        database.child(userId).removeEventListener(listener)
+    }
+
 }

@@ -90,39 +90,39 @@ fun MessageList(
         itemsIndexed(messages.reversed()) { index, message ->
             renderedIndex[message.messageId] = index
             if (message.members.contains(curUser)) {
-            MessageBubble(
-                message = message,
-                curUserId = curUser,
-                isSelected = selectedMessages.contains(message),
-                selectedMessagesSize = selectedMessages.size,
-                isHighlighted = highlightedIndex == index,
-                onTapOrLongPress = {
-                    onMessageLongPress(
-                        message,
-                        selectedMessages,
-                        onSelect = { updatedSelection ->
-                            updateMessages(updatedSelection)
-                        })
-                },
-                onReply = { message ->
-                    onReply(message)
-                },
-                onReplyClick = { id ->
-                    coroutineScope.launch {// since using launched effect i was not able to re-scroll to the same message again and again
-                        // and if we try to maintain any variable so we need to update it that causes re-composition that leads it to scroll till mid and before reaching
-                        // re-scroll to end
-                        scrollToMessage(id, renderedIndex, listState)
-                        renderedIndex[id]?.let { index ->
-                            highlightedIndex = index
-                            delay(500)
-                            highlightedIndex = null
+                MessageBubble(
+                    message = message,
+                    curUserId = curUser,
+                    isSelected = selectedMessages.contains(message),
+                    selectedMessagesSize = selectedMessages.size,
+                    isHighlighted = highlightedIndex == index,
+                    onTapOrLongPress = {
+                        onMessageLongPress(
+                            message,
+                            selectedMessages,
+                            onSelect = { updatedSelection ->
+                                updateMessages(updatedSelection)
+                            })
+                    },
+                    onReply = { message ->
+                        onReply(message)
+                    },
+                    onReplyClick = { id ->
+                        coroutineScope.launch {// since using launched effect i was not able to re-scroll to the same message again and again
+                            // and if we try to maintain any variable so we need to update it that causes re-composition that leads it to scroll till mid and before reaching
+                            // re-scroll to end
+                            scrollToMessage(id, renderedIndex, listState)
+                            renderedIndex[id]?.let { index ->
+                                highlightedIndex = index
+                                delay(500)
+                                highlightedIndex = null
+                            }
                         }
                     }
-                }
-            )
+                )
             }
         }
-        item{
+        item {
             Spacer(Modifier.height(4.dp))
         }
     }
@@ -152,8 +152,11 @@ fun MessageBubble(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isSelected) Color(0xFF007AFF
-            ).copy(alpha = .2f) else Color.Transparent)
+            .background(
+                if (isSelected) Color(
+                    0xFF007AFF
+                ).copy(alpha = .2f) else Color.Transparent
+            )
             .pointerInput(selectedMessagesSize) { // selectedMessagesSize is used for Key as it change it enables to call
                 detectTapGestures(
                     onTap = { if (selectedMessagesSize > 0) onTapOrLongPress() },
@@ -256,9 +259,13 @@ fun MessageBubble(
                         fontStyle = FontStyle.Italic
                     )
                 } else {
-                    if(LinkUtils.containsLink(text = message.message)){
-                        LinkPreview(message.message, message.senderId == curUserId, selectedMessagesSize)
-                    }else {
+                    if (LinkUtils.containsLink(text = message.message)) {
+                        LinkPreview(
+                            message.message,
+                            message.senderId == curUserId,
+                            selectedMessagesSize
+                        )
+                    } else {
                         Text(
                             text = message.message,
                             style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),

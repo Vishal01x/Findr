@@ -134,13 +134,11 @@ dependencies {
     implementation ("com.squareup.retrofit2:retrofit:2.11.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
 
+    // fm
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // Logging for debugging
     implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0") // Google OAuth2
 
-    implementation("io.github.jan-tennert.supabase:storage-kt:1.4.7")
-
-    implementation("io.ktor:ktor-client-android:2.3.13")
-    implementation("io.ktor:ktor-client-core:2.3.13")
-    implementation("io.ktor:ktor-utils:2.3.13")
+    // new dependency
+    implementation ("androidx.compose.material:material-icons-extended:1.7.0")
 
 }

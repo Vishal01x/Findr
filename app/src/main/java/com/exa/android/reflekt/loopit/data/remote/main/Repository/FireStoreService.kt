@@ -51,6 +51,8 @@ class FirestoreService @Inject constructor(
     private val chatCollection = db.collection("chats")
     val currentUser = auth.currentUser?.uid
 
+
+
     //search user based on the phone number
     suspend fun searchUser(phone: String): Flow<Response<User?>> = flow {
         emit(Response.Loading)

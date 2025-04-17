@@ -27,6 +27,8 @@ fun NavGraphBuilder.mainAppNavGraph(navController: NavHostController) {
             SettingScreen(viewModel)
         }
     }
+
+
 }
 
 //object MainRoutes {

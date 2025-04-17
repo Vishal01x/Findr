@@ -93,7 +93,7 @@ fun HeaderSection(navController: NavController) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = "Mengobrol",
+            text = "Let's Talk",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp

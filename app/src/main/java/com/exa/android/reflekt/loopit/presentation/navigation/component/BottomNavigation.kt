@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -69,7 +70,10 @@ fun CustomBottomNavigationBar(
 ) {
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     var selected = currentDestination?.route
-    Log.d("currentBackStackEntry->BottomNav", "selected - $selected, back - ${currentDestination?.route.toString()}")
+    Log.d(
+        "currentBackStackEntry->BottomNav",
+        "selected - $selected, back - ${currentDestination?.route.toString()}"
+    )
     // Define navigation items
     val items = listOf(BottomNavItem(route = HomeRoute.ChatList.route,
         icon = Icons.Default.Home,
@@ -87,21 +91,21 @@ fun CustomBottomNavigationBar(
             }
         }),
         BottomNavItem(route = MainRoute.Profile.route,
-        icon = Icons.Default.Person,
-        label = "Profile",
-        onClick = {
-            //  if (selected != MainRoute.Profile.route) {
-            Log.d("profile", "2")
-            navController.navigate(MainRoute.Profile.route) {
+            icon = Icons.Default.Person,
+            label = "Profile",
+            onClick = {
+                //  if (selected != MainRoute.Profile.route) {
+                Log.d("profile", "2")
+                navController.navigate(MainRoute.Profile.route) {
 //                // Clear back stack up to start destination
 //                popUpTo(navController.graph.findStartDestination().id) {
 //                    saveState = true
 //                }
-                launchSingleTop = true
-                restoreState = true
-            }
-            // }
-        }),
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                // }
+            }),
         BottomNavItem(
             route = MainRoute.Map.route,
             icon = Icons.Default.LocationOn,
@@ -115,7 +119,25 @@ fun CustomBottomNavigationBar(
                 }
                 // }
             }
-        ))
+        ),
+
+        BottomNavItem(
+            route = MainRoute.Project.route,
+            icon = Icons.Default.List,
+            label = "Project",
+            onClick = {
+                //  if (selected != MainRoute.Profile.route) {
+                Log.d("Project", "2")
+                navController.navigate("project_graph") {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                // }
+            }
+        )
+    )
+
+
 
     // Render the custom navigation bar
     Row(
@@ -168,7 +190,8 @@ fun CustomBottomNavigationBar(
                 items[1].onClick()
                 //selected.value = items[1].route
             }) {
-            Icon(imageVector = items[1].icon,
+            Icon(
+                imageVector = items[1].icon,
                 contentDescription = items[1].label,
                 tint = if (currentDestination?.route == items[1].route) Color.Black else Color.Gray,
                 modifier = Modifier
@@ -190,6 +213,23 @@ fun CustomBottomNavigationBar(
                     .size(32.dp)
             )
         }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable {
+                Log.d("Map", "1")
+                items[3].onClick()
+            }
+        ) {
+            Icon(
+                imageVector = items[3].icon,
+                contentDescription = items[3].label,
+                tint = if (currentDestination?.route == items[3].route) Color.Black else Color.Gray,
+                modifier = Modifier
+                    .size(32.dp)
+            )
+        }
+
+
     }
 }
 
