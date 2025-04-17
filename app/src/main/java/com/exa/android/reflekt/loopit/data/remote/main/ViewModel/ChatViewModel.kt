@@ -6,6 +6,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreServi
 import com.exa.android.reflekt.loopit.util.model.User
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
+import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.Message
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -66,9 +67,9 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun createChatAndSendMessage(userId: String, message: String, receiverToken : String?) {
+    fun createChatAndSendMessage(userId: String, message: String, receiverToken : String?, media : Media? = null) {
         viewModelScope.launch {
-            repo.createChatAndSendMessage(userId, message, receiverToken, curUser.value)
+            repo.createChatAndSendMessage(userId, message, media, receiverToken, curUser.value)
         }
     }
 

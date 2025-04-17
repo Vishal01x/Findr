@@ -51,12 +51,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.docs.DocumentMessageItem
+import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.LinkPreview
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.LinkPreviewCard
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.downloadMedia
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getFileNameFromUrl
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.image.ImageMessageContent
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.video.VideoMessageItem
 import com.exa.android.reflekt.loopit.util.LinkUtils
 import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.getVibrator
+import com.exa.android.reflekt.loopit.util.model.MediaType
 import com.exa.android.reflekt.loopit.util.model.Message
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -266,12 +273,49 @@ fun MessageBubble(
                             selectedMessagesSize
                         )
                     } else {
-                        Text(
-                            text = message.message,
-                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                            color = if (curUserId == message.senderId) Color.White else Color.Black,
-                            fontWeight = FontWeight.Normal
-                        )
+                        if (message.media == null) {
+                            Text(
+                                text = message.message,
+                                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                                color = if (curUserId == message.senderId) Color.White else Color.Black,
+                                fontWeight = FontWeight.Medium
+                            )
+                        } else {
+                            val fileName = getFileNameFromUrl(message.media.mediaUrl)
+                            when (message.media.mediaType) {
+                                MediaType.IMAGE -> {
+                                    ImageMessageContent(
+                                        imageUrl = message.media.mediaUrl,
+                                        onDownloadClick = {
+
+                                            downloadMedia(
+                                                context, message.media.mediaUrl,
+                                                fileName = fileName
+                                            )
+                                            //openImageIntent(context,message.media.mediaUrl)
+                                        },
+                                        onImageClick = {
+                                            openImageIntent(context, message.media.mediaUrl)
+                                        }
+                                    )
+                                }
+
+                                MediaType.VIDEO -> {
+                                    VideoMessageItem(message.media.mediaUrl, fileName, message.senderId == curUserId, message.media.uploadStatus)
+                                }
+
+                                MediaType.AUDIO -> TODO()
+                                MediaType.DOCUMENT -> {
+                                    DocumentMessageItem(
+                                        fileUrl = message.media.mediaUrl,
+                                        fileName = getFileNameFromUrl(message.media.mediaUrl)
+                                    )
+                                }
+
+                                MediaType.LOCATION -> TODO()
+                                MediaType.CONTACT -> TODO()
+                            }
+                        }
                     }
                 }
 

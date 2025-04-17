@@ -6,4 +6,12 @@ object Constants {
     const val MEET_API_KEY = "wt9xvrvup9nq"
     const val callType = "default"
      val callId = UUID.randomUUID()
+
+
+    const val CLOUDINARY_BASE_URL = "https://api.cloudinary.com/"
+    const val CLOUDINARY_UPLOAD_PRESET = "media_uploads"
+    const val CLOUDINARY_NAME = "dgqxusedq"
+
+    const val APP_NAME = "Let's Talk"
+
 }

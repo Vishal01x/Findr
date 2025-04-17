@@ -13,6 +13,7 @@ import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.ChatList
+import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.User
 import com.google.firebase.Timestamp
@@ -114,7 +115,7 @@ class FirestoreService @Inject constructor(
             .addOnFailureListener { Log.e("FCM", "Failed to update token", it) }
     }
 
-    suspend fun createChatAndSendMessage(userId2: String, text: String, receiverToken: String?, curUser: User?) {
+    suspend fun createChatAndSendMessage(userId2: String, text: String, media : Media?, receiverToken: String?, curUser: User?) {
         val userId1 = auth.currentUser?.uid ?: return
         val chatId = generateChatId(userId1, userId2)
         val message = Message(
@@ -122,6 +123,7 @@ class FirestoreService @Inject constructor(
             senderId = userId1,
             receiverId = userId2,
             message = text,
+            media = media,
             members = listOf(userId1, userId2)
         )
 

@@ -103,10 +103,10 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
 
     // HTML parsing
-    implementation ("org.jsoup:jsoup:1.17.2")
+    implementation("org.jsoup:jsoup:1.17.2")
 
-    implementation ("androidx.room:room-runtime:2.6.1")
-    kapt ("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
 
     implementation("com.google.code.gson:gson:2.10.1")
@@ -116,7 +116,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.1.0")
 
     // geofire
-    implementation ("com.firebase:geofire-android:3.2.0")
+    implementation("com.firebase:geofire-android:3.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
     // image
@@ -125,23 +125,31 @@ dependencies {
     kapt("com.github.bumptech.glide:compiler:4.16.0")
 
 
-    implementation ("com.google.android.libraries.places:places:3.4.0")
-    implementation ("com.google.maps.android:places-ktx:3.1.1")
-    implementation ("androidx.activity:activity-ktx:1.10.1")
-    implementation ("com.jakewharton.timber:timber:5.0.1")
+    implementation("com.google.android.libraries.places:places:3.4.0")
+    implementation("com.google.maps.android:places-ktx:3.1.1")
+    implementation("androidx.activity:activity-ktx:1.10.1")
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Retrofit
-    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // fm
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // Logging for debugging
     implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0") // Google OAuth2
 
     // new dependency
-    implementation ("androidx.compose.material:material-icons-extended:1.7.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
     // new dependency
-    implementation ("androidx.compose.material:material-icons-extended:1.7.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
+
+    // All:
+    implementation("com.cloudinary:cloudinary-android:3.0.2")
+
+// Download + Preprocess:
+    implementation("com.cloudinary:cloudinary-android-download:3.0.2")
+    implementation("com.cloudinary:cloudinary-android-preprocess:3.0.2")
 }

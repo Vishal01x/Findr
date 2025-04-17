@@ -2,6 +2,8 @@ package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -38,6 +40,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.MediaSharingViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.ChatHeader
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.MessageList
@@ -62,12 +65,13 @@ fun DetailChat(
     val chatViewModel: ChatViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
     val lobbyVM: LobbyViewModel = hiltViewModel()
+    val mediaSharingRepository: MediaSharingViewModel = hiltViewModel()
 
     val responseChatMessages by remember { chatViewModel.messages }.collectAsState() // all the chats of cur and other User
     val curUserId by chatViewModel.curUserId.collectAsState()  // cur User Id
     val chatMessages: MutableState<List<Message>> = remember { mutableStateOf(emptyList()) }
-    val responseUserDetail by remember {  userViewModel.userDetail}.collectAsState()
-    val userDetail: MutableState<User?> = remember { mutableStateOf(User()) }
+    val responseOtherUserDetail by remember { userViewModel.userDetail }.collectAsState()
+    val otherUserDetail: MutableState<User?> = remember { mutableStateOf(User()) }
     val userStatus by userViewModel.userStatus.observeAsState()
 
     var replyMessage by remember { mutableStateOf<Message?>(null) } // to track is message replied
@@ -84,8 +88,27 @@ fun DetailChat(
     val coroutineScope =
         rememberCoroutineScope() // to handle asynchronous here for calling viewMode.delete
 
-    BackHandler(true){
-        if(selectedMessages.isEmpty())
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+//                val file = mediaSharingRepository.createTempFileFromUri(context, uri)
+                val media = mediaSharingRepository.uploadFileToCloudinary(context, uri)
+                Log.d("Storage Cloudinary", "Uploaded URL: ${media.toString()}")
+                chatViewModel.createChatAndSendMessage(
+                    otherUserId,
+                    "",
+                    otherUserDetail.value?.fcmToken,
+                    media
+                )
+            }
+
+        }
+    }
+
+    BackHandler(true) {
+        if (selectedMessages.isEmpty())
             navController.popBackStack()
         else selectedMessages = emptySet()
     }
@@ -97,18 +120,18 @@ fun DetailChat(
         userViewModel.updateUnreadMessages(curUserId, otherUserId)
         userViewModel.getUserDetail(otherUserId)
         userViewModel.updateOnlineStatus(curUserId, true)
-       // activeChatId = generateChatId(curUserId,otherUserId)
-        clearChatNotifications(context,chatIdState.value)
+        // activeChatId = generateChatId(curUserId,otherUserId)
+        clearChatNotifications(context, chatIdState.value)
     }
 
-    when (val response = responseUserDetail) {
+    when (val response = responseOtherUserDetail) {
         is Response.Loading -> {
             Text("---")
         }
 
         is Response.Success -> {
             Log.d("Detail Chat", "Success in userDetail")
-            userDetail.value = response.data
+            otherUserDetail.value = response.data
         }
 
         else -> {
@@ -138,10 +161,12 @@ fun DetailChat(
                     activeChatId = chatIdState.value // Update chat ID when app resumes
                     Log.d("ChatScreen", "App Resumed: ActiveChatId updated to $activeChatId")
                 }
+
                 Lifecycle.Event.ON_STOP -> {
                     activeChatId = null // Reset chat when app goes to background
                     Log.d("ChatScreen", "App in Background: ActiveChatId Cleared")
                 }
+
                 else -> {}
             }
         }
@@ -160,7 +185,7 @@ fun DetailChat(
     Scaffold(
         topBar = {
             ChatHeader(
-                userDetail.value, userStatus, curUserId, selectedMessages,
+                otherUserDetail.value, userStatus, curUserId, selectedMessages,
                 onProfileClick = { },
                 onBackClick = { navController.popBackStack() },
                 onVoiceCallClick = { },
@@ -170,8 +195,7 @@ fun DetailChat(
                     copyMessages(selectedMessages, clipboardManager, coroutineScope)
                     selectedMessages = emptySet()
                 },
-                onEditClick = {
-                    message->
+                onEditClick = { message ->
                     editMessage = message
                     selectedMessages = emptySet()
                 },
@@ -194,21 +218,24 @@ fun DetailChat(
                 userViewModel, editMessage,
                 focusRequester,
                 onTextMessageSend = { text ->
-                    if(editMessage != null){
+                    if (editMessage != null) {
                         chatViewModel.updateMessage(editMessage!!, text)
                         editMessage = null
-                    }else {
+                    } else {
                         chatViewModel.createChatAndSendMessage(
                             otherUserId,
                             text,
-                            userDetail.value?.fcmToken
+                            otherUserDetail.value?.fcmToken,
+                            null
                         )
                     }
                 },
-                onRecordingSend = { /*TODO*/ }
-            ) {
+                onRecordingSend = { /*TODO*/ },
+                onAddClick = {
+                    filePickerLauncher.launch("*/*")
+                }
 
-            }
+            )
         }
     ) { paddingValues ->
         Box(
