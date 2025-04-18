@@ -15,6 +15,7 @@ import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.Message
+import com.exa.android.reflekt.loopit.util.model.UploadStatus
 import com.exa.android.reflekt.loopit.util.model.User
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -41,6 +42,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
+import java.util.UUID
 import javax.inject.Inject
 
 class FirestoreService @Inject constructor(
@@ -51,7 +53,6 @@ class FirestoreService @Inject constructor(
     private val userCollection = db.collection("users")
     private val chatCollection = db.collection("chats")
     val currentUser = auth.currentUser?.uid
-
 
 
     //search user based on the phone number
@@ -107,16 +108,23 @@ class FirestoreService @Inject constructor(
     }
 
     fun updateToken(token: String?) {
-        if(token.isNullOrEmpty() || currentUser.isNullOrEmpty())return
+        if (token.isNullOrEmpty() || currentUser.isNullOrEmpty()) return
         val userRef = userCollection.document(currentUser)
 
         userRef.update("fcmToken", token)
             .addOnSuccessListener { Log.d("FCM", "Token updated in Firestore") }
             .addOnFailureListener { Log.e("FCM", "Failed to update token", it) }
     }
-
-    suspend fun createChatAndSendMessage(userId2: String, text: String, media : Media?, receiverToken: String?, curUser: User?) {
-        val userId1 = auth.currentUser?.uid ?: return
+/*
+    suspend fun createChatAndSendMessage(
+        userId2: String,
+        text: String,
+        media: Media?,
+        receiverToken: String?,
+        curUser: User?,
+        messageId: String? = null
+    ) : String? {
+        val userId1 = auth.currentUser?.uid ?: return null
         val chatId = generateChatId(userId1, userId2)
         val message = Message(
             chatId = chatId,
@@ -126,6 +134,15 @@ class FirestoreService @Inject constructor(
             media = media,
             members = listOf(userId1, userId2)
         )
+
+        if (messageId != null) {
+            message.messageId = messageId
+            updateMessage(message, "")
+            if (receiverToken != null) {
+                sendPushNotification(receiverToken,message,curUser)
+            }
+            return null
+        }
 
         Log.d("FireStore Operation", "receiver Token - $receiverToken")
 
@@ -168,16 +185,90 @@ class FirestoreService @Inject constructor(
             Log.d("FireStoreService", "New message added Successfully")
 
             // Send push notification outside of the Firestore coroutine scope
+            if (!receiverToken.isNullOrEmpty() && message.media != null
+                && message.media.uploadStatus != UploadStatus.SUCCESS) {
+                sendPushNotification(receiverToken, message, curUser)
+            }
+            return message.messageId
+        } catch (e: Exception) {
+            Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
+        }
+        return null
+    }
+*/
+
+    suspend fun createChatAndSendMessage(
+        userId2: String,
+        text: String,
+        media: Media?,
+        receiverToken: String?,
+        curUser: User? = null,
+        messageId: String? = null
+    ): String? {
+        val userId1 = auth.currentUser?.uid ?: return null
+        val chatId = generateChatId(userId1, userId2)
+        val finalMessageId = messageId ?: UUID.randomUUID().toString()
+
+        val message = Message(
+            chatId = chatId,
+            senderId = userId1,
+            receiverId = userId2,
+            message = text,
+            media = media,
+            members = listOf(userId1, userId2),
+            messageId = finalMessageId
+        )
+
+        try {
+            withContext(Dispatchers.IO) {
+
+                val messageRef = chatCollection.document(chatId).collection("messages")
+                messageRef.document(finalMessageId).set(message).await()
+
+                val chatDoc = chatCollection.document(chatId)
+                val snapshot = chatDoc.get().await()
+
+                val text = if(message.media != null)message.media.mediaType.name else message.message
+
+                if (snapshot.exists()) {
+                    chatDoc.update(
+                        mapOf(
+                            "lastMessage" to text,
+                            "lastMessageTimestamp" to message.timestamp,
+                            "unreadMessages.$userId2" to FieldValue.increment(1),
+                            "unreadMessages.$userId1" to 0
+                        )
+                    ).await()
+                } else {
+                    chatDoc.set(
+                        mapOf(
+                            "lastMessage" to text,
+                            "lastMessageTimestamp" to message.timestamp,
+                            "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
+                        )
+                    ).await()
+                }
+
+                updateUserList(userId1, userId2)
+                updateUserList(userId2, userId1)
+
+                chatCollection.document(chatId)
+                    .set(mapOf("users" to listOf(userId1, userId2)), SetOptions.merge()).await()
+            }
+
             if (!receiverToken.isNullOrEmpty()) {
                 sendPushNotification(receiverToken, message, curUser)
             }
 
+            return finalMessageId
         } catch (e: Exception) {
             Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
+            return null
         }
     }
 
-    private fun sendPushNotification(receiverToken: String, message: Message, curUser : User?) {
+
+    private fun sendPushNotification(receiverToken: String, message: Message, curUser: User?) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val accessToken = getAccessToken(context)
@@ -192,25 +283,31 @@ class FirestoreService @Inject constructor(
                             title = curUser?.name ?: "",
                             senderId = message.senderId,
                             chatId = message.chatId,
-                            body = message.message,
+                            body = if(message.media != null)message.media.mediaType.name else message.message,
                             imageUrl = curUser?.profilePicture ?: ""
                         )
                     )
                 )
 
-                val response = RetrofitInstance.api.sendNotification("Bearer $accessToken", request).execute()
+                val response =
+                    RetrofitInstance.api.sendNotification("Bearer $accessToken", request).execute()
 
                 if (response.isSuccessful) {
-                    Log.d("FireStore Operation", "Notification sent successfully: ${response.body()}")
+                    Log.d(
+                        "FireStore Operation",
+                        "Notification sent successfully: ${response.body()}"
+                    )
                 } else {
-                    Log.e("FireStore Operation", "Error sending notification: ${response.errorBody()?.string()}")
+                    Log.e(
+                        "FireStore Operation",
+                        "Error sending notification: ${response.errorBody()?.string()}"
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("FireStore Operation", "FCM Request Failed", e)
             }
         }
     }
-
 
 
     private fun updateUserList(currentUser: String, newUser: String) {
@@ -227,6 +324,20 @@ class FirestoreService @Inject constructor(
             chatCollection.document(chatId).collection("messages").document(message.messageId)
         try {
             batch.update(messageRef, mapOf("message" to newText))
+            batch.commit().await()
+            Log.d("FireStore Operation", "Messages Edited Successfully")
+        } catch (e: Exception) {
+            Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
+        }
+    }
+
+    suspend fun updateMediaMessage(messageId: String, otherUserId : String, media : Media?){
+        val chatId = generateChatId(currentUser!!, otherUserId)
+        val batch = db.batch()
+        val messageRef =
+            chatCollection.document(chatId).collection("messages").document(messageId)
+        try {
+            batch.update(messageRef, "media", media)
             batch.commit().await()
             Log.d("FireStore Operation", "Messages Edited Successfully")
         } catch (e: Exception) {
@@ -308,7 +419,7 @@ class FirestoreService @Inject constructor(
                             trySend(Response.Error(exception.message ?: "Unknown error")).isFailure
                         } else {
                             val messages = snapshot?.toObjects(Message::class.java) ?: emptyList()
-                            if(!activeChatId.isNullOrEmpty()) {
+                            if (!activeChatId.isNullOrEmpty()) {
                                 updateUnreadMessages(chatId)
                                 updateMessageStatusToSeen(chatId, messages)
                             }
@@ -529,7 +640,7 @@ class FirestoreService @Inject constructor(
             val name = snapshot.getString("name") ?: return null
             val profilePic = snapshot.getString("profilePicture") ?: ""
             val fcmToken = snapshot.getString("fcmToken") ?: ""
-            val user = User(name=name, profilePicture = profilePic, fcmToken = fcmToken)
+            val user = User(name = name, profilePicture = profilePic, fcmToken = fcmToken)
             user
         } catch (e: Exception) {
             null

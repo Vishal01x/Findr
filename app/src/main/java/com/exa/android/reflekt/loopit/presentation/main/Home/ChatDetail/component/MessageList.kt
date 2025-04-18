@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,8 +53,7 @@ import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.med
 import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.LinkPreview
-import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.LinkPreviewCard
-import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.downloadMedia
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.image.downloadMedia
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getFileNameFromUrl
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.image.ImageMessageContent
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.video.VideoMessageItem
@@ -65,6 +62,7 @@ import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.getVibrator
 import com.exa.android.reflekt.loopit.util.model.MediaType
 import com.exa.android.reflekt.loopit.util.model.Message
+import com.exa.android.reflekt.loopit.util.model.UploadStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -76,7 +74,8 @@ fun MessageList(
     selectedMessages: Set<Message>,
 
     updateMessages: (Set<Message>) -> Unit,
-    onReply: (message: Message) -> Unit
+    onReply: (message: Message) -> Unit,
+    onRetry: (Message) -> Unit
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -96,37 +95,48 @@ fun MessageList(
     ) {
         itemsIndexed(messages.reversed()) { index, message ->
             renderedIndex[message.messageId] = index
+            val isSentByCurrentUser = message.senderId == curUser
+            val hasUnfinishedMedia =
+                (message.media != null && message.media.uploadStatus != UploadStatus.SUCCESS)
+
             if (message.members.contains(curUser)) {
-                MessageBubble(
-                    message = message,
-                    curUserId = curUser,
-                    isSelected = selectedMessages.contains(message),
-                    selectedMessagesSize = selectedMessages.size,
-                    isHighlighted = highlightedIndex == index,
-                    onTapOrLongPress = {
-                        onMessageLongPress(
-                            message,
-                            selectedMessages,
-                            onSelect = { updatedSelection ->
-                                updateMessages(updatedSelection)
-                            })
-                    },
-                    onReply = { message ->
-                        onReply(message)
-                    },
-                    onReplyClick = { id ->
-                        coroutineScope.launch {// since using launched effect i was not able to re-scroll to the same message again and again
-                            // and if we try to maintain any variable so we need to update it that causes re-composition that leads it to scroll till mid and before reaching
-                            // re-scroll to end
-                            scrollToMessage(id, renderedIndex, listState)
-                            renderedIndex[id]?.let { index ->
-                                highlightedIndex = index
-                                delay(500)
-                                highlightedIndex = null
+                // Skip rendering if message has media that is not successfully uploaded and it's a received message
+                if (!hasUnfinishedMedia || (hasUnfinishedMedia && isSentByCurrentUser)) {
+                    MessageBubble(
+                        message = message,
+                        curUserId = curUser,
+                        isSelected = selectedMessages.contains(message),
+                        selectedMessagesSize = selectedMessages.size,
+                        isHighlighted = highlightedIndex == index,
+                        onTapOrLongPress = {
+                            onMessageLongPress(
+                                message,
+                                selectedMessages,
+                                onSelect = { updatedSelection ->
+                                    updateMessages(updatedSelection)
+                                })
+                        },
+                        onReply = { message ->
+                            onReply(message)
+                        },
+                        onReplyClick = { id ->
+                            coroutineScope.launch {// since using launched effect i was not able to re-scroll to the same message again and again
+                                // and if we try to maintain any variable so we need to update it that causes re-composition that leads it to scroll till mid and before reaching
+                                // re-scroll to end
+                                scrollToMessage(id, renderedIndex, listState)
+                                renderedIndex[id]?.let { index ->
+                                    highlightedIndex = index
+                                    delay(500)
+                                    highlightedIndex = null
+                                }
                             }
+                        },
+                        onRetry = {
+                            onRetry(message)
                         }
-                    }
-                )
+
+                    )
+                }
             }
         }
         item {
@@ -147,7 +157,8 @@ fun MessageBubble(
     isHighlighted: Boolean, // it used to change color of messages for 500ms to reply that reply message is rendered
     onTapOrLongPress: () -> Unit, //select and unselect messages
     onReply: (Message) -> Unit, // pass the message which is to be reply
-    onReplyClick: (String) -> Unit // pass the click reply index to messageList to scroll and update the ui of replied message
+    onReplyClick: (String) -> Unit, // pass the click reply index to messageList to scroll and update the ui of replied message
+    onRetry: () -> Unit
 ) {
     val offsetX = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
@@ -286,8 +297,11 @@ fun MessageBubble(
                                 MediaType.IMAGE -> {
                                     ImageMessageContent(
                                         imageUrl = message.media.mediaUrl,
+                                        fileName = fileName,
+                                        message.senderId == curUserId,
+                                        message.media.uploadStatus,
+                                        onRetry = { onRetry() },
                                         onDownloadClick = {
-
                                             downloadMedia(
                                                 context, message.media.mediaUrl,
                                                 fileName = fileName
@@ -301,19 +315,30 @@ fun MessageBubble(
                                 }
 
                                 MediaType.VIDEO -> {
-                                    VideoMessageItem(message.media.mediaUrl, fileName, message.senderId == curUserId, message.media.uploadStatus)
+                                    VideoMessageItem(
+                                        message.media.mediaUrl,
+                                        fileName,
+                                        message.senderId == curUserId,
+                                        message.media.uploadStatus,
+                                        onRetry = { onRetry() })
                                 }
 
                                 MediaType.AUDIO -> TODO()
                                 MediaType.DOCUMENT -> {
                                     DocumentMessageItem(
                                         fileUrl = message.media.mediaUrl,
-                                        fileName = getFileNameFromUrl(message.media.mediaUrl)
+                                        fileName = getFileNameFromUrl(message.media.mediaUrl),
+                                        message.senderId == curUserId, message.media.uploadStatus,
+                                        onRetry = { onRetry() }
                                     )
+
                                 }
 
                                 MediaType.LOCATION -> TODO()
                                 MediaType.CONTACT -> TODO()
+                                else -> {
+                                    Text("Nothing")
+                                }
                             }
                         }
                     }

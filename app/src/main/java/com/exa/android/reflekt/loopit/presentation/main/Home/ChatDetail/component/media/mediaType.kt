@@ -1,12 +1,14 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media
 
+import android.content.Context
 import android.net.Uri
 import com.exa.android.reflekt.loopit.util.model.MediaType
 import java.io.File
 
 fun getFileNameFromUrl(url: String): String {
-        return Uri.parse(url).lastPathSegment ?: "downloaded_file"
-    }
+    if (url.isNullOrEmpty()) return "Uploading..."
+    return Uri.parse(url).lastPathSegment ?: "downloaded_file"
+}
 
 fun getMimeType(file: File): String {
     val extension = file.extension.lowercase()
@@ -37,3 +39,33 @@ fun getMediaTypeFromUrl(url: String): MediaType {
         else -> MediaType.DOCUMENT // fallback to document for unknown types
     }
 }
+
+fun getMediaTypeFromUri(context: Context, uri: Uri?): MediaType {
+
+    if(uri == null)return MediaType.DOCUMENT
+
+    val mimeType = context.contentResolver.getType(uri)
+    val uriStr = uri.toString()
+
+    return when {
+        mimeType?.startsWith("image/") == true -> MediaType.IMAGE
+        mimeType?.startsWith("video/") == true -> MediaType.VIDEO
+        mimeType?.startsWith("audio/") == true -> MediaType.AUDIO
+        mimeType == "application/pdf" -> MediaType.DOCUMENT
+        mimeType?.contains("msword") == true ||
+                mimeType?.contains("excel") == true ||
+                mimeType?.contains("powerpoint") == true -> MediaType.DOCUMENT
+
+        mimeType?.contains("vcard") == true || uri.authority?.contains("contacts") == true -> MediaType.CONTACT
+        uriStr.startsWith("geo:") || uriStr.contains("maps.google.com") -> MediaType.LOCATION
+        else -> MediaType.DOCUMENT
+    }
+}
+
+fun isFileTooLarge(context: Context, uri: Uri, maxSizeMB: Int = 10): Boolean {
+    val fileSizeInBytes =
+        context.contentResolver.openFileDescriptor(uri, "r")?.statSize ?: return false
+    val fileSizeInMB = fileSizeInBytes / (1024 * 1024)
+    return fileSizeInMB > maxSizeMB
+}
+

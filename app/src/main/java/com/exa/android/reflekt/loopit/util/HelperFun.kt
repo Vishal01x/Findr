@@ -2,6 +2,8 @@ package com.exa.android.reflekt.loopit.util
 
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.widget.Toast
@@ -28,9 +30,16 @@ import kotlin.random.Random
 import java.text.SimpleDateFormat
 import java.util.*
 
-fun showToast(context : Context, message : String){
-    Toast.makeText(context,message, Toast.LENGTH_SHORT).show()
+//fun showToast(context : Context, message : String){
+//    Toast.makeText(context,message, Toast.LENGTH_SHORT).show()
+//}
+
+fun showToast(context: Context, message: String) {
+    Handler(Looper.getMainLooper()).post {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
 }
+
 
 @Composable
 fun AudioWaveForm(

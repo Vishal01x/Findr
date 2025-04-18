@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 import android.content.Context
 import android.util.Log
 import com.exa.android.reflekt.loopit.data.remote.main.api.CloudinaryApi
+import com.exa.android.reflekt.loopit.util.isNetworkAvailable
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,6 +12,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.io.IOException
 import javax.inject.Inject
 
 class MediaSharingRepository @Inject constructor(
@@ -30,6 +32,10 @@ class MediaSharingRepository @Inject constructor(
 //
 //        val api = retrofit.create(CloudinaryApi::class.java)
 
+        if(!isNetworkAvailable(context)){
+            throw IOException("No Internet Available")
+        }
+
         val requestFile = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
         val uploadPreset = "media_uploads".toRequestBody("text/plain".toMediaTypeOrNull())
@@ -41,7 +47,7 @@ class MediaSharingRepository @Inject constructor(
         } catch (e: Exception) {
             Log.d("Storage Cloudinary", "Upload failed")
             Log.e("Storage Cloudinary", "Upload failed", e)
-            null
+            throw e
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,7 +53,12 @@ import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.User
 import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getMediaTypeFromUri
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.isFileTooLarge
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
 import com.exa.android.reflekt.loopit.util.clearChatNotifications
+import com.exa.android.reflekt.loopit.util.model.MediaType
+import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -65,7 +72,7 @@ fun DetailChat(
     val chatViewModel: ChatViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
     val lobbyVM: LobbyViewModel = hiltViewModel()
-    val mediaSharingRepository: MediaSharingViewModel = hiltViewModel()
+    val mediaSharingViewModel: MediaSharingViewModel = hiltViewModel()
 
     val responseChatMessages by remember { chatViewModel.messages }.collectAsState() // all the chats of cur and other User
     val curUserId by chatViewModel.curUserId.collectAsState()  // cur User Id
@@ -92,18 +99,11 @@ fun DetailChat(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            coroutineScope.launch {
-//                val file = mediaSharingRepository.createTempFileFromUri(context, uri)
-                val media = mediaSharingRepository.uploadFileToCloudinary(context, uri)
-                Log.d("Storage Cloudinary", "Uploaded URL: ${media.toString()}")
-                chatViewModel.createChatAndSendMessage(
-                    otherUserId,
-                    "",
-                    otherUserDetail.value?.fcmToken,
-                    media
-                )
-            }
-
+            launchMediaUpload(
+                coroutineScope, context, uri,
+                otherUserId, otherUserDetail.value?.fcmToken, getMediaTypeFromUri(context, uri),
+                null, chatViewModel, mediaSharingViewModel
+            )
         }
     }
 
@@ -182,6 +182,13 @@ fun DetailChat(
         }
     }
 
+    //if (showMediaPickerSheet) {
+        MediaPickerHandler(
+            otherUserId = otherUserId,
+            fcmToken = otherUserDetail.value?.fcmToken,
+        )
+
+
     Scaffold(
         topBar = {
             ChatHeader(
@@ -232,7 +239,9 @@ fun DetailChat(
                 },
                 onRecordingSend = { /*TODO*/ },
                 onAddClick = {
-                    filePickerLauncher.launch("*/*")
+//                    filePickerLauncher.launch("*/*")
+                    mediaSharingViewModel.showMediaPickerSheet = true
+                    Log.d("Storage Cloudinary", "mediaPicker - $mediaSharingViewModel.showMediaPickerSheet")
                 }
 
             )
@@ -250,9 +259,62 @@ fun DetailChat(
                 0,
                 selectedMessages,
                 updateMessages = { selectedMessages = it },
-                onReply = { replyMessage = it; focusRequester.requestFocus() }
+                onReply = { replyMessage = it; focusRequester.requestFocus() },
+                onRetry = { message ->
+                    val uri = Uri.parse(message.media?.uri)
+                    launchMediaUpload(
+                        coroutineScope,
+                        context,
+                        uri,
+                        otherUserId,
+                        otherUserDetail?.value?.fcmToken,
+                        getMediaTypeFromUri(context, uri),
+                        message.messageId,
+                        chatViewModel,
+                        mediaSharingViewModel
+                    )
+                    //showToast(context, "Retry File Upload")
+                }
+
             )
         }
+    }
+}
+
+fun launchMediaUpload(
+    coroutineScope: CoroutineScope,
+    context: Context,
+    uri: Uri?,
+    otherUserId: String,
+    fcmToken: String?,
+    mediaType: MediaType,
+    messageId: String? = null,
+    chatViewModel: ChatViewModel,
+    mediaSharingViewModel: MediaSharingViewModel
+) {
+
+    if (uri != null && isFileTooLarge(context, uri)) {
+        showToast(context, "File too large. Maximum allowed size is 10MB.")
+        return
+    }
+
+    coroutineScope.launch {
+        mediaSharingViewModel.uploadAndSendMediaMessage(
+            context = context,
+            uri = uri,
+            otherUserId = otherUserId,
+            fcmToken = fcmToken,
+            mediaType = mediaType,
+            chatViewModel = chatViewModel,
+            messageId = messageId,
+            onError = { e ->
+                val errorMessage = mediaSharingViewModel.getUploadErrorMessage(e)
+                showToast(context, errorMessage)
+            },
+            onProgress = {
+                // Optional: Handle UI progress updates
+            }
+        )
     }
 }
 

@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
@@ -10,6 +11,7 @@ import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.Message
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -61,17 +63,34 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun getCurUser(){
+    private fun getCurUser() {
         viewModelScope.launch {
             curUser.value = repo.getCurUser()
         }
     }
+    val messageIdFlow = MutableSharedFlow<String?>()
 
-    fun createChatAndSendMessage(userId: String, message: String, receiverToken : String?, media : Media? = null) {
+    fun createChatAndSendMessage(
+        userId: String,
+        message: String,
+        receiverToken: String?,
+        media: Media? = null,
+        messageId: String? = null
+    ){
         viewModelScope.launch {
-            repo.createChatAndSendMessage(userId, message, media, receiverToken, curUser.value)
+            val id = repo.createChatAndSendMessage(
+                userId,
+                message,
+                media,
+                receiverToken,
+                curUser.value,
+                messageId
+            )
+            messageIdFlow.emit(id)
         }
     }
+
+
 
     fun getMessages(userId1: String, userId2: String) {
         viewModelScope.launch {
@@ -107,9 +126,15 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun updateMessage(message : Message, newText : String){
+    fun updateMessage(message: Message, newText: String) {
         viewModelScope.launch {
-            repo.updateMessage(message,newText)
+            repo.updateMessage(message, newText)
+        }
+    }
+
+    fun updateMediaMessage(messageId: String, otherUserId: String, media: Media){
+        viewModelScope.launch {
+            repo.updateMediaMessage(messageId, otherUserId, media)
         }
     }
 

@@ -14,6 +14,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withPermit
 import java.io.File
 import javax.inject.Inject
 
@@ -27,6 +28,12 @@ class VideoDownloadViewModel @Inject constructor(
     val downloadStates: Map<String, StateFlow<DownloadState>> get() = _downloadStates
 
     private val downloadedFilePaths = mutableMapOf<String, String>()
+    private val downloadSemaphore =
+        kotlinx.coroutines.sync.Semaphore(permits = 3) // Max 3 at a time
+
+    init {
+        cleanUpTempFiles(context)
+    }
 
     fun getDownloadState(fileName: String): StateFlow<DownloadState> {
         return _downloadStates.getOrPut(fileName) {
@@ -37,7 +44,11 @@ class VideoDownloadViewModel @Inject constructor(
     fun isFileDownloaded(context: Context, fileName: String): File? {
         val folder = File(context.getExternalFilesDir(null), APP_NAME)
         val file = File(folder, fileName)
-        return if (file.exists()) file else null
+        val isValid = file.exists() && (
+                file.extension != "txt" && file.length() > 1024 ||  // For large files
+                        file.extension == "txt"                              // For small text files
+                )
+        return if (isValid) file else null
     }
 
 
@@ -53,28 +64,49 @@ class VideoDownloadViewModel @Inject constructor(
     }
 
     fun downloadFile(context: Context, url: String, fileName: String) {
-        val state = getDownloadState(fileName) as MutableStateFlow
+        val state = getDownloadState(fileName) as MutableStateFlow<DownloadState>
+
+        // Check if final file exists
+        val finalFile = File(context.getExternalFilesDir(null), "$APP_NAME/$fileName")
+        if (finalFile.exists() && finalFile.length() > 1024) {
+            downloadedFilePaths[fileName] = finalFile.absolutePath
+            state.value = DownloadState.Completed
+            return
+        }
+
+        val tempFile = File(context.getExternalFilesDir(null), "$APP_NAME/$fileName.temp")
+        tempFile.delete() // Clean up any previous failed attempt
 
         viewModelScope.launch {
-            state.value = DownloadState.Downloading(0f)
+            downloadSemaphore.withPermit {
+                state.value = DownloadState.Downloading(0f)
 
-            fileDownloader.downloadFile(
-                context = context,
-                fileUrl = url,
-                fileName = fileName,
-                onProgress = { progress ->
-                    state.value = DownloadState.Downloading(progress)
-                },
-                onSuccess = { file ->
-                    downloadedFilePaths[fileName] = file.absolutePath
-                    state.value = DownloadState.Completed
-                },
-                onError = {
-                    state.value = DownloadState.Failed
-                }
-            )
+                fileDownloader.downloadFile(
+                    context = context,
+                    fileUrl = url,
+                    fileName = "$fileName.temp", // Save as temp file
+                    onProgress = { progress ->
+                        state.value = DownloadState.Downloading(progress)
+                    },
+                    onSuccess = { _ ->
+                        val renamed = tempFile.renameTo(finalFile)
+                        if (renamed) {
+                            downloadedFilePaths[fileName] = finalFile.absolutePath
+                            state.value = DownloadState.Completed
+                        } else {
+                            tempFile.delete()
+                            state.value = DownloadState.Failed
+                        }
+                    },
+                    onError = {
+                        tempFile.delete()
+                        state.value = DownloadState.Failed
+                    }
+                )
+            }
         }
     }
+
 
     fun openFile(context: Context, fileName: String) {
         downloadedFilePaths[fileName]?.let { path ->
@@ -98,5 +130,15 @@ class VideoDownloadViewModel @Inject constructor(
             }
         }
     }
+
+    fun cleanUpTempFiles(context: Context) {
+        val folder = File(context.getExternalFilesDir(null), APP_NAME)
+        folder.listFiles()?.forEach { file ->
+            if (file.name.endsWith(".temp")) {
+                file.delete()
+            }
+        }
+    }
+
 
 }

@@ -14,4 +14,6 @@ object Constants {
 
     const val APP_NAME = "Let's Talk"
 
+    const val CAMERA_REQUEST_CODE = 1001
+
 }
