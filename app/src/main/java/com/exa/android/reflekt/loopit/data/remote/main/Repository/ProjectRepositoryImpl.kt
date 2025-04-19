@@ -23,8 +23,6 @@ class ProjectRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth
 ) : ProjectRepository {
 
-
-
     private companion object {
         const val PROJECTS_COLLECTION = "projects"
         const val METADATA_DOCUMENT = "metadata"

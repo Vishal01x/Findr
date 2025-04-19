@@ -1,6 +1,5 @@
 package com.exa.android.reflekt.loopit.util.model
 
-import android.net.Uri
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
@@ -28,10 +27,10 @@ data class Message(
 )
 
 data class Media(
-    var mediaType : MediaType = MediaType.IMAGE,
-    var mediaUrl : String = "",
-    val uri : String? = null,
-    var uploadStatus : UploadStatus = UploadStatus.UPLOADING
+    var mediaType: MediaType = MediaType.IMAGE,
+    var mediaUrl: String = "",
+    val uri: String? = null,
+    var uploadStatus: UploadStatus = UploadStatus.UPLOADING
 )
 
 enum class MediaType {

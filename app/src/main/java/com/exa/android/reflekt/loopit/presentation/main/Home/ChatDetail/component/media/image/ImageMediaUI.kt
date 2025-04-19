@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.video.VideoDownloadViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.util.model.UploadStatus
 import com.exa.android.reflekt.loopit.util.showToast
 
@@ -59,18 +60,10 @@ fun ImageMessageContent(
         .background(Color.LightGray)
         .clickable { onImageClick() /*viewModel.openFile(context, fileName)*/ }) {
 
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(imageUrl)
-                .crossfade(true)
-                .placeholder(R.drawable.placeholder) // shown while loading
-                //.error(R.drawable.chat_img3) // shown on load failure
-                .build(),
-            contentDescription = "Image message",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            contentScale = ContentScale.Crop
+        ImageUsingCoil(
+            context,imageUrl, R.drawable.placeholder, Modifier
+            .fillMaxWidth()
+            .height(200.dp)
         )
 
         when (uploadStatus) {

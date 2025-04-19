@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.lazy.items
 import androidx.compose.animation.core.animateFloatAsState
@@ -8,6 +9,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +57,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +75,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -111,12 +115,12 @@ fun ProjectDetailScreen(
     val isOwner = project?.createdBy == currentUserId
     val isEnrolled = currentUserId?.let { project?.enrolledPersons?.containsKey(it) } ?: false
 
+    val context = LocalContext.current
     LaunchedEffect(projectId) {
         if (state.projects.none { it.id == projectId }) {
             viewModel.onEvent(ProjectListEvent.Refresh)
         }
     }
-
 
     LaunchedEffect(state.error) {
         state.error?.let { error ->
@@ -158,8 +162,7 @@ fun ProjectDetailScreen(
                         if (isEnrolled) {
                             viewModel.withdrawFromProject(project.id)
                         } else {
-                            val userName = FirebaseAuth.getInstance().currentUser?.displayName ?: "User"
-                            viewModel.enrollInProject(project.id, userName)
+                            viewModel.enrollInProject(project.id)
                         }
                     },
                     icon = {
@@ -488,26 +491,6 @@ fun ProjectDetailScreen(
                                             }
                                         }
                                     }
-                                    Button(
-                                        onClick = {
-                                            navController.navigate("map_screen/${project.enrolledPersons.keys.joinToString(",")}")
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 8.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Map,
-                                            contentDescription = "View on map",
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("View Team on Map")
-                                    }
                                 }
                             }
                         }
@@ -629,6 +612,39 @@ fun ProjectDetailScreen(
                                                 }
                                             }
                                         }
+                                    }
+
+                                    FilledTonalButton(
+                                        onClick = {
+                                            if (project.requestedPersons.isNotEmpty()) {
+                                                navController.navigate("map_screen/${project.requestedPersons.keys.joinToString(",")}")
+                                            }else{
+                                                Toast.makeText(context, "No requested members", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        enabled = project.requestedPersons.isNotEmpty(),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (project.requestedPersons.isNotEmpty())
+                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                                            else
+                                                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                        ),
+                                        shape = MaterialTheme.shapes.medium
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Map,
+                                            contentDescription = "View on map",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("View Request on Map")
                                     }
                                 }
                             }

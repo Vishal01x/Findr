@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.ui.theme
+package com.exa.android.reflekt.loopit.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

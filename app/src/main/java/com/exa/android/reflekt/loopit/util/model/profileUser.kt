@@ -1,7 +1,7 @@
-import java.security.Timestamp
+package com.exa.android.reflekt.loopit.util.model
 
+import com.google.firebase.Timestamp
 
-//  package com.exa.android.reflekt.loopit.util.model
 
 data class profileUser(
     val uid: String = "",
@@ -12,9 +12,13 @@ data class profileUser(
     val isStudent: Boolean = false,
     val createdAt: Timestamp? = null,
     val collegeName: String? = null,
-    val year: Int? = null,
+    val year: String? = "",
     val lat: Double = 0.0,
-    val lng: Double = 0.0
+    val lng: Double = 0.0,
+    val location: String = "",
+    val companyName: String = "",
+    val ctc: String = "",
+    val experience: String = ""
 ) {
     // Custom getter for Firestore deserialization
     constructor() : this(
@@ -26,9 +30,13 @@ data class profileUser(
         isStudent = false,
         createdAt = null,
         collegeName = null,
-        year = null,
+        year = "",
         lat = 0.0,
-        lng = 0.0
+        lng = 0.0,
+        location = "",
+        companyName = "",
+        ctc = "",
+        experience = ""
     ) {
         // No need for manual parsing if Firestore stores it as Double
     }
@@ -45,9 +53,13 @@ data class profileUser(
                 isStudent = map["isStudent"] as? Boolean ?: false,
                 createdAt = map["createdAt"] as? Timestamp,
                 collegeName = map["collegeName"] as? String,
-                year = map["year"] as? Int,
+                year = map["year"] as? String,
                 lat = (map["lat"] as? String)?.toDoubleOrNull() ?: (map["lat"] as? Double ?: 0.0),
-                lng = (map["lng"] as? String)?.toDoubleOrNull() ?: (map["lng"] as? Double ?: 0.0)
+                lng = (map["lng"] as? String)?.toDoubleOrNull() ?: (map["lng"] as? Double ?: 0.0),
+                location = map["location"] as? String ?: "",
+                companyName = map["companyName"] as? String ?: "",
+                ctc = map["ctc"] as? String ?: "",
+                experience = map["experience"] as? String ?: ""
             )
         }
     }

@@ -60,7 +60,7 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
         }
     }
 
-     fun getUserDetail(userId: String) {
+    fun getUserDetail(userId: String) {
         viewModelScope.launch {
             userRepository.getUserDetail(userId)
                 .catch { exception ->

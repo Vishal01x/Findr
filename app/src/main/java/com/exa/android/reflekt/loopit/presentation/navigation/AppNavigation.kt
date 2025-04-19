@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.ProjectCard
 import com.exa.android.reflekt.loopit.presentation.main.Home.Map.MapScreen
+import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
@@ -21,13 +22,19 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSh
 import io.getstream.video.android.compose.theme.VideoTheme
 
 @Composable
-fun AppNavigation(navController: NavHostController, isLoggedIn: Boolean, otherUserId : String ? = null) {
+fun AppNavigation(
+    navController: NavHostController,
+    isLoggedIn: Boolean,
+    otherUserId: String? = null
+) {
     //OnBackPressed(navController)
 
     LaunchedEffect(otherUserId) {
         otherUserId?.let {
             navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId)) {
-                popUpTo(HomeRoute.ChatList.route) { inclusive = false } // Ensure HomeScreen is in the back stack
+                popUpTo(HomeRoute.ChatList.route) {
+                    inclusive = false
+                } // Ensure HomeScreen is in the back stack
                 launchSingleTop = true  // Avoid creating duplicate instances
             }
 
@@ -40,24 +47,37 @@ fun AppNavigation(navController: NavHostController, isLoggedIn: Boolean, otherUs
             if (currentDestination == HomeRoute.ChatList.route ||
                 currentDestination == MainRoute.Profile.route ||
                 currentDestination == MapInfo.MapScreen.route ||
-                currentDestination == ProjectRoute.ProjectList.route) {
+                currentDestination == ProjectRoute.ProjectList.route
+            ) {
                 CustomBottomNavigationBar(navController) {
                     bottomSheet = true
                 }
             }
         }
     ) { paddingValues ->
-        NavHost(
+        RootNavGraph(
             navController = navController,
-            startDestination = if (isLoggedIn) "main_app" else "auth",
-            modifier = Modifier.padding(paddingValues).background(VideoTheme.colors.appBackground)
-        ) {
-            authNavGraph(navController)
-            mainAppNavGraph(navController)
-        }
+            isLoggedIn = isLoggedIn,
+            modifier = Modifier.padding(paddingValues)
+        )
     }
 }
 
 
+@Composable
+fun RootNavGraph(
+    navController: NavHostController,
+    isLoggedIn: Boolean,
+    modifier: Modifier = Modifier
+) {
+    NavHost(
+        navController = navController,
+        startDestination = if (isLoggedIn) MainRoute.ROOT else AuthRoute.ROOT,
+        modifier = modifier
+    ) {
+        authNavGraph(navController)
+        mainAppNavGraph(navController)
+    }
+}
 
 

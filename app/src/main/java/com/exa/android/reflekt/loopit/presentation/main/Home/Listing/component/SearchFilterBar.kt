@@ -132,7 +132,6 @@ fun SearchFilterBar(
                 } else null
             )
 
-
             Spacer(modifier = Modifier.width(8.dp))
 
             FilterChip(

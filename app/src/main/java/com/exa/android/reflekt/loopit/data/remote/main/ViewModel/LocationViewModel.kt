@@ -8,12 +8,12 @@ import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.LocationRepository
+import com.exa.android.reflekt.loopit.util.model.profileUser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import profileUser
 import timber.log.Timber
 
 
@@ -69,7 +69,6 @@ class LocationViewModel @Inject constructor(
             }
         }
     }
-
 
     private val _requestedUserLocations = MutableStateFlow<List<profileUser>>(emptyList())
     val requestedUserLocations: StateFlow<List<profileUser>> get() = _requestedUserLocations

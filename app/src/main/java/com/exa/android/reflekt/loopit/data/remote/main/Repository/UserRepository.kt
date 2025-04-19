@@ -220,8 +220,7 @@ class UserRepository @Inject constructor(
                     } else {
                         val users = snapshot?.toObjects(User::class.java) ?: emptyList()
                         Log.d("FireStore Operation", " users - $users")
-                        val updatedUsers =
-                            users.filter { it.userId != currentUser }.sortedBy { it.name }
+                        val updatedUsers = users.filter { it.userId != currentUser }.sortedBy { it.name }
                         val result = trySend(Response.Success(updatedUsers))
                         if (result.isFailure) {
                             // Log or handle the failure (optional)
@@ -248,15 +247,10 @@ class UserRepository @Inject constructor(
             val listenerRegistration = userCollection.document(userId)
                 .addSnapshotListener { snapshot, exception ->
                     if (exception != null) {
-                        trySend(
-                            Response.Error(
-                                exception.localizedMessage ?: "Error fetching user"
-                            )
-                        ).isFailure
+                        trySend(Response.Error(exception.localizedMessage ?: "Error fetching user")).isFailure
                     } else if (snapshot != null && snapshot.exists()) {
                         val user = snapshot.toObject(User::class.java)
                         if (user != null) {
-                            Log.d("FireStore Operation", " user - $user")
                             trySend(Response.Success(user)).isFailure
                         } else {
                             trySend(Response.Error("Failed to parse user data")).isFailure
@@ -282,7 +276,5 @@ class UserRepository @Inject constructor(
             Log.e("Firebase Operation", "Failed to reset unread messages", e)
         }
     }
-
-
 
 }

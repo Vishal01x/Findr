@@ -105,7 +105,7 @@ fun DocumentMessageItem(
                     )
 
                     UploadStatus.SUCCESS -> {
-                        when (downloadState) {
+                        when (val state = downloadState) {
                             is DownloadState.NotStarted -> Text(
                                 text = "Tap to download",
                                 color = Color.Gray,
@@ -113,11 +113,8 @@ fun DocumentMessageItem(
                             )
 
                             is DownloadState.Downloading -> Text(
-                                text = "${
-                                    (downloadState as DownloadState.Downloading).progress.times(
-                                        100
-                                    ).toInt()
-                                }% downloaded",
+                                //text = "${(downloadState as DownloadState.Downloading).progress.times(100).toInt()}% downloaded",
+                                text = "${(state.progress * 100).toInt()}% downloaded",
                                 color = Color.Blue,
                                 fontSize = 12.sp
                             )
@@ -134,15 +131,17 @@ fun DocumentMessageItem(
                                 fontSize = 12.sp
                             )
                         }
-
                         if (downloadState is DownloadState.Downloading) {
                             LinearProgressIndicator(
-                                progress = { (downloadState as DownloadState.Downloading).progress },
+                                progress = {
+                                    (downloadState as DownloadState.Downloading).progress // Directly access progress
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 4.dp)
+                                    .padding(top = 4.dp),
                             )
                         }
+
                     }
 
                     else -> {}

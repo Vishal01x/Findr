@@ -8,7 +8,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
-import com.exa.android.reflekt.ui.chat.LinkUtils
+import com.exa.android.reflekt.loopit.util.LinkUtils
 
 /*
 @Composable

@@ -104,8 +104,6 @@ fun CreateProjectScreen(
                         )
                     }
                 },
-
-
                 actions = {
                     if (state.canSubmit) {
                         TextButton(

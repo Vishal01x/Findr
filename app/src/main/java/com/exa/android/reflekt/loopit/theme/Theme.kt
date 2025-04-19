@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.ui.theme
+package com.exa.android.reflekt.loopit.theme
 
 import android.app.Activity
 import android.os.Build

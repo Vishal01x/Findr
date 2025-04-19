@@ -18,14 +18,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.util.application.MyLifecycleObserver
 import com.exa.android.reflekt.loopit.util.application.NetworkCallbackReceiver
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
-import com.exa.android.reflekt.loopit.data.remote.main.meeting.MeetingRoomTheme
 import com.exa.android.reflekt.loopit.util.clearAllNotifications
+import io.getstream.meeting.room.compose.ui.AppTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -43,11 +44,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MeetingRoomTheme {
+            AppTheme {
                 updateStatus(this)
                 App()
-                //MediaScreen()
-                //AppNav()
             }
         }
         clearAllNotifications(this)
@@ -66,27 +65,26 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun App() {
-        val viewModel: UserViewModel = hiltViewModel()
-        val curUser = viewModel.curUser
+        val viewModel: AuthVM = hiltViewModel()
+        val isLoggedIn = viewModel.loginState.value.loginSuccess
         val navController = rememberNavController()  // Assign instance to class property
 
         //val intent = Intent()
         val senderId = intent?.data?.lastPathSegment
 
-        AppNavigation(navController, !curUser.isNullOrEmpty(), senderId)
+        AppNavigation(navController, isLoggedIn, senderId)
     }
 }
 
 @Composable
 fun GlobalScreen(modifier: Modifier = Modifier) {
-    
+
 }
 
 @Composable
 fun ProfileScreen(modifier: Modifier = Modifier) {
-    
-}
 
+}
 
 
 @Composable

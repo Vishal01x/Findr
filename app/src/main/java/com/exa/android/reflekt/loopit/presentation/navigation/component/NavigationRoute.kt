@@ -3,20 +3,27 @@ package com.exa.android.reflekt.loopit.presentation.navigation.component
 import android.net.Uri
 import com.google.gson.Gson
 
-sealed class AuthRoute(val route: String) {
+sealed class AuthRoute(val route : String){
     object Login : AuthRoute("login")
     object Register : AuthRoute("register")
+    object Verification : AuthRoute("verification")
     object ForgetPassword : AuthRoute("forget_password")
+    companion object{
+        const val ROOT="auth"
+    }
 }
 
 
 
-sealed class MainRoute(val route: String) {
+sealed class MainRoute(val route : String){
     object Home : MainRoute("home")
     object Profile : MainRoute("status")
     object Setting : MainRoute("setting")
     object Map : MainRoute("map")
     object Project : MainRoute("project")
+    companion object{
+        const val ROOT="main_app"
+    }
 }
 
 

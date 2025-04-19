@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.LinkMetadataRepository
 import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
-import com.exa.android.reflekt.util.LinkUtils
+import com.exa.android.reflekt.loopit.util.LinkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

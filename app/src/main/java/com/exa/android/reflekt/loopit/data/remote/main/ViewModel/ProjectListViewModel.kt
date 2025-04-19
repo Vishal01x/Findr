@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
@@ -17,12 +18,12 @@ import javax.inject.Inject
 @HiltViewModel
 class ProjectListViewModel @Inject constructor(
     private val repository: ProjectRepository,
+    private val profileRepository: ProfileRepository,
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProjectListState())
     val state = _state.asStateFlow()
-
 
     init {
         loadFilters()
@@ -133,11 +134,13 @@ class ProjectListViewModel @Inject constructor(
         }
     }
 
-    fun enrollInProject(projectId: String, userName: String) {
+    fun enrollInProject(projectId: String) {
         auth.currentUser?.uid?.let { userId ->
             _state.update { it.copy(isLoading = true, error = null) }
             viewModelScope.launch {
                 try {
+                    val profile = profileRepository.getUserProfile(userId)
+                    val userName = "${profile.firstName} ${profile.lastName}"
                     repository.enrollInProject(projectId, userId, userName)
                     loadProjects() // Refresh the list
                 } catch (e: Exception) {

@@ -1,9 +1,10 @@
 package com.exa.android.reflekt.loopit.data.remote.main.MapDataSource
-
+import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
 import com.firebase.geofire.GeoQueryEventListener
+import com.google.firebase.Timestamp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -13,8 +14,6 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 import com.google.firebase.firestore.DocumentSnapshot
-import profileUser
-import java.security.Timestamp
 import timber.log.Timber
 
 
@@ -24,6 +23,7 @@ class FirebaseDataSource @Inject constructor() {
     private val firestore = FirebaseFirestore.getInstance()
 
     fun saveUserLocation(userId: String, location: GeoLocation, onComplete: (String?, DatabaseError?) -> Unit) {
+        Timber.tag("GeoFire").d("Saving location for user $userId: $location")
         geoFire.setLocation(userId, location, onComplete)
     }
 
@@ -43,7 +43,7 @@ class FirebaseDataSource @Inject constructor() {
                                 isStudent = data["isStudent"] as? Boolean ?: false,
                                 createdAt = data["createdAt"] as? Timestamp,
                                 collegeName = data["collegeName"] as? String,
-                                year = (data["year"] as? Long)?.toInt(),
+                                year = (data["year"] as? Long)?.toString(),
                                 lat = (data["lat"] as? Number)?.toDouble() ?: 0.0,  // Safe conversion
                                 lng = (data["lng"] as? Number)?.toDouble() ?: 0.0   // Safe conversion
                             )

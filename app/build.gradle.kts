@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.runner)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.firebase.messaging.ktx)
+    implementation(libs.androidx.hilt.work)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -82,6 +83,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // system ui
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
 
     // Stream Video SDK
     implementation(libs.stream.video.ui.compose)
@@ -152,4 +156,9 @@ dependencies {
 // Download + Preprocess:
     implementation("com.cloudinary:cloudinary-android-download:3.0.2")
     implementation("com.cloudinary:cloudinary-android-preprocess:3.0.2")
+
+    //work Manager
+    // Kotlin + coroutines
+    val work_version = "2.10.0"
+    implementation( "androidx.work:work-runtime-ktx:$work_version")
 }

@@ -13,16 +13,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.MediaSharingRepository
+import com.exa.android.reflekt.loopit.data.remote.main.worker.enqueueUploadWorker
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getMediaTypeFromUrl
 import com.exa.android.reflekt.loopit.util.isNetworkAvailable
 import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.MediaType
 import com.exa.android.reflekt.loopit.util.model.UploadStatus
-import com.exa.android.reflekt.loopit.util.model.User
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -98,6 +97,12 @@ class MediaSharingViewModel @Inject constructor(
                         chatViewModel = chatViewModel,
                         onProgress = onProgress
                     )
+//                    if (messageId != null && uri != null) {
+//                        enqueueUploadWorker(
+//                            context, uri, mediaType, chatViewModel, otherUserId, messageId
+//                        )
+//                    }
+
                 }
 
             } catch (e: UnknownHostException) {
@@ -388,9 +393,9 @@ class MediaSharingViewModel @Inject constructor(
 
     fun getUploadErrorMessage(e: Exception): String {
         return when (e) {
-            is java.net.UnknownHostException -> "No internet connection. Please check your network."
-            is java.net.SocketTimeoutException -> "Connection timed out. Try again later."
-            is java.io.IOException -> "File upload failed due to network or file error."
+            is UnknownHostException -> "No internet connection. Please check your network."
+            is SocketTimeoutException -> "Connection timed out. Try again later."
+            is IOException -> "File upload failed due to network or file error."
             is IllegalStateException -> "Failed to prepare upload. Please try again."
             else -> e.message ?: "Unknown error occurred."
         }

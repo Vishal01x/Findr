@@ -1,5 +1,5 @@
 // ui/theme/ComponentStyles.kt
-package com.exa.android.reflekt.ui.theme
+package com.exa.android.reflekt.loopit.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults

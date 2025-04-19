@@ -24,5 +24,4 @@ interface ProjectRepository {
     suspend fun acceptJoinRequest(projectId: String, userId: String, userName: String): Result<Unit>
     suspend fun rejectJoinRequest(projectId: String, userId: String): Result<Unit>
     fun getProjectUpdates(projectId: String): Flow<Result<Project>>
-
 }

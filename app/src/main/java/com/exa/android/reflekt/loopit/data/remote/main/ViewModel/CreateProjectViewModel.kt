@@ -24,7 +24,6 @@ class CreateProjectViewModel @Inject constructor(
     private val auth: FirebaseAuth
 ) : ViewModel(){
 
-
     private val _state = mutableStateOf(CreateProjectState())
     val state: State<CreateProjectState> = _state
 
@@ -83,6 +82,7 @@ class CreateProjectViewModel @Inject constructor(
                 error = null,
                 isSuccess = false
             )
+            Log.d("project", "profile: ${auth.currentUser} ${auth.currentUser?.uid}")
 
             val currentUser = auth.currentUser ?: run {
                 _state.value = _state.value.copy(
@@ -91,6 +91,7 @@ class CreateProjectViewModel @Inject constructor(
                 )
                 return@launch
             }
+            Log.d("project", "profile: $currentUser")
             val profileResult = try {
                 profileRepository.getUserProfile(currentUser.uid)
             } catch (e: Exception) {
@@ -98,8 +99,10 @@ class CreateProjectViewModel @Inject constructor(
                     isLoading = false,
                     error = "Failed to fetch user profile: ${e.message}"
                 )
+                Log.d("project", "profile: ${e.message}")
                 return@launch
             }
+            Log.d("project", "profile: $profileResult")
 
             val fullName = if (profileResult.firstName.isNotBlank() && profileResult.lastName.isNotBlank()) {
                 "${profileResult.firstName} ${profileResult.lastName}"
@@ -107,6 +110,7 @@ class CreateProjectViewModel @Inject constructor(
                 currentUser.displayName ?: "Anonymous"
             }
 
+            Log.d("project", "profile full name: $fullName")
 
             val project = Project(
                 id = UUID.randomUUID().toString(),
@@ -117,8 +121,7 @@ class CreateProjectViewModel @Inject constructor(
                 createdBy = currentUser.uid,
                 createdByName = fullName
             )
-            Log.d("Firestore", project.toString())
-
+            Log.d("project", "createProject: $project")
             try {
                 repository.createProject(project)
                 _state.value = _state.value.copy(

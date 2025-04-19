@@ -16,11 +16,14 @@ import com.firebase.geofire.GeoQueryEventListener
 import com.google.android.gms.location.*
 import com.google.firebase.database.*
 import dagger.hilt.android.scopes.ViewModelScoped
+import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.firebase.geofire.GeoQuery
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.Priority
 import com.google.firebase.auth.FirebaseAuth
-import profileUser
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import timber.log.Timber
 
 @ViewModelScoped
@@ -49,10 +52,7 @@ class LocationRepository @Inject constructor(
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
-                    firebaseDataSource.saveUserLocation(
-                        userId,
-                        GeoLocation(location.latitude, location.longitude)
-                    ) { key, error ->
+                    firebaseDataSource.saveUserLocation(userId, GeoLocation(location.latitude, location.longitude)) { key, error ->
                         if (error != null) {
                             Timber.tag("GeoFire").e("Error saving location: ${error.message}")
                         } else {
@@ -62,13 +62,12 @@ class LocationRepository @Inject constructor(
                 }
             }
         }
-
+        Timber.tag("GeoFire").d("Starting location updates for user $userId")
         locationDataSource.startLocationUpdates(context, locationRequest, locationCallback)
     }
 
     fun fetchUserLocations(role: String, radius: Double, location: LatLng) {
-        Timber.tag("GeoFire")
-            .d("Fetching user locations for role: $role, radius: $radius, location: $location")
+        Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
         // clearUserLocations()
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {
@@ -78,8 +77,7 @@ class LocationRepository @Inject constructor(
                         Timber.tag("Location").d("users: $user")
                         if (role == user?.role && user.uid != currentUserId) {
 
-                            val updatedUser =
-                                user.copy(lat = location.latitude, lng = location.longitude)
+                            val updatedUser = user.copy(lat = location.latitude, lng = location.longitude)
 
                             Timber.tag("GeoFire").d("User location fetched: $updatedUser")
                             _userLocations.value = _userLocations.value + updatedUser
@@ -97,10 +95,7 @@ class LocationRepository @Inject constructor(
 
             override fun onKeyMoved(key: String, location: GeoLocation) {
                 _userLocations.value = _userLocations.value.map {
-                    if (it.uid == key) it.copy(
-                        lat = location.latitude,
-                        lng = location.longitude
-                    ) else it
+                    if (it.uid == key) it.copy(lat = location.latitude, lng = location.longitude) else it
                 }
             }
 
@@ -123,7 +118,7 @@ class LocationRepository @Inject constructor(
 
     private val _userProfile = MutableStateFlow<profileUser>(profileUser())
     val userProfiles: StateFlow<profileUser> get() = _userProfile
-    fun getUserProfile(userId: String) {
+    fun getUserProfile(userId: String){
         firebaseDataSource.fetchUser(userId,
             onSuccess = { user ->
                 if (user != null) {
@@ -180,29 +175,28 @@ class LocationRepository @Inject constructor(
         locationListeners.clear()
         _requestedUserLocations.value = emptyList()
     }
+}
 
 
-    class LocationRepositor @Inject constructor() {
-        private val database: DatabaseReference =
-            FirebaseDatabase.getInstance().getReference("user_locations")
-        private val geoFire = GeoFire(database)
+class LocationRepositor @Inject constructor() {
+    private val database: DatabaseReference = FirebaseDatabase.getInstance().getReference("user_locations")
+    private val geoFire = GeoFire(database)
 
-        fun getNearbyUsers(city: String, callback: (List<UserLocation>) -> Unit) {
-            val users = mutableListOf<UserLocation>()
-            database.get().addOnSuccessListener { snapshot ->
-                snapshot.children.forEach { child ->
-                    val lat = child.child("lat").getValue(Double::class.java) ?: 0.0
-                    val lng = child.child("lng").getValue(Double::class.java) ?: 0.0
-                    val role = child.child("role").getValue(String::class.java) ?: ""
-                    val uid = child.child("uid").getValue(String::class.java) ?: ""
-                    if (role == "Software Developer") {
-                        users.add(UserLocation(lat, lng, role, uid))
-                    }
+    fun getNearbyUsers(city: String, callback: (List<UserLocation>) -> Unit) {
+        val users = mutableListOf<UserLocation>()
+        database.get().addOnSuccessListener { snapshot ->
+            snapshot.children.forEach { child ->
+                val lat = child.child("lat").getValue(Double::class.java) ?: 0.0
+                val lng = child.child("lng").getValue(Double::class.java) ?: 0.0
+                val role = child.child("role").getValue(String::class.java) ?: ""
+                val uid = child.child("uid").getValue(String::class.java) ?: ""
+                if (role == "Software Developer") {
+                    users.add(UserLocation(lat, lng, role, uid))
                 }
-                callback(users)
-            }.addOnFailureListener {
-                Timber.tag("GeoFire").e(it, "Error fetching user locations")
             }
+            callback(users)
+        }.addOnFailureListener {
+            Timber.tag("GeoFire").e(it, "Error fetching user locations")
         }
     }
 }

@@ -123,9 +123,9 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController) {
 //                onCallClick = { navController.navigate(Call.VoiceCall.route) },
 //                onMediaVisibilityClick = { navController.navigate(ChatInfo.MediaVisibility.route) },
 //                onBlockClick = { navController.navigate(ChatInfo.BlockUser.route) }
-                openChat = { userId ->
-                    navController.navigate(HomeRoute.ChatDetail.createRoute(userId))
-                }
+//                openChat = { userId ->
+//                    navController.navigate(HomeRoute.ChatDetail.createRoute(userId))
+//                }
             )
         }
         /*composable(ChatInfo.ChatMedia.route) { MediaScreen() }
@@ -196,9 +196,9 @@ fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
             RequestedPersonMapScreen(
                 userIds = userIds,
                 navController = navController,
-                openChat = {otherUserId->
-                    navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId))
-                }
+//                openChat = {otherUserId->
+//                    navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId))
+//                }
             )
         }
     }

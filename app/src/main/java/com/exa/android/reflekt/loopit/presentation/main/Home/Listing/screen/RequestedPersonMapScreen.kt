@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
+import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.model.LatLng
@@ -33,7 +34,6 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.rememberCameraPositionState
-import profileUser
 import timber.log.Timber
 
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
@@ -41,9 +41,8 @@ import timber.log.Timber
 @Composable
 fun RequestedPersonMapScreen(
     userIds: String, // Comma-separated list of user IDs
-    navController: NavHostController,
-    openChat : (String) -> Unit,
-    viewModel: LocationViewModel = hiltViewModel()
+    viewModel: LocationViewModel = hiltViewModel(),
+    navController: NavHostController
 ) {
     val context = LocalContext.current
     val userLocations by viewModel.requestedUserLocations.collectAsState()
@@ -126,9 +125,6 @@ fun RequestedPersonMapScreen(
             selectedUser?.let { user ->
                 ProfileBottomSheet(
                     user = user,
-                    openChat = {
-                        openChat(user.uid)
-                    },
                     onDismiss = { selectedUser = null }
                 )
             }

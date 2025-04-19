@@ -1,17 +1,19 @@
 package com.exa.android.reflekt.loopit.util
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
-import com.exa.android.reflekt.ui.chat.LinkMetadata
-import com.exa.android.reflekt.ui.chat.LinkUtils
+import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
 import java.util.regex.Pattern
 
 object LinkUtils {
+
+    private val URL_REGEX = Pattern.compile(
+        "(https?://)?(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)"
+    )
+
+
     // Existing containsLink function
     fun containsLink(text: String): Boolean {
         return findUrls(text).isNotEmpty()
@@ -32,9 +34,25 @@ object LinkUtils {
         return matches
     }
 
+    fun findLinksInText(text: String): List<LinkSpan> {
+        val matcher = URL_REGEX.matcher(text)
+        val links = mutableListOf<LinkSpan>()
+
+        while (matcher.find()) {
+            links.add(
+                LinkSpan(
+                    url = matcher.group(),
+                    start = matcher.start(),
+                    end = matcher.end()
+                )
+            )
+        }
+        return links
+    }
+
     fun isValidUrl(text: String): Boolean {
         return try {
-            val url = java.net.URL(text)
+            val url = URL(text)
             url.toURI() // Ensures it's a valid URI
             true
         } catch (e: Exception) {
@@ -44,7 +62,7 @@ object LinkUtils {
     data class LinkSpan(val url: String, val start: Int, val end: Int)
 }
 
-
+/*
 // Mock metadata fetch function
 private suspend fun fetchLinkMetadata(url: String): LinkMetadata? {
     return try {
@@ -62,9 +80,13 @@ private suspend fun fetchLinkMetadata(url: String): LinkMetadata? {
             url = url,
             title = connection.getHeaderField("og:title") ?: "Untitled",
             description = connection.getHeaderField("og:description"),
-            imageUrl = connection.getHeaderField("og:image")
+            imageUrl = connection.getHeaderField("og:image"),
+            domain = TODO(),
+            timestamp = TODO()
         )
     } catch (e: Exception) {
         null
     }
 }
+
+*/

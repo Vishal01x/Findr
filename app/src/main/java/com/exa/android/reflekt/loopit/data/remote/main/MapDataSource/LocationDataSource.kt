@@ -14,8 +14,6 @@ import timber.log.Timber
 class LocationDataSource @Inject constructor(
     private val locationProvider: FusedLocationProviderClient
 ) {
-
-
     @SuppressLint("MissingPermission")
     fun startLocationUpdates(
         context: Context,

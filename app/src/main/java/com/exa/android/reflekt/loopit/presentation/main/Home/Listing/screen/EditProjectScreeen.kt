@@ -102,7 +102,6 @@ fun EditProjectScreen(
                         overflow = TextOverflow.Ellipsis
                     )
                 },
-
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

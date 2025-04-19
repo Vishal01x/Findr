@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class EditProjectState(
-
     val projectId: String = "",
     val title: String = "",
     val description: String = "",
