@@ -107,7 +107,7 @@ fun ExtracurricularCard(
         is Response.Success -> {
             Card(
                 elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(Color.White),
+                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -166,7 +166,7 @@ fun ExtracurricularCard(
                 .padding(8.dp),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(4.dp),
-            colors = CardDefaults.cardColors(Color.White)
+            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier

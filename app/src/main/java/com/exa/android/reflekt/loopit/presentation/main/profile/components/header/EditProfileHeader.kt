@@ -30,6 +30,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -122,12 +125,20 @@ fun EditProfileHeader(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Edit Profile") },
+                title = { Text("Edit Profile",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -345,43 +356,57 @@ private fun SocialLinksGroup(
         )
 
         IconTextField(
-            icon = Icons.Default.VideoLibrary,
+            icon2 = R.drawable.github,
             value = youtube,
             onValueChange = onYoutubeChange,
-            label = "YouTube URL"
+            label = "GitHub URL"
         )
         IconTextField(
-            icon = Icons.Default.Person,
+            icon2 = R.drawable.linedin,
             value = linkedin,
             onValueChange = onLinkedinChange,
             label = "LinkedIn URL"
         )
         IconTextField(
-            icon = Icons.Default.Email,
+            icon1 = Icons.Default.Email,
             value = email,
             onValueChange = onEmailChange,
             label = "Email Address"
         )
         IconTextField(
-            icon = Icons.Default.Link,
+            icon1 = Icons.Default.Link,
             value = portfolio,
             onValueChange = onPortfolioChange,
             label = "Portfolio URL"
         )
+//        IconTextField(
+//            icon = Icons.Default.Link,
+//            value = portfolio,
+//            onValueChange = onPortfolioChange,
+//            label = "Extra URL"
+//        )
     }
 }
 
 @Composable
 private fun IconTextField(
-    icon: ImageVector,
+    icon1: ImageVector? = null,
+    icon2 : Int? = null,
     value: String,
     onValueChange: (String) -> Unit,
     label: String
 ) {
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        leadingIcon = { Icon(icon, contentDescription = label) },
+        leadingIcon = {
+            if(icon1 != null)
+            Icon(imageVector = icon1, contentDescription = label)
+            else
+                icon2?.let { painterResource(it) }
+                    ?.let { Icon(painter = it, contentDescription = label) }
+        },
         label = { Text(label) },
         modifier = Modifier
             .fillMaxWidth()

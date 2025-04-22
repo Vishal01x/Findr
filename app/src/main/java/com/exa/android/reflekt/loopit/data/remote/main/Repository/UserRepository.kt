@@ -524,12 +524,10 @@ class UserRepository @Inject constructor(
                 return@addSnapshotListener
             }
 
-            val profileHeader = snapshot?.toObject(ProfileHeaderWrapper::class.java)?.profileData
-            if (profileHeader != null) {
-                trySend(Response.Success(profileHeader))
-            } else {
-                trySend(Response.Error("Profile header not found"))
-            }
+            val profileWrapper = snapshot?.toObject(ProfileDataWrapper::class.java)
+            val profileHeader = profileWrapper?.profileData ?: ProfileData() // Return empty ProfileData if missing
+
+            trySend(Response.Success(profileHeader))
         }
 
         awaitClose { listener.remove() }
@@ -560,7 +558,7 @@ class UserRepository @Inject constructor(
 
 
     // Firestore model wrapper
-    data class ProfileHeaderWrapper(
+    data class ProfileDataWrapper(
         val profileData: ProfileData? = null
     )
 

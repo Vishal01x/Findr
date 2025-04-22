@@ -42,7 +42,7 @@ fun showLoader(message: String = "Saving Changes...", modifier: Modifier = Modif
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onTertiary
             )
         }
     }

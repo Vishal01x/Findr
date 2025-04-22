@@ -16,10 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -51,7 +53,11 @@ fun FullExtraCardScreen(
         //scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
-                title = { Text("Extra Activity") },
+                title = { Text("Extra Activity",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -68,19 +74,19 @@ fun FullExtraCardScreen(
                             )
                             navController.popBackStack()
                         }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 },
-               modifier = Modifier.background(MaterialTheme.colorScheme.background)
-//                    .
-//                 = MaterialTheme.colorScheme.surface,
-//                contentColor = MaterialTheme.colorScheme.onSurface,
-//                elevation = 4.dp
+                modifier = Modifier.shadow(elevation = 10.dp),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                ),
             )
         },
-        containerColor = Color.White,
-        contentColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.tertiary,
+        contentColor = MaterialTheme.colorScheme.tertiary,
         content = { padding ->
 //            Box(
 //                modifier = Modifier

@@ -151,7 +151,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
-import com.exa.android.reflekt.loopit.presentation.main.test.components.Chip
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
 import com.exa.android.reflekt.loopit.util.model.Project

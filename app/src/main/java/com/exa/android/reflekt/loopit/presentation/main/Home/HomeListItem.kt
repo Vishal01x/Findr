@@ -109,12 +109,12 @@ fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (user : Use
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(Color.Yellow)
+                            .background(MaterialTheme.colorScheme.primary)
                     ) {
                         Text(
                             "${chat.unreadMessages}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 12.sp
                         )
                     }

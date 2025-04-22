@@ -38,7 +38,7 @@ fun ExperienceCard(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -58,7 +58,7 @@ fun ExperienceCard(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Experience",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onTertiary
                         )
                     }
                 }
@@ -115,7 +115,7 @@ fun EducationCard(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -135,7 +135,7 @@ fun EducationCard(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Education",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onTertiary
                         )
                     }
                 }

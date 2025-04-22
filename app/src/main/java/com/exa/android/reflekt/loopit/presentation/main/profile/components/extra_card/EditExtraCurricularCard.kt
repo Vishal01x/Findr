@@ -54,6 +54,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.R
@@ -143,13 +145,20 @@ fun EditExtracurricularScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Edit Activity") },
+                title = { Text("Edit Activity",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, "Close")
+                        Icon(Icons.Default.Close, contentDescription = "Back")
                     }
                 },
-                modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         bottomBar = {
@@ -172,6 +181,7 @@ fun EditExtracurricularScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+
         ) {
             Column(
                 modifier = Modifier
@@ -324,7 +334,7 @@ private fun ActionButtons(loading: Boolean, onCancel: () -> Unit, onSave: () -> 
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = onSave) {
-                Text("Save Changes")
+                Text("Save")
             }
        // }
     }

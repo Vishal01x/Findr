@@ -98,7 +98,10 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            AppTheme {
+            AppTheme (
+                darkTheme = false, // ✅ Force light theme
+                dynamicColor = false // ✅ Optional: prevent Material You theme changes
+            ) {
               updateStatus(this)
                App()
             }
@@ -237,7 +240,7 @@ class MainActivity : ComponentActivity() {
         //val intent = Intent()
         val senderId = intent?.data?.lastPathSegment
 
-        AppNavigation(navController, true, senderId)
+        AppNavigation(navController, isLoggedIn, senderId)
     }
 
 }

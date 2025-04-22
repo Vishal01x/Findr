@@ -268,7 +268,6 @@ fun LoginScreen(
             Text(
                 text = "Welcome!",
                 style = typography.displayLarge,
-                color = colorScheme.onBackground
             )
 
             Text(

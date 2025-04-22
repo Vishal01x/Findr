@@ -2,6 +2,7 @@
 <resources>
 
     <style name="Theme.Reflekt" parent="android:Theme.Material.Light.NoActionBar">
+
     </style>
     <style name="Theme.Reflekt.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/colorPrimary</item>

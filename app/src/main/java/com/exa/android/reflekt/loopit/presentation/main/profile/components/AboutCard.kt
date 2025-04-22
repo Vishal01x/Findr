@@ -64,7 +64,7 @@ fun AboutCard(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
     ) {
         Column(Modifier.padding(16.dp)) {
             // Title + Edit Icon
@@ -89,7 +89,7 @@ fun AboutCard(
                                 localText = content
                             }
                             .padding(start = 8.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onTertiary
                     )
                 }
             }

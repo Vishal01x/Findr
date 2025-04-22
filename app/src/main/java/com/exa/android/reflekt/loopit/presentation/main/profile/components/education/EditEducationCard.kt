@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -67,17 +68,20 @@ fun EditEducationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Education") },
+                title = { Text("Edit Education",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.Close, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -156,8 +160,8 @@ fun EditEducationScreen(
                         val isValid = school.isNotBlank().also { schoolError = !it } &&
                                 stream.isNotBlank().also { streamError = !it } &&
                                 startDate.isNotBlank().also { startDateError = !it } &&
-                                endDate.isNotBlank().also { endDateError = !it } &&
-                                datesValid.also { dateError = !it }
+                                endDate.isNotBlank().also { endDateError = !it }
+                                //&& datesValid.also { dateError = !it }
 
                         if (isValid) {
                             editProfileViewModel.updateUserEducation(

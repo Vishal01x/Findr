@@ -107,7 +107,7 @@ fun SignUpScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Account") },
+                title = { Text("Create Account", color = colorScheme.onTertiary) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (state.selectedAccountType == "Professional") {
@@ -116,7 +116,7 @@ fun SignUpScreen(
                             onNavigateBack()
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onTertiary)
                     }
                 }
             )
@@ -243,7 +243,8 @@ fun SignUpScreen(
                                 focusedBorderColor = colorScheme.primary,
                                 unfocusedBorderColor = colorScheme.onSurface.copy(alpha = 0.4f),
                                 focusedLabelColor = colorScheme.primary,
-                                cursorColor = colorScheme.primary
+                                cursorColor = colorScheme.primary,
+                                focusedTextColor = colorScheme.onTertiary
                             ),
                             keyboardOptions = KeyboardOptions(
                                 imeAction = ImeAction.Next,  // This enables the Next button

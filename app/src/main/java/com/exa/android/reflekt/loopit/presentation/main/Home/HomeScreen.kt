@@ -135,7 +135,6 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
             .padding(top = 2.dp)
     ) {
         if (!isQueryClicker) {
@@ -267,12 +266,15 @@ fun QuerySection(
     Column(modifier = Modifier.padding(16.dp)) {
         BasicTextField(
             value = searchQuery,
-            onValueChange = onQueryChange ,
+            onValueChange = onQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
             decorationBox = { innerTextField ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onBackClick) {
@@ -283,14 +285,17 @@ fun QuerySection(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    if (searchQuery.text.isEmpty()) {
-                        Text(
-                            "Search chats...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                    Box {
+                        if (searchQuery.text.isEmpty()) {
+                            Text(
+                                text = "Search chats...",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 }
             }
         )
@@ -464,7 +469,7 @@ fun ChatsSection(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         when (response) {
             is Response.Loading -> {

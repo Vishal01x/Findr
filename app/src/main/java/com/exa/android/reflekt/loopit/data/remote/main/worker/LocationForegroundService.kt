@@ -96,9 +96,9 @@ class LocationForegroundService : Service() {
 
     private fun buildNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Location Tracking")
-            .setContentText("Tracking your location for better service")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Stay Connected")
+            .setContentText("Working in the background to optimize nearby services.")
+            .setSmallIcon(R.drawable.findr_logo)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }

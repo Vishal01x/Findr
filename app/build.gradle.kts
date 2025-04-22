@@ -110,6 +110,7 @@ dependencies {
 
     //coil
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-svg:2.4.0")
 
     // HTML parsing
     implementation("org.jsoup:jsoup:1.17.2")

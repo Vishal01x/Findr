@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.CallToAction
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SmartDisplay
@@ -153,13 +154,13 @@ private fun ProfileContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (!userProfileHeader.socialLinks.youtube.isNullOrEmpty()) {
-                CircularIconCard(icon = Icons.Default.SmartDisplay, onClick = {
+                CircularIconCardPainter(iconPainter = R.drawable.github, onClick = {
                     userProfileHeader.socialLinks.youtube?.let { openUrl(context, it) }
                 })
             }
             if (!userProfileHeader.socialLinks.linkedin.isNullOrEmpty()) {
                 CircularIconCardPainter(
-                    iconPainter = R.drawable.linkedin_logo,
+                     iconPainter = R.drawable.linedin,
                     onClick = {
                         userProfileHeader.socialLinks.linkedin?.let { openUrl(context, it) }
                     }
@@ -182,9 +183,10 @@ private fun ProfileContent(
                 // Chat Button
                 FilledTonalButton(
                     onClick = { openChat() },
-//                colors = ButtonDefaults.filledTonalButtonColors(
-//                    containerColor = MaterialTheme.colorScheme.primaryContainer
-//                ),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                     elevation = ButtonDefaults.buttonElevation(8.dp)
                 ) {
                     Icon(
@@ -206,7 +208,7 @@ private fun ProfileContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = userProfileHeader.socialLinks.portfolio ?: "Portfolio.in",
+                    text =  "Portfolio.in",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color(0xFF4285F4),
                         fontSize = 18.sp,
@@ -237,8 +239,8 @@ fun CircularIconCardPainter(
     Card(
         shape = CircleShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = modifier.size(48.dp)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
+        modifier = modifier.size(40.dp)
     ) {
         IconButton(
             onClick = {
@@ -266,8 +268,8 @@ fun CircularIconCard(
     Card(
         shape = CircleShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = modifier.size(48.dp)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
+        modifier = modifier.size(40.dp)
     ) {
         IconButton(
             onClick = {
@@ -281,7 +283,7 @@ fun CircularIconCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onTertiary
             )
         }
     }
