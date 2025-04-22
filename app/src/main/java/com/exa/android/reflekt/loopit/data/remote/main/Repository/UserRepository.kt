@@ -6,8 +6,14 @@ import androidx.lifecycle.MutableLiveData
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.Chat
+import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
+import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
+import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.model.Status
 import com.exa.android.reflekt.loopit.util.model.User
+import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -17,6 +23,8 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -220,7 +228,8 @@ class UserRepository @Inject constructor(
                     } else {
                         val users = snapshot?.toObjects(User::class.java) ?: emptyList()
                         Log.d("FireStore Operation", " users - $users")
-                        val updatedUsers = users.filter { it.userId != currentUser }.sortedBy { it.name }
+                        val updatedUsers =
+                            users.filter { it.userId != currentUser }.sortedBy { it.name }
                         val result = trySend(Response.Success(updatedUsers))
                         if (result.isFailure) {
                             // Log or handle the failure (optional)
@@ -247,7 +256,11 @@ class UserRepository @Inject constructor(
             val listenerRegistration = userCollection.document(userId)
                 .addSnapshotListener { snapshot, exception ->
                     if (exception != null) {
-                        trySend(Response.Error(exception.localizedMessage ?: "Error fetching user")).isFailure
+                        trySend(
+                            Response.Error(
+                                exception.localizedMessage ?: "Error fetching user"
+                            )
+                        ).isFailure
                     } else if (snapshot != null && snapshot.exists()) {
                         val user = snapshot.toObject(User::class.java)
                         if (user != null) {
@@ -276,5 +289,280 @@ class UserRepository @Inject constructor(
             Log.e("Firebase Operation", "Failed to reset unread messages", e)
         }
     }
+
+
+    suspend fun updateOrCreateProfileHeader(profileHeader: ProfileHeaderData) {
+        val userDocRef = userCollection.document(currentUser!!)
+
+        Firebase.firestore.runTransaction { transaction ->
+            val snapshot = transaction.get(userDocRef)
+
+            // Check if document exists
+            if (!snapshot.exists()) {
+                // Create document with profileHeader
+                val newUser = mapOf(
+                    "profileData" to mapOf("profileHeader" to profileHeader)
+                )
+                transaction.set(userDocRef, newUser, SetOptions.merge())
+            } else {
+                // Document exists, just update the profileHeader
+                transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
+            }
+        }.await()
+    }
+
+    suspend fun updateUserNameAndImage(name: String, imageUrl: String): Response<Unit> {
+        return try {
+            val updates = mapOf(
+                "name" to name,
+                "profilePicture" to imageUrl
+            )
+
+            userCollection
+                .document(currentUser!!)
+                .update(updates)
+                .await()
+
+            Response.Success(Unit)
+        } catch (e: Exception) {
+            // You can log the error to Crashlytics or a logging system
+            Log.e("Firestore Service", "Failed to update user profile", e)
+            Response.Error(e.localizedMessage ?: "Unknown error occurred")
+        }
+
+    }
+
+
+    fun updateUserAbout(description: String) = flow {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId.isNullOrBlank()) {
+            emit(Response.Error("User not logged in"))
+            return@flow
+        }
+
+        val userRef = userCollection.document(userId)
+
+        try {
+            emit(Response.Loading)
+
+            val snapshot = userRef.get().await()
+
+            val updateMap = mapOf("profileData.about.description" to description)
+
+            if (snapshot.exists()) {
+                // Update only about field
+                userRef.update(updateMap).await()
+                emit(Response.Success(Unit))
+            } else {
+                // Create whole structure if doc doesn't exist
+                val initialData = mapOf(
+                    "profileData" to mapOf(
+                        "about" to mapOf("description" to description)
+                    )
+                )
+                userRef.set(initialData).await()
+                emit(Response.Success(Unit))
+            }
+
+        } catch (e: Exception) {
+            emit(Response.Error(e.message ?: "Unexpected error occurred"))
+        }
+    }
+
+
+    fun updateUserSkill(skills: List<String>) = flow {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val skill = skills.joinToString(separator = ",") { it.trim() }
+
+        if (userId.isNullOrBlank()) {
+            emit(Response.Error("User not logged in"))
+            return@flow
+        }
+
+        val userRef = userCollection.document(userId)
+
+        try {
+            emit(Response.Loading)
+
+            val snapshot = userRef.get().await()
+
+            val updateMap = mapOf("profileData.skill" to skill)
+
+            if (snapshot.exists()) {
+                // Update only about field
+                userRef.update(updateMap).await()
+                emit(Response.Success(Unit))
+            } else {
+                // Create whole structure if doc doesn't exist
+                val initialData = mapOf("profileData" to mapOf("skill" to skill))
+                userRef.set(initialData).await()
+                emit(Response.Success(Unit))
+            }
+
+        } catch (e: Exception) {
+            emit(Response.Error(e.message ?: "Unexpected error occurred"))
+        }
+    }
+
+    // Update or Insert Activity
+    suspend fun updateExtraActivity(activity: ExtraActivity) {
+        try {
+            // Check if the activity already exists using its activityId
+            val docRef = userCollection
+                .document(currentUser!!)
+                .collection("extraActivity")
+                .document(activity.id)
+
+            // Check if the activity exists
+            val documentSnapshot = docRef.get().await()
+
+            if (documentSnapshot.exists()) {
+                // If the activity exists, update it
+                docRef.set(activity).await()
+            } else {
+                // If the activity doesn't exist, insert it
+                docRef.set(activity).await()
+            }
+        } catch (e: Exception) {
+            throw Exception("Error updating or inserting activity: ${e.message}")
+        }
+    }
+
+    suspend fun deleteExtraActivity(activityId: String) {
+        try {
+            val docRef = userCollection
+                .document(currentUser!!)
+                .collection("extraActivity")
+                .document(activityId)
+
+            docRef.delete().await()
+        } catch (e: Exception) {
+            throw Exception("Error deleting activity: ${e.message}")
+        }
+    }
+
+
+    //update User Education
+    fun updateUserEducation(collegeInfo: CollegeInfo) = flow {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId.isNullOrBlank()) {
+            emit(Response.Error("User not logged in"))
+            return@flow
+        }
+
+        val userRef = userCollection.document(userId)
+
+        try {
+            emit(Response.Loading)
+
+            val snapshot = userRef.get().await()
+
+            val updateMap = mapOf("profileData.collegeInfo" to collegeInfo)
+
+            if (snapshot.exists()) {
+                // Update only about field
+                userRef.update(updateMap).await()
+                emit(Response.Success(Unit))
+            } else {
+                // Create whole structure if doc doesn't exist
+                val initialData = mapOf("profileData" to mapOf("collegeInfo" to collegeInfo))
+                userRef.set(initialData).await()
+                emit(Response.Success(Unit))
+            }
+
+        } catch (e: Exception) {
+            emit(Response.Error(e.message ?: "Unexpected error occurred"))
+        }
+    }
+
+    //update User Education
+    fun updateUserExperience(experienceInfo: ExperienceInfo) = flow {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId.isNullOrBlank()) {
+            emit(Response.Error("User not logged in"))
+            return@flow
+        }
+
+        val userRef = userCollection.document(userId)
+
+        try {
+            emit(Response.Loading)
+
+            val snapshot = userRef.get().await()
+
+            val updateMap = mapOf("profileData.experienceInfo" to experienceInfo)
+
+            if (snapshot.exists()) {
+                // Update only about field
+                userRef.update(updateMap).await()
+                emit(Response.Success(Unit))
+            } else {
+                // Create whole structure if doc doesn't exist
+                val initialData = mapOf("profileData" to mapOf("experienceInfo" to experienceInfo))
+                userRef.set(initialData).await()
+                emit(Response.Success(Unit))
+            }
+
+        } catch (e: Exception) {
+            emit(Response.Error(e.message ?: "Unexpected error occurred"))
+        }
+    }
+
+    fun getProfileData(userId: String?): Flow<Response<ProfileData>> = callbackFlow {
+        trySend(Response.Loading)
+
+        val id: String = if (userId == null && currentUser != null) currentUser else userId ?: ""
+
+        val docRef = userCollection.document(id)
+
+        val listener = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(Response.Error(error.message ?: "Unknown Firestore error"))
+                return@addSnapshotListener
+            }
+
+            val profileHeader = snapshot?.toObject(ProfileHeaderWrapper::class.java)?.profileData
+            if (profileHeader != null) {
+                trySend(Response.Success(profileHeader))
+            } else {
+                trySend(Response.Error("Profile header not found"))
+            }
+        }
+
+        awaitClose { listener.remove() }
+    }
+
+    fun getUserActivity(userId: String?): Flow<Response<List<ExtraActivity>>> = callbackFlow {
+        trySend(Response.Loading)
+
+        val userIdToUse = userId ?: currentUser ?: ""
+
+        val collectionRef = userCollection
+            .document(userIdToUse)
+            .collection("extraActivity")
+
+        val listener = collectionRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                trySend(Response.Error("Error listening to activity changes: ${e.message}"))
+                return@addSnapshotListener
+            }
+
+            val activities = snapshot?.toObjects(ExtraActivity::class.java) ?: emptyList()
+            trySend(Response.Success(activities))
+        }
+
+        // This must be the final statement in callbackFlow
+        awaitClose { listener.remove() }
+    }
+
+
+    // Firestore model wrapper
+    data class ProfileHeaderWrapper(
+        val profileData: ProfileData? = null
+    )
+
 
 }

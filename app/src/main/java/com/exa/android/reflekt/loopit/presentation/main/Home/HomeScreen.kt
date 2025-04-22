@@ -17,26 +17,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,8 +63,10 @@ import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
+import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.google.gson.Gson
 
+/*
 @Composable
 fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
 
@@ -65,8 +74,62 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     // Handle back press to exit app when at Home
     BackHandler(enabled = true) {
 //        if (!navController.popBackStack()) {
-            (context as Activity).finish()
+        (context as Activity).finish()
+    }
 
+    var isQueryClicker by remember { mutableStateOf(false) }
+    var chatList = remember { mutableStateListOf<ChatList>() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(top = 2.dp)
+    ) {
+        if (!isQueryClicker) {
+            HeaderSection(navController) {
+                isQueryClicker = true
+            }
+
+        } else {
+            QuerySection(chatList, onBackClick = { isQueryClicker = false }) {
+//                chatList.clear()
+                chatList.addAll(it)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        //StoriesSection()
+        // Spacer(modifier = Modifier.height(16.dp))
+        ChatsSection(navController, isQueryClicker, chatList, viewModel) { data ->
+            chatList.clear()
+            chatList.addAll(data)
+        }
+
+    }
+}*/
+
+@Composable
+fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
+    val context = LocalContext.current
+    BackHandler(enabled = true) {
+        (context as Activity).finish()
+    }
+
+    var isQueryClicker by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
+
+    val filteredList by remember(searchQuery, originalChatList) {
+        derivedStateOf {
+            if (searchQuery.text.isBlank()) originalChatList
+            else {
+                val words = searchQuery.text.trim().lowercase().split("\\s+".toRegex())
+                originalChatList.filter { chat ->
+                    words.all { word -> chat.name.lowercase().contains(word) }
+                }
+            }
+        }
     }
 
     Column(
@@ -75,16 +138,37 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
             .background(Color.White)
             .padding(top = 2.dp)
     ) {
-        HeaderSection(navController)
+        if (!isQueryClicker) {
+            HeaderSection(navController) {
+                isQueryClicker = true
+            }
+        } else {
+            QuerySection(
+                searchQuery = searchQuery,
+                onQueryChange = { searchQuery = it },
+                onBackClick = {
+                    isQueryClicker = false
+                    searchQuery = TextFieldValue("")
+                }
+            )
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
-        //StoriesSection()
-       // Spacer(modifier = Modifier.height(16.dp))
-        ChatsSection(navController, viewModel)
+
+        ChatsSection(
+            navController = navController,
+            isQueryActive = isQueryClicker,
+            chatList = filteredList,
+            viewModel = viewModel
+        ) { fetchedList ->
+            originalChatList = fetchedList
+        }
     }
 }
 
+
 @Composable
-fun HeaderSection(navController: NavController) {
+fun HeaderSection(navController: NavController, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -93,19 +177,122 @@ fun HeaderSection(navController: NavController) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = "Let's Talk",
+            text = "Findr",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            fontSize = 22.sp
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 24.sp,
+            color = MaterialTheme.colorScheme.primary
         )
         Icon(
             imageVector = Icons.Default.Search,
             contentDescription = "Search",
             tint = Color.Black,
             modifier = Modifier
-                .clickable { navController.navigate(HomeRoute.SearchScreen.route) }
+                .clickable { onClick() }
                 .padding(8.dp)
                 .size(24.dp)
+        )
+    }
+}
+
+/*
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuerySection(
+    chatList: List<ChatList>,
+    onBackClick: () -> Unit,
+    onResult: (List<ChatList>) -> Unit
+) {
+    val searchQuery = remember { mutableStateOf(TextFieldValue("")) }
+
+    // Filter logic
+    val filteredChats = remember(searchQuery.value.text, chatList) {
+        if (searchQuery.value.text.isBlank()) chatList
+        else {
+            val queryWords = searchQuery.value.text.trim().lowercase().split("\\s+".toRegex())
+            chatList.filter { chat ->
+                queryWords.all { word ->
+                    chat.name.lowercase().contains(word)
+                }
+            }
+        }
+    }
+
+    // Callback with filtered results
+    LaunchedEffect(filteredChats) {
+        onResult(filteredChats)
+    }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        BasicTextField(
+            value = searchQuery.value,
+            onValueChange = { searchQuery.value = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if (searchQuery.value.text.isEmpty()) {
+                        Text(
+                            "Search chats...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+ */
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuerySection(
+    searchQuery: TextFieldValue,
+    onQueryChange: (TextFieldValue) -> Unit,
+    onBackClick: () -> Unit
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        BasicTextField(
+            value = searchQuery,
+            onValueChange = onQueryChange ,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if (searchQuery.text.isEmpty()) {
+                        Text(
+                            "Search chats...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    innerTextField()
+                }
+            }
         )
     }
 }
@@ -159,9 +346,15 @@ fun AddStoryItem() {
         )
     }
 }
-
+/*
 @Composable
-fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
+fun ChatsSection(
+    navController: NavController,
+    isQueryActive : Boolean,
+    updateChatList: List<ChatList>,
+    viewModel: ChatViewModel,
+    onSuccess: (List<ChatList>) -> Unit
+) {
     val chatList by viewModel.chatList.collectAsState()
     Log.d("chatsSection", chatList.toString())
     LazyColumn(
@@ -189,22 +382,27 @@ fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
             }
 
             is Response.Success -> {
+                onSuccess(response.data)
                 // Display the chat list
                 if (response.data.isEmpty()) {
                     item {
                         Column(
-                            modifier =  Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = "No chats Yet", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = "No chats Yet",
+                                style = MaterialTheme.typography.labelMedium
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route)}) {
+                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route) }) {
                                 Text(text = "New Chat")
                             }
                         }
                     }
                 }
+                val data = if(isQueryActive)updateChatList else response.data
                 items(response.data) { chat ->
                     ChatListItem(
                         chat = chat,
@@ -216,13 +414,15 @@ fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
 //                            val encodedUserJson = java.net.URLEncoder.encode(userJson, "UTF-8")
 //                            navController.navigate(HomeRoute.ChatDetail.createRoute(encodedUserJson))
 
-                             navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId))
+                            navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId))
                         }
                     )
                 }
             }
 
             is Response.Error -> {
+
+                Log.d("ChatList", response.message)
                 // Show a friendly error message and optional retry button
                 item {
                     Column(
@@ -247,6 +447,85 @@ fun ChatsSection(navController: NavController, viewModel: ChatViewModel) {
     }
 }
 
+
+ */
+
+
+@Composable
+fun ChatsSection(
+    navController: NavController,
+    isQueryActive: Boolean,
+    chatList: List<ChatList>,
+    viewModel: ChatViewModel,
+    onSuccess: (List<ChatList>) -> Unit
+) {
+    val response by viewModel.chatList.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        when (response) {
+            is Response.Loading -> {
+                item {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .wrapContentWidth(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+
+            is Response.Success -> {
+                val data = (response as Response.Success<List<ChatList>>).data
+                onSuccess(data)
+
+                if (data.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("No chats Yet")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route) }) {
+                                Text("New Chat")
+                            }
+                        }
+                    }
+                }
+
+                items(chatList) { chat ->
+                    ChatListItem(
+                        chat = chat,
+                        zoomImage = {/* navController.navigate("zoomImage/${chat.image}")*/ },
+                        openChat = { navController.navigate(HomeRoute.ChatDetail.createRoute(chat.userId)) }
+                    )
+                }
+            }
+
+            is Response.Error -> {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Failed to load chats. Please try again.", color = Color.Red)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { viewModel.getChatList() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun ChatTitle(modifier: Modifier = Modifier) {

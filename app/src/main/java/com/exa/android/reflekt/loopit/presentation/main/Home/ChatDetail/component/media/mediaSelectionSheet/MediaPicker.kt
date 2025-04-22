@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaPickerBottomSheet(
+    showAll : Boolean = true,
     onImageClick: () -> Unit,
     onVideoClick: () -> Unit,
     onDocumentClick: () -> Unit,
@@ -45,8 +46,14 @@ fun MediaPickerBottomSheet(
             Spacer(modifier = Modifier.height(12.dp))
             MediaPickerItem("Camera", Icons.Default.PhotoCamera, onCameraClick)
             MediaPickerItem("Image", Icons.Default.Image, onImageClick)
-            MediaPickerItem("Video", Icons.Default.Videocam, onVideoClick)
-            MediaPickerItem("Document", Icons.AutoMirrored.Filled.InsertDriveFile, onDocumentClick)
+            if(showAll) {
+                MediaPickerItem("Video", Icons.Default.Videocam, onVideoClick)
+                MediaPickerItem(
+                    "Document",
+                    Icons.AutoMirrored.Filled.InsertDriveFile,
+                    onDocumentClick
+                )
+            }
         }
     }
 }

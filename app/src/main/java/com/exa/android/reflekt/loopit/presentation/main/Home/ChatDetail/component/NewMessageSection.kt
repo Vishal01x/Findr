@@ -126,20 +126,20 @@ fun NewMessageSection(
         )
     } else {
         // Audio Recording UI
-        SendAudioMessage(
-            isPaused = isPaused,
-            recordingTime = recordingTime,
-            onDeleteRecording = {
-                resetTimer()
-            },
-            onPauseResumeRecording = {
-                isPaused = !isPaused
-            },
-            onSendRecording = {
-                onRecordingSend()
-                resetTimer()
-            }
-        )
+//        SendAudioMessage(
+//            isPaused = isPaused,
+//            recordingTime = recordingTime,
+//            onDeleteRecording = {
+//                resetTimer()
+//            },
+//            onPauseResumeRecording = {
+//                isPaused = !isPaused
+//            },
+//            onSendRecording = {
+//                onRecordingSend()
+//                resetTimer()
+//            }
+//        )
     }
 }
 
@@ -191,7 +191,7 @@ fun SendTFMessage(
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -253,9 +253,10 @@ fun SendTFMessage(
                 }
             ) {
                 Icon(
-                    painter = painterResource(if (textFieldValue.text.isEmpty()) R.drawable.microphone else R.drawable.send),
+                    //painter = painterResource(if (textFieldValue.text.isEmpty()) R.drawable.microphone else R.drawable.send),
+                    painter = painterResource(R.drawable.send),
                     contentDescription = "Send or Mic",
-                    tint = Color.Black,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }

@@ -59,7 +59,7 @@ class MediaSharingViewModel @Inject constructor(
         uri: Uri?,
         otherUserId: String,
         fcmToken: String?,
-        mediaType: MediaType = MediaType.VIDEO,
+        mediaType: MediaType = MediaType.IMAGE,
         chatViewModel: ChatViewModel,
         messageId: String? = null,
         onError: ((Exception) -> Unit)? = null,

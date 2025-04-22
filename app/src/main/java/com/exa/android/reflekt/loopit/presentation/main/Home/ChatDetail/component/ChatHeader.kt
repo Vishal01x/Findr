@@ -37,11 +37,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.Status
@@ -277,6 +279,8 @@ fun HeaderWithProfile(
     onVoiceCallClick: () -> Unit,
     onVideoCallClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -296,14 +300,14 @@ fun HeaderWithProfile(
         Spacer(modifier = Modifier.width(4.dp))
 
         // Profile Picture
-        Image(
-            painter = painterResource(id = R.drawable.chat_img3),
-            contentDescription = "Profile Picture",
+        ImageUsingCoil(
+            context, otherUser?.profilePicture,
+            placeholder = R.drawable.placeholder,
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
                 .border(1.dp, Color.Black, CircleShape),
-            contentScale = ContentScale.Crop
+            errorImage = R.drawable.placeholder
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -349,25 +353,25 @@ fun HeaderWithProfile(
             )
         }
 
-        //Video Call Icon
-        IconButton(onClick = onVideoCallClick) {
-            Icon(
-                imageVector = Icons.Default.Call,
-                contentDescription = "Video Call",
-                tint = Color.Black,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        //CallButton()
-
-        // Voice Call Icon
-        IconButton(onClick = onVoiceCallClick) {
-            Icon(
-                imageVector = Icons.Default.Call,
-                contentDescription = "Call",
-                tint = Color.Black
-            )
-        }
+//        //Video Call Icon
+//        IconButton(onClick = onVideoCallClick) {
+//            Icon(
+//                imageVector = Icons.Default.Call,
+//                contentDescription = "Video Call",
+//                tint = Color.Black,
+//                modifier = Modifier.size(24.dp)
+//            )
+//        }
+//        //CallButton()
+//
+//        // Voice Call Icon
+//        IconButton(onClick = onVoiceCallClick) {
+//            Icon(
+//                imageVector = Icons.Default.Call,
+//                contentDescription = "Call",
+//                tint = Color.Black
+//            )
+//        }
     }
 }
 

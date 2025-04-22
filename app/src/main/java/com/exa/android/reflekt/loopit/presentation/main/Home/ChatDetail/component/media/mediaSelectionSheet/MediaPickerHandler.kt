@@ -26,9 +26,8 @@ import java.io.File
 
 @Composable
 fun MediaPickerHandler(
-    otherUserId: String,
-    fcmToken: String?,
-    chatViewModel: ChatViewModel = hiltViewModel(),
+    showAll : Boolean,
+    onLaunch : (Uri) -> Unit,
     mediaSharingViewModel: MediaSharingViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -42,18 +41,8 @@ fun MediaPickerHandler(
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
+            onLaunch(uri)
             // Default to image, determine type later if needed
-            launchMediaUpload(
-                context = context,
-                uri = uri,
-                mediaType = getMediaTypeFromUri(context,uri),
-                otherUserId = otherUserId,
-                fcmToken = fcmToken,
-                chatViewModel = chatViewModel,
-                coroutineScope = coroutineScope,
-                messageId = null,
-                mediaSharingViewModel = mediaSharingViewModel
-            )
         }
     }
 
@@ -68,17 +57,7 @@ fun MediaPickerHandler(
                 val byteArray = inputStream?.readBytes()
 
                 if (byteArray != null && byteArray.isNotEmpty()) {
-                    launchMediaUpload(
-                        context = context,
-                        uri = uri,
-                        mediaType = MediaType.IMAGE,
-                        otherUserId = otherUserId,
-                        fcmToken = fcmToken,
-                        chatViewModel = chatViewModel,
-                        coroutineScope = coroutineScope,
-                        messageId = null,
-                        mediaSharingViewModel = mediaSharingViewModel
-                    )
+                    onLaunch(uri)
                 } else {
                     Log.e("Upload", "Captured image is empty")
                 }
@@ -91,6 +70,7 @@ fun MediaPickerHandler(
 
     if (showBottomSheet.value) {
         MediaPickerBottomSheet(
+            showAll,
             onImageClick = {
                 mediaSharingViewModel.showMediaPickerSheet = false
                 launcher.launch("image/*")

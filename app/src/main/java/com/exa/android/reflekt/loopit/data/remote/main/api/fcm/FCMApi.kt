@@ -1,7 +1,6 @@
-package com.exa.android.reflekt.loopit.data.remote.main.api
+package com.exa.android.reflekt.loopit.data.remote.main.api.fcm
 
 import retrofit2.http.Body
-import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.Call
 import retrofit2.http.Header

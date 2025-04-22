@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.androidx.hilt.work)
+    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -105,6 +106,8 @@ dependencies {
 
     //coil
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-svg:2.4.0") // for loading svg from skill icons
+
 
     // HTML parsing
     implementation("org.jsoup:jsoup:1.17.2")

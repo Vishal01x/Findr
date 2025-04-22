@@ -8,6 +8,8 @@ import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
 import com.exa.android.reflekt.loopit.util.model.Status
 import com.exa.android.reflekt.loopit.util.model.User
 import com.exa.android.reflekt.loopit.util.Response
+import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +25,12 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     private val _userDetail = MutableStateFlow<Response<User?>>(Response.Loading) // Default loading state
     val userDetail: StateFlow<Response<User?>> = _userDetail
+
+    private val _userProfileData = MutableStateFlow<Response<ProfileData>>(Response.Loading)
+    val userProfileData : StateFlow<Response<ProfileData>> = _userProfileData
+
+    private val _userExtraActivity = MutableStateFlow<Response<List<ExtraActivity>>>(Response.Loading)
+    val userExtraActivity : StateFlow<Response<List<ExtraActivity>>> = _userExtraActivity
 
     var curUser: String? = null
 
@@ -71,4 +79,27 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                 }
         }
     }
+
+    fun getProfileData(userId: String?) {
+        viewModelScope.launch {
+            if (curUser != null) {
+                userRepository.getProfileData(userId)
+                    .collect { response ->
+                        _userProfileData.value = response
+                    }
+            }
+        }
+    }
+
+    fun getExtraActivity(userId: String?) {
+        viewModelScope.launch {
+            if (curUser != null) {
+                userRepository.getUserActivity(userId)
+                    .collect { response ->
+                        _userExtraActivity.value = response
+                    }
+            }
+        }
+    }
+
 }

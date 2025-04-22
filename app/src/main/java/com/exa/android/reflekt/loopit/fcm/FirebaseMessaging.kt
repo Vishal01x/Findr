@@ -53,7 +53,7 @@ class FirebaseService : FirebaseMessagingService() {
         val chatId = message.data["chatId"] ?: return
         if (chatId == activeChatId) return // Ignore messages from the active chat
 
-        val imageUrl = "https://www.w3schools.com/w3images/avatar2.png"
+        val imageUrl =  message.data["imageUrl"]
         val title = message.data["title"] ?: "New Message"
         val body = message.data["body"] ?: "You have a new message"
 
@@ -148,7 +148,7 @@ class FirebaseService : FirebaseMessagingService() {
 
         // ✅ Build Notification with the "Conversation" style
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.findr_logo)
             .setStyle(messagingStyle) //Makes it a conversation notification
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setShortcutId(senderName) //Groups messages from the same sender
@@ -162,6 +162,8 @@ class FirebaseService : FirebaseMessagingService() {
                 .asBitmap()
                 .load(imageUrl)
                 .transform(CircleCrop())
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
                 .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
                     override fun onResourceReady(
                         resource: Bitmap,

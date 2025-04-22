@@ -28,69 +28,71 @@ import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 @Composable
 fun ProfileScreen() {
 
-    var name by remember { mutableStateOf("") } // Use `by` for mutable state
-    var phone by remember { mutableStateOf("") }
-    val viewModel : ChatViewModel = hiltViewModel()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-//        // Profile Picture
-//        Box(
-//            modifier = Modifier
-//                .size(120.dp)
-//                .clip(CircleShape)
-//                .background(Color.Gray),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            Text(
-//                text = "No Image",
-//                color = Color.White,
-//                textAlign = TextAlign.Center
-//            )
-//        }
+    //Profile()
+
+//    var name by remember { mutableStateOf("") } // Use `by` for mutable state
+//    var phone by remember { mutableStateOf("") }
+//    val viewModel : ChatViewModel = hiltViewModel()
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+////        // Profile Picture
+////        Box(
+////            modifier = Modifier
+////                .size(120.dp)
+////                .clip(CircleShape)
+////                .background(Color.Gray),
+////            contentAlignment = Alignment.Center
+////        ) {
+////            Text(
+////                text = "No Image",
+////                color = Color.White,
+////                textAlign = TextAlign.Center
+////            )
+////        }
+////
+////        Spacer(modifier = Modifier.height(24.dp))
+//
+//        // Name Text Field
+//        OutlinedTextField(
+//            value = name,
+//            onValueChange = { newValue -> name = newValue }, // Correctly update the state
+//            label = { Text("Name") },
+//            singleLine = true,
+//            modifier = Modifier.fillMaxWidth()
+//        )
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Phone Text Field
+//        OutlinedTextField(
+//            value = phone,
+//            onValueChange = { newValue -> phone = newValue }, // Correctly update the state
+//            label = { Text("Phone Number") },
+//            singleLine = true,
+//            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
+//            modifier = Modifier.fillMaxWidth()
+//        )
 //
 //        Spacer(modifier = Modifier.height(24.dp))
-
-        // Name Text Field
-        OutlinedTextField(
-            value = name,
-            onValueChange = { newValue -> name = newValue }, // Correctly update the state
-            label = { Text("Name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Phone Text Field
-        OutlinedTextField(
-            value = phone,
-            onValueChange = { newValue -> phone = newValue }, // Correctly update the state
-            label = { Text("Phone Number") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Save Button
-        Button(
-            onClick = {
-                viewModel.insertUser(name,phone)// Use the current values of `name` and `phone`
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text(text = "Save")
-        }
-    }
+//
+//        // Save Button
+//        Button(
+//            onClick = {
+//                viewModel.insertUser(name,phone)// Use the current values of `name` and `phone`
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(50.dp),
+//            shape = RoundedCornerShape(8.dp)
+//        ) {
+//            Text(text = "Save")
+//        }
+//    }
 }
 /*
 @Composable

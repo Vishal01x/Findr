@@ -184,8 +184,20 @@ fun DetailChat(
 
     //if (showMediaPickerSheet) {
         MediaPickerHandler(
-            otherUserId = otherUserId,
-            fcmToken = otherUserDetail.value?.fcmToken,
+            showAll = true,
+            onLaunch = {uri->
+                launchMediaUpload(
+                    context = context,
+                    uri = uri,
+                    mediaType = MediaType.IMAGE,
+                    otherUserId = otherUserId,
+                    fcmToken = otherUserDetail.value?.fcmToken,
+                    chatViewModel = chatViewModel,
+                    coroutineScope = coroutineScope,
+                    messageId = null,
+                    mediaSharingViewModel = mediaSharingViewModel
+                )
+            }
         )
 
 

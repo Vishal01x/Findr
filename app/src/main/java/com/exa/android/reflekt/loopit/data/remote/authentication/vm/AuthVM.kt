@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
 import com.exa.android.reflekt.loopit.util.Response
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -19,7 +21,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthVM @Inject constructor(
-    val repository: AuthRepository
+    val repository: AuthRepository,
+    val auth : FirebaseAuth
 ) : ViewModel() {
 
     // Login State
@@ -35,6 +38,10 @@ class AuthVM @Inject constructor(
     val roleSuggestions = mutableStateListOf<String>()
 
     val forgotPasswordState = mutableStateOf(ForgotPasswordState())
+
+    val currentUser: FirebaseUser?
+        get() = auth.currentUser
+
 
     // UI Events
     fun onLoginEvent(event: LoginEvent) {
