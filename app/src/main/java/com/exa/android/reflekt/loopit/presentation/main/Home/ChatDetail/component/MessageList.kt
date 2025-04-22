@@ -174,6 +174,7 @@ fun MessageBubble(
                 if (isSelected) Color(
                     0xFF007AFF
                 ).copy(alpha = .2f) else Color.Transparent
+                //if(isSelected)MaterialTheme.colorScheme.primary.copy(.2f) else Color.Transparent
             )
             .pointerInput(selectedMessagesSize) { // selectedMessagesSize is used for Key as it change it enables to call
                 detectTapGestures(
@@ -235,9 +236,10 @@ fun MessageBubble(
                 Arrangement.Start
             }
         ) {
-            val bubbleColor = if (curUserId == message.senderId) Color(
-                0xFF007AFF
-            ).copy(alpha = .6f) else Color(0xFFf6f6f6)
+            val bubbleColor = if (curUserId == message.senderId)
+                Color(0xFF007AFF).copy(alpha = .6f)
+               // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
+             else Color(0xFFf6f6f6)
             Column(
                 modifier = Modifier
                     .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp) // occupy 70% of screen only

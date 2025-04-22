@@ -41,7 +41,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
         composable(HomeRoute.ChatList.route) {
             val viewModel: ChatViewModel = hiltViewModel()
             val chatList = listOf("Vishal", "Kanhaiya", "Joe Tam", "Holder", "Smith Darklew")
-            HomeScreen(navController, viewModel)
+            HomeScreen(navController,viewModel)
         }
 
 

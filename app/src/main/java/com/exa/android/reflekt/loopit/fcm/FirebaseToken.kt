@@ -2,8 +2,6 @@ package com.exa.android.reflekt.loopit.fcm
 
 import android.content.Context
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.api.FCMRequest
-import com.exa.android.reflekt.loopit.util.model.Message
 import com.google.auth.oauth2.GoogleCredentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

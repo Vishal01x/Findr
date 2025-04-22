@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.loopit.data.remote.main.api
+package com.exa.android.reflekt.loopit.data.remote.main.api.fcm
 
 //data class FCMRequest(
 //    val to: String, // FCM Token of receiver

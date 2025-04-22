@@ -99,8 +99,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppTheme {
-                updateStatus(this)
-                App()
+              updateStatus(this)
+               App()
             }
         }
         clearAllNotifications(this)
@@ -237,7 +237,7 @@ class MainActivity : ComponentActivity() {
         //val intent = Intent()
         val senderId = intent?.data?.lastPathSegment
 
-        AppNavigation(navController, isLoggedIn, senderId)
+        AppNavigation(navController, true, senderId)
     }
 
 }

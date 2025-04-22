@@ -5,10 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.worker.PreferenceHelper
 import com.exa.android.reflekt.loopit.util.Response
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -22,7 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthVM @Inject constructor(
     val repository: AuthRepository,
-    private val preferenceHelper: PreferenceHelper,
+    val auth : FirebaseAuth
 ) : ViewModel() {
 
     // Login State
@@ -39,22 +39,9 @@ class AuthVM @Inject constructor(
 
     val forgotPasswordState = mutableStateOf(ForgotPasswordState())
 
-    init {
-        checkCurrentUser()
-    }
+    val currentUser: FirebaseUser?
+        get() = auth.currentUser
 
-    private fun checkCurrentUser() {
-        viewModelScope.launch {
-            val currentUser = repository.getCurrentUser()
-            if (currentUser != null && currentUser.isEmailVerified) {
-                preferenceHelper.saveUserId(currentUser.uid)
-                loginState.value = loginState.value.copy(
-                    loginSuccess = true,
-                    email = currentUser.email ?: ""
-                )
-            }
-        }
-    }
 
     // UI Events
     fun onLoginEvent(event: LoginEvent) {
@@ -181,8 +168,6 @@ class AuthVM @Inject constructor(
 
             when {
                 result.isSuccess -> {
-                    val userId = repository.getCurrentUser()?.uid ?: ""
-                    preferenceHelper.saveUserId(userId)
                     loginState.value = loginState.value.copy(
                         loginSuccess = true,
                         errorMessage = null
@@ -319,15 +304,6 @@ class AuthVM @Inject constructor(
                     )
                 }
             }
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            val userId = repository.getCurrentUser()?.uid ?: ""
-            preferenceHelper.clearUserId()
-            repository.logout()
-            loginState.value = LoginState() // Reset login state
         }
     }
 }

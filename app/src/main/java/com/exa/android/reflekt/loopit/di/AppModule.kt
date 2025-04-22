@@ -2,10 +2,10 @@ package com.exa.android.reflekt.loopit.di
 
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepositoryImpl
-import com.exa.android.reflekt.loopit.data.remote.main.MapDataSource.FirebaseDataSource
-import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileRepository
+import com.exa.android.reflekt.loopit.data.remote.main.api.BrandftechAPI
 import com.exa.android.reflekt.loopit.data.remote.main.api.CloudinaryApi
+import com.exa.android.reflekt.loopit.util.Constants.BRANDFTECH_BASE_URL
 import com.exa.android.reflekt.loopit.util.Constants.CLOUDINARY_BASE_URL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -13,7 +13,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -42,6 +41,12 @@ class AuthModule {
     }
 
     @Provides
+    fun provideAuthRepository(
+        auth: FirebaseAuth,
+        firestore: FirebaseFirestore
+    ): AuthRepository = AuthRepositoryImpl(auth, firestore)
+
+    @Provides
     @Singleton
     fun providesCloudinaryApi(): CloudinaryApi {
         val retrofit = Retrofit.Builder()
@@ -53,15 +58,14 @@ class AuthModule {
     }
 
     @Provides
-    fun provideFirebaseDataSource(): FirebaseDataSource {
-        return FirebaseDataSource()
+    @Singleton
+    fun provideBrandfetchApi(): BrandftechAPI {
+        return Retrofit.Builder()
+            .baseUrl(BRANDFTECH_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(BrandftechAPI::class.java)
     }
-
-    @Provides
-    fun provideAuthRepository(
-        auth: FirebaseAuth,
-        firestore: FirebaseFirestore
-    ): AuthRepository = AuthRepositoryImpl(auth, firestore)
 }
 
 

@@ -7,6 +7,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -70,13 +71,15 @@ fun RootNavGraph(
     isLoggedIn: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     NavHost(
         navController = navController,
         startDestination = if (isLoggedIn) MainRoute.ROOT else AuthRoute.ROOT,
         modifier = modifier
     ) {
         authNavGraph(navController)
-        mainAppNavGraph(navController)
+        mainAppNavGraph(context,navController)
     }
 }
 

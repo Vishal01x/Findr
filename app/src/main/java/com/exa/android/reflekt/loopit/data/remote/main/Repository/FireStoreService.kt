@@ -2,12 +2,10 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.content.Context
 import android.util.Log
-import com.exa.android.reflekt.loopit.data.remote.main.api.FCMRequest
-import com.exa.android.reflekt.loopit.data.remote.main.api.FCMResponse
-import com.exa.android.reflekt.loopit.data.remote.main.api.MessageData
-import com.exa.android.reflekt.loopit.data.remote.main.api.NotificationData
-import com.exa.android.reflekt.loopit.data.remote.main.api.RetrofitInstance
-import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper
+import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
+import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
+import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
+import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
 import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
 import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.util.Response
@@ -15,11 +13,9 @@ import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.Message
-import com.exa.android.reflekt.loopit.util.model.UploadStatus
 import com.exa.android.reflekt.loopit.util.model.User
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -40,8 +36,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import retrofit2.Call
-import retrofit2.Callback
 import java.util.UUID
 import javax.inject.Inject
 

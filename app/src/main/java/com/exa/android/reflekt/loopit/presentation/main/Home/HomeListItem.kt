@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,12 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.exa.android.reflekt.loopit.util.model.User
@@ -37,63 +42,82 @@ import com.exa.android.reflekt.loopit.util.model.User
 
 @Composable
 fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (user : User) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { openChat(User(userId = chat.userId, name = chat.name, fcmToken = chat.fcmToken)) }
-            .padding(horizontal = 4.dp, vertical = 8.dp)
-    ) {
-        Image(
-            painter = painterResource(R.drawable.chat_img3),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+
+    Card(modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant),
+        shape = CircleShape) {
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+                .clickable {
+                    openChat(
+                        User(
+                            userId = chat.userId,
+                            name = chat.name,
+                            fcmToken = chat.fcmToken
+                        )
+                    )
+                }
+                .padding(horizontal = 4.dp, vertical = 8.dp)
+        ) {
+            val context = LocalContext.current
+
+            ImageUsingCoil(context,chat.profilePicture,R.drawable.placeholder,Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .clickable { zoomImage(R.drawable.chat_img3) }
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.SpaceAround
-        ) {
-            Text(
-                chat.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                chat.lastMessage,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.DarkGray,
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            val timestampInMillis = chat.lastMessageTimestamp.seconds*1000L
-            Text(formatTimestamp(timestampInMillis), style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontSize = 13.sp)
-            if (chat.unreadMessages>0) {
+                .clickable(!chat.profilePicture.isNullOrEmpty()) { openImageIntent(context,chat.profilePicture!!) })
+
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.SpaceAround
+            ) {
+                Text(
+                    chat.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(Color.Yellow)
-                ) {
-                    Text(
-                        "${chat.unreadMessages}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Black,
-                        fontSize = 12.sp
-                    )
+                Text(
+                    chat.lastMessage,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.DarkGray,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                val timestampInMillis = chat.lastMessageTimestamp.seconds * 1000L
+                Text(
+                    formatTimestamp(timestampInMillis),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 13.sp
+                )
+                if (chat.unreadMessages > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(Color.Yellow)
+                    ) {
+                        Text(
+                            "${chat.unreadMessages}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }

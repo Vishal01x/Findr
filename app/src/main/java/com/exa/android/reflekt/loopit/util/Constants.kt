@@ -12,6 +12,8 @@ object Constants {
     const val CLOUDINARY_UPLOAD_PRESET = "media_uploads"
     const val CLOUDINARY_NAME = "dgqxusedq"
 
+    const val BRANDFTECH_BASE_URL = "https://api.brandfetch.io/"
+
     const val APP_NAME = "Let's Talk"
 
     const val CAMERA_REQUEST_CODE = 1001

@@ -1,4 +1,4 @@
-package com.exa.android.reflekt.loopit.data.remote.main.api
+package com.exa.android.reflekt.loopit.data.remote.main.api.fcm
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
