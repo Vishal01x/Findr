@@ -262,7 +262,12 @@ class UserRepository @Inject constructor(
                             )
                         ).isFailure
                     } else if (snapshot != null && snapshot.exists()) {
-                        val user = snapshot.toObject(User::class.java)
+                        val name = snapshot.getString("name") ?: "Name"
+                        val profilePic = snapshot.getString("profilePicture") ?: ""
+                        val user = User(
+                            name = name,
+                            profilePicture = profilePic
+                        )
                         if (user != null) {
                             trySend(Response.Success(user)).isFailure
                         } else {

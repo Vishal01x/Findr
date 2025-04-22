@@ -46,7 +46,8 @@ data class CollegeInfo(
     val stream: String = "",
     val startDate: String = "",
     val endDate: String = "",
-    val grade: String = ""
+    val grade: String = "",
+    val year: String  = ""
 )
 
 data class ExperienceInfo(
@@ -57,7 +58,9 @@ data class ExperienceInfo(
     val startDate: String = "",
     val endDate: String? = null, // nullable if 'Currently Working Here' is true
     val currentlyWorking: Boolean = false,
-    val description: String = ""
+    val description: String = "",
+    val experience : String = "",
+    val ctc: String = ""
 )
 
 data class ExtraActivity(

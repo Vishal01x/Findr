@@ -90,11 +90,12 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                     }
                 },
                 openChat = { userId ->
-                    if (userId != null)
-                        navController.navigate(HomeRoute.ChatDetail.createRoute(userId)){
+                    if (userId != null) {
+                        navController.navigate(HomeRoute.ChatDetail.createRoute(userId)) {
                             launchSingleTop = true
                             restoreState = true
                         }
+                    }
                 },
                 onEditEducation = {
                     navController.navigate(ProfileRoute.EditEducation.createRoute(it ?: CollegeInfo())){

@@ -118,6 +118,7 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController) {
     ) {
         composable(MapInfo.MapScreen.route) {
             MapScreen(
+                navController
 //                "fjidjf",
 //                onMediaClick = { navController.navigate(ChatInfo.ChatMedia.route) },
 //                onCallClick = { navController.navigate(Call.VoiceCall.route) },

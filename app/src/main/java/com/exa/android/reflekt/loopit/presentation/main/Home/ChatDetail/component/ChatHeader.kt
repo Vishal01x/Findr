@@ -283,8 +283,8 @@ fun HeaderWithProfile(
 
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp),
+            .fillMaxWidth(),
+//            .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Back Button
@@ -293,7 +293,7 @@ fun HeaderWithProfile(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = "Back",
                 tint = Color.Black,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp).size(32.dp)
             )
         }
 
@@ -306,7 +306,8 @@ fun HeaderWithProfile(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .border(1.dp, Color.Black, CircleShape),
+                .border(1.dp, Color.Black, CircleShape)
+                .clickable { onProfileClick() },
             errorImage = R.drawable.placeholder
         )
 
@@ -316,7 +317,7 @@ fun HeaderWithProfile(
         Column(
             modifier = Modifier.weight(1f).clickable {
                 onProfileClick()
-            }
+            }.padding(vertical = 4.dp, horizontal = 8.dp),
         ) {
             // Chat Name
             Text(
@@ -332,21 +333,21 @@ fun HeaderWithProfile(
 
             val statusText = when {
                         status?.typingTo == curUser -> "typing..."
-                        status?.isOnline == true -> "Online"
+                        status?.isOnline == true -> "•Active"
                         status?.lastSeen != null -> {
                             val time =
                                 formatTimestamp(status.lastSeen * 1000L) // Convert to milliseconds
-                            "last seen at $time"
+                            "last active at $time"
                         }
 
-                        else -> "Offline"
+                        else -> "last active at "
                     }
 
 
             Text(
                 text = statusText,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray,
+                color = if(statusText == "•Active") Color.Green else Color.Gray,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping

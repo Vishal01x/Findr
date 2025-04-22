@@ -45,7 +45,7 @@ fun MediaPickerBottomSheet(
             Text("Choose Media", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
             MediaPickerItem("Camera", Icons.Default.PhotoCamera, onCameraClick)
-            MediaPickerItem("Image", Icons.Default.Image, onImageClick)
+            MediaPickerItem("Gallery", Icons.Default.Image, onImageClick)
             if(showAll) {
                 MediaPickerItem("Video", Icons.Default.Videocam, onVideoClick)
                 MediaPickerItem(

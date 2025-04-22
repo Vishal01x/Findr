@@ -118,7 +118,8 @@ fun ExtracurricularCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Extracurricular Activities", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiary)
-                        CircularIconCard(Icons.Default.Add, { onAddClick(null) })
+                        if(userId.isNullOrEmpty())
+                            CircularIconCard(Icons.Default.Add, { onAddClick(null) })
                     }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(response.data) {
@@ -128,10 +129,7 @@ fun ExtracurricularCard(
                             )
                         }
 
-                        item{
-
-                        }
-
+                        // to add + card
 
                     }
                 }

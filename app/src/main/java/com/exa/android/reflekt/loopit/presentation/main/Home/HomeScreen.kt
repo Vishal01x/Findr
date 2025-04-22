@@ -60,6 +60,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
@@ -466,43 +467,34 @@ fun ChatsSection(
 ) {
     val response by viewModel.chatList.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        when (response) {
-            is Response.Loading -> {
-                item {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .wrapContentWidth(Alignment.CenterHorizontally)
-                    )
+    when (response) {
+        is Response.Loading -> {
+            showLoader("Chats Loading...")
+        }
+
+        is Response.Success -> {
+            val data = (response as Response.Success<List<ChatList>>).data
+            onSuccess(data)
+
+            if (data.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("No chats Yet")
+                    Spacer(modifier = Modifier.height(16.dp))
+//                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route) }) {
+//                                Text("New Chat")
+//                            }
                 }
             }
 
-            is Response.Success -> {
-                val data = (response as Response.Success<List<ChatList>>).data
-                onSuccess(data)
-
-                if (data.isEmpty()) {
-                    item {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("No chats Yet")
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route) }) {
-                                Text("New Chat")
-                            }
-                        }
-                    }
-                }
-
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 items(chatList) { chat ->
                     ChatListItem(
                         chat = chat,
@@ -511,21 +503,19 @@ fun ChatsSection(
                     )
                 }
             }
+        }
 
-            is Response.Error -> {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Failed to load chats. Please try again.", color = Color.Red)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.getChatList() }) {
-                            Text("Retry")
-                        }
-                    }
+        is Response.Error -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Failed to load chats. Please try again.", color = Color.Red)
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { viewModel.getChatList() }) {
+                    Text("Retry")
                 }
             }
         }

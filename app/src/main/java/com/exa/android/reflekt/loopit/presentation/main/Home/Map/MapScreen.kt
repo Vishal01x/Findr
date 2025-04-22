@@ -86,23 +86,27 @@ import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.google.accompanist.permissions.shouldShowRationale
 
 
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
+fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid ?: return
@@ -115,7 +119,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
     var selectedRole by remember { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
-    var selectedUser by rememberSaveable  { mutableStateOf<profileUser?>(null) }
+    var selectedUser by remember { mutableStateOf<profileUser?>(null) }
 
     // Bottom sheet state
     val sheetState = rememberModalBottomSheetState()
@@ -237,14 +241,12 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                 userLocations.forEach { user ->
                     if (user.uid != userId) {  // Skip the current user
                         CustomMapMarker(
-                            imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
-                            fullName = user.name,
-                            location = LatLng(user.lat, user.lng),
-                            onClick = {
+                            //imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
+                            imageUrl = user.imageUrl, //.ifBlank { R.drawable.placeholder },
+                            fullName = user.name, location = LatLng(user.lat, user.lng), onClick = {
                                 selectedUser = user
                                 true
-                            }
-                        )
+                            })
                     }
                 }
 
@@ -260,10 +262,10 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             }
             // Profile Bottom Sheet
             selectedUser?.let { user ->
-                ProfileBottomSheet(
-                    user = user,
-                    onDismiss = { selectedUser = null }
-                )
+                ProfileBottomSheet(user = user,
+                    openProfile = { navController.navigate(ProfileRoute.UserProfile.createRoute(user.uid)) },
+                    openChat = { navController.navigate(HomeRoute.ChatDetail.createRoute(user.uid)) },
+                    onDismiss = { selectedUser = null })
             }
 
             // update
@@ -516,9 +518,12 @@ fun SearchBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
+fun ProfileBottomSheet(
+    user: profileUser, openProfile: () -> Unit, openChat: () -> Unit, onDismiss: () -> Unit
+) {
     val sheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -533,22 +538,32 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                 .padding(24.dp)
         ) {
             // Profile Header
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { openProfile() }) {
                 // Profile Image or Initials
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape
+                if (user.imageUrl.isNullOrEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = CircleShape
+                            )
+                            .padding(12.dp), contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = user.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = user.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    }
+                } else {
+                    ImageUsingCoil(
+                        context,
+                        user.imageUrl,
+                        R.drawable.placeholder,
+                        Modifier
+                            .size(64.dp)
                     )
                 }
 
@@ -582,18 +597,16 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 InfoRow(
-                    icon = Icons.Default.Email,
-                    text = user.email
+                    icon = Icons.Default.Email, text = user.email
                 )
 
                 InfoRow(
-                    icon = Icons.Default.Phone,
-                    text = "Not available"
+                    icon = Icons.Default.Phone, text = "Not available"
                 )
 
                 InfoRow(
                     icon = Icons.Default.LocationOn,
-                    text = "${user.collegeName}"
+                    text = user.collegeName ?: user.companyName.ifBlank { "Not Available" }
                 )
             }
 
@@ -605,15 +618,13 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { /* Handle message action */ },
-                    modifier = Modifier.weight(1f)
+                    onClick = { openChat() }, modifier = Modifier.weight(1f)
                 ) {
                     Text("Send Message")
                 }
 
                 OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
+                    onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
                     Text("Close")
                 }
@@ -714,10 +725,7 @@ fun MapScreenn(viewModel: LocationViewModel = hiltViewModel()) {
 
 @Composable
 fun CustomMapMarkerr(
-    imageUrl: String?,
-    fullName: String,
-    location: LatLng,
-    onClick: () -> Unit
+    imageUrl: String?, fullName: String, location: LatLng, onClick: () -> Unit
 ) {
     val markerState = remember { MarkerState(position = location) }
     val shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 0.dp)
@@ -767,18 +775,14 @@ fun CustomMapMarkerr(
 
 @Composable
 fun CustomMapMarker(
-    imageUrl: String?,
-    fullName: String,
-    location: LatLng,
-    onClick: () -> Unit
+    imageUrl: String?, fullName: String, location: LatLng, onClick: () -> Unit
 ) {
     val markerState = remember { MarkerState(position = location) }
     val context = LocalContext.current
 
     val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl)
-            .allowHardware(false)
+        ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
+            .placeholder(R.drawable.placeholder).error(R.drawable.placeholder).allowHardware(false)
             .build()
     )
 
