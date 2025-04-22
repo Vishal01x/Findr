@@ -28,9 +28,9 @@ private val LightColorScheme = lightColorScheme(
   onSecondary = Color(0xFF4875E1),
   tertiary = Color.White,
   onTertiary = Color.Black,
-  background = Color(0xFFF8F8F8),          // White clean UI background
+  background = Color.White,          // White clean UI background
   surface = Color(0xFFF8F8F8),       // Light gray for chat backgrounds
-  onSurface = Color.Black,     // Dark gray for text
+  onSurface = Color(0xFF212121),     // Dark gray for text
   error = Color(0xFFE57373),         // Soft Red (for errors)
   primaryContainer = Color(0xFF4875E1),
   onPrimaryContainer = Color.White,
@@ -53,8 +53,10 @@ private val DarkColorScheme = darkColorScheme(
   onSurface = Color.White,
   onBackground = Color(0xFFE0E0E0),
   error = Color(0xFFEF5350),
-  primaryContainer = Color(0xFF4875E1),
-  secondaryContainer = Color(0xFFBDBDBD)
+  primaryContainer = Color(0xFF242424),
+  onPrimaryContainer = Color.White,
+  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
+  onSecondaryContainer = Color(0xFF4875E1),
 )
 
 // Extended Colors
@@ -63,7 +65,6 @@ object AppColors {
   val DividerColor = Color(0xFFE0E0E0) // Light gray for dividers
   val cardButtonColor1 = Color.White
   val cardButtonColor2 = Color.Black
-  val whiteBlue = Color(0xFFF8F8F8)
 }
 
 // Typography Setup
@@ -71,24 +72,22 @@ private val AppTypography = Typography(
   displayLarge = TextStyle(
     fontWeight = FontWeight.Bold,
     fontSize = 32.sp,
-    letterSpacing = 0.5.sp,
-    color = Color.Black
+    letterSpacing = 0.5.sp
   ),
   titleLarge = TextStyle(
     fontWeight = FontWeight.SemiBold,
     fontSize = 22.sp,
-    color = Color.Black
+    color = Color(0xFF333333)
   ),
   bodyLarge = TextStyle(
     fontWeight = FontWeight.Normal,
     fontSize = 16.sp,
-    lineHeight = 24.sp,
-    color = Color.Black
+    lineHeight = 24.sp
   ),
   labelSmall = TextStyle(
     fontWeight = FontWeight.Medium,
     fontSize = 12.sp,
-    color = Color.Black
+    color = Color(0xFF616161)
   )
 )
 
@@ -101,22 +100,21 @@ private val AppShapes = Shapes(
 
 @Composable
 fun AppTheme(
-  darkTheme: Boolean = false,
-  dynamicColor: Boolean = false,
+  darkTheme: Boolean = isSystemInDarkTheme(),
+  dynamicColor: Boolean = true,
   content: @Composable () -> Unit
 ) {
-
   val colorScheme = when {
     /*
     dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
       val context = LocalContext.current
       if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     }
+
      */
     darkTheme -> LightColorScheme
     else -> LightColorScheme
   }
-
 
   // Remember System UI Controller
   val systemUiController = rememberSystemUiController()
@@ -124,8 +122,8 @@ fun AppTheme(
   // Set the status bar color based on the theme
   SideEffect {
     systemUiController.setStatusBarColor(
-      color = AppColors.whiteBlue,
-      darkIcons = true
+      color = Color.Transparent,
+      darkIcons = !darkTheme
     )
   }
 

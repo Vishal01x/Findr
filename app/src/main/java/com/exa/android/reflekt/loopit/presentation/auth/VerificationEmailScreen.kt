@@ -80,14 +80,15 @@ fun VerificationEmailScreen(
     ) {
         Text(
             text = "A verification email has been sent to:",
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = currentUser?.email ?: "",
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
         )
 
@@ -96,7 +97,8 @@ fun VerificationEmailScreen(
         Text(
             text = "Please check your inbox and verify your email to continue.",
             style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         Spacer(modifier = Modifier.height(32.dp))

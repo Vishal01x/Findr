@@ -90,7 +90,7 @@ fun ForgotPasswordScreen(
     ) {
         Text(
             text = "Forgot Password",
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 24.dp)
         )
@@ -99,13 +99,14 @@ fun ForgotPasswordScreen(
             text = "Enter your email address to receive a password reset link",
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 24.dp),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
         )
 
         OutlinedTextField(
             value = state.email,
             onValueChange = { viewModel.onForgotPasswordEvent(ForgotPasswordEvent.EmailChanged(it)) },
-            label = { Text("Email") },
+            label = { Text("Email", color = MaterialTheme.colorScheme.onSurface) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
@@ -117,7 +118,7 @@ fun ForgotPasswordScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7987CB))
+            colors = ButtonDefaults.buttonColors(containerColor =MaterialTheme.colorScheme.primary)
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator(color = Color.White)
