@@ -1,6 +1,8 @@
 package com.exa.android.reflekt.loopit.util.model.Profile
 
+import com.google.firebase.Timestamp
 import java.util.UUID
+
 
 
 data class ProfileData(
@@ -14,9 +16,21 @@ data class ProfileData(
 
 
 data class ProfileHeaderData(
-    val name: String = "",
-    val headline: String = "",
-    val role: String = "",
+    val uid: String = "",
+    val email: String = "",
+    val isStudent: Boolean = false,
+    val createdAt: Timestamp? = null,
+    val collegeName: String? = null,
+    val year: String? = "",
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
+    val location: String = "",
+    val companyName: String = "",
+    val ctc: String = "",
+    val experience: String = "",
+    var name: String = "",
+    var headline: String = "",
+    var role: String = "",
     var profileImageUrl: String = "",
     var bannerImageUrl: String = "",
     val skills: List<String> = emptyList(),
@@ -56,8 +70,8 @@ data class ExtraActivity(
 )
 
 data class SocialLinks(
-    val linkedin: String? = "",
-    val youtube: String? = "",
-    val email: String? = "",
-    val portfolio: String? = ""
+    var linkedin: String? = "",
+    var youtube: String? = "",
+    var email: String? = "",
+    var portfolio: String? = ""
 )

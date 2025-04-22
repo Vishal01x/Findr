@@ -137,6 +137,7 @@ fun ProfileContent(
     ) {
         item {
             ImageHeader(
+                userId.isNullOrEmpty(),
                 profileData.profileHeader,
                 onEditClick = {
                     Log.d("ProfileScreen", "onEditclickatIcon")

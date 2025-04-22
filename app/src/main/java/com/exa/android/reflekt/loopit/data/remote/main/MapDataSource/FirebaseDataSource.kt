@@ -1,4 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.main.MapDataSource
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository.ProfileDataWrapper
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
@@ -28,24 +30,26 @@ class FirebaseDataSource @Inject constructor() {
     }
 
     fun fetchUser(userId: String, onSuccess: (profileUser?) -> Unit, onFailure: (Exception) -> Unit) {
-        firestore.collection("profile").document(userId).get()
+        firestore.collection("users").document(userId).get()
             .addOnSuccessListener { documentSnapshot: DocumentSnapshot ->
                 if (documentSnapshot.exists()) {
                     try {
-                        val data = documentSnapshot.data
-                        if (data != null) {
+                        val profileWrapper = documentSnapshot?.toObject(ProfileDataWrapper::class.java)
+                        val profileData = profileWrapper?.profileData ?: ProfileData() // Return empty ProfileData if missing
+                        if (profileData != null) {
+                            val data = profileData.profileHeader
+
                             val profile = profileUser(
-                                uid = data["uid"] as? String ?: "",
-                                email = data["email"] as? String ?: "",
-                                firstName = data["firstName"] as? String ?: "",
-                                lastName = data["lastName"] as? String ?: "",
-                                role = data["role"] as? String ?: "",
-                                isStudent = data["isStudent"] as? Boolean ?: false,
-                                createdAt = data["createdAt"] as? Timestamp,
-                                collegeName = data["collegeName"] as? String,
-                                year = (data["year"] as? Long)?.toString(),
-                                lat = (data["lat"] as? Number)?.toDouble() ?: 0.0,  // Safe conversion
-                                lng = (data["lng"] as? Number)?.toDouble() ?: 0.0   // Safe conversion
+                                uid = data.uid,
+                                email = data.email,
+                                name = data.name,
+                                role = data.role,
+                                isStudent = data.isStudent,
+                                createdAt = data.createdAt,
+                                collegeName = data.collegeName,
+                                year = data.year,
+                                lat = data.lat,  // Safe conversion
+                                lng = data.lng  // Safe conversion
                             )
                             Timber.tag("GeoFire").d("User profile fetched from Firestore: $profile")
                             onSuccess(profile)

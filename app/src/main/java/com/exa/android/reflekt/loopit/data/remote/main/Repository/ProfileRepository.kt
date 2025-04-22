@@ -1,6 +1,9 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository.ProfileDataWrapper
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.exa.android.reflekt.loopit.util.model.profileUser
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -10,9 +13,24 @@ class ProfileRepository @Inject constructor(
 ) {
     suspend fun getUserProfile(userId: String): profileUser {
         return try {
-            val document = firestore.collection("profile").document(userId).get().await()
+            val document = firestore.collection("users").document(userId).get().await()
             if (document.exists()) {
-                profileUser.fromFirestore(document.data!!)
+                val profileWrapper = document.toObject(ProfileDataWrapper::class.java)
+                val profileData = profileWrapper?.profileData ?: ProfileData()
+
+                val data = profileData.profileHeader
+                profileUser(
+                    uid = data.uid,
+                    email = data.email,
+                    name = data.name,
+                    role = data.role,
+                    isStudent = data.isStudent,
+                    createdAt = data.createdAt,
+                    collegeName = data.collegeName,
+                    year = data.year,
+                    lat = data.lat,
+                    lng = data.lng
+                )
             } else {
                 throw Exception("Profile not found")
             }

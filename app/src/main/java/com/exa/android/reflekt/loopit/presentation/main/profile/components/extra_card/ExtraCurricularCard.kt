@@ -128,6 +128,11 @@ fun ExtracurricularCard(
                             )
                         }
 
+                        item{
+
+                        }
+
+
                     }
                 }
             }
@@ -207,7 +212,7 @@ fun ExtracurricularCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = extraActivity.domain,
+                    text = extraActivity.domain.ifBlank { ".com" },
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(.6f),
                     maxLines = 1,

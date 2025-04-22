@@ -1,11 +1,19 @@
 package com.exa.android.reflekt.loopit.data.remote.authentication.repo
 
+import android.util.Log
 import com.exa.android.reflekt.loopit.util.Response
+import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
+import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
+import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.model.profileUser
+import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -19,8 +27,7 @@ interface AuthRepository {
     suspend fun signUp(
         email: String,
         password: String,
-        firstName: String,
-        lastName: String,
+        name : String,
         role: String,
         isStudent: Boolean,
         collegeName: String,
@@ -59,8 +66,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun signUp(
         email: String,
         password: String,
-        firstName: String,
-        lastName: String,
+        name : String,
         role: String,
         isStudent: Boolean,
         collegeName: String,
@@ -74,11 +80,26 @@ class AuthRepositoryImpl @Inject constructor(
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             result.user?.sendEmailVerification()?.await()
 
-            val user = profileUser(
+//            val user = profileUser(
+//                uid = result.user?.uid ?: "",
+//                email = email,
+//                firstName = firstName,
+//                lastName = lastName,
+//                role = role,
+//                isStudent = isStudent,
+//                collegeName = collegeName,
+//                year = year,
+//                location = location,
+//                companyName = companyName,
+//                ctc = ctc,
+//                experience = experience,
+//                createdAt = Timestamp.now(),
+//            )
+            val userDocRef = firestore.collection("users").document(result.user?.uid ?: "")
+            val profileHeader = ProfileHeaderData(
                 uid = result.user?.uid ?: "",
                 email = email,
-                firstName = firstName,
-                lastName = lastName,
+                name = name,
                 role = role,
                 isStudent = isStudent,
                 collegeName = collegeName,
@@ -90,10 +111,46 @@ class AuthRepositoryImpl @Inject constructor(
                 createdAt = Timestamp.now(),
             )
 
-            firestore.collection("profile").document(result.user?.uid ?: "").set(user).await()
+            val collegeInfo = CollegeInfo(
+                instituteName = collegeName
+            )
+
+            val experienceInfo = ExperienceInfo(
+                companyName = companyName,
+                description = experience
+
+            )
+
+            val profile = ProfileData(
+                profileHeader = profileHeader,
+                collegeInfo = collegeInfo,
+                experienceInfo = experienceInfo
+            )
+
+
+
+
+//            firestore.collection("user").document(result.user?.uid ?: "").set(user).await()
+
+            Firebase.firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(userDocRef)
+
+                // Check if document exists
+                if (!snapshot.exists()) {
+                    // Create document with profileHeader
+                    val newUser = mapOf(
+                        "profileData" to profile
+                    )
+                    transaction.set(userDocRef, newUser, SetOptions.merge())
+                } else {
+                    // Document exists, just update the profileHeader
+                    transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
+                }
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.d("FireStore Service", "User Sign Up failed - ${e.localizedMessage}")
             Result.failure(e)
         }
     }

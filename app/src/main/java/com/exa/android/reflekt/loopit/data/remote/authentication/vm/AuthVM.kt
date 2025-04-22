@@ -209,13 +209,12 @@ class AuthVM @Inject constructor(
             signUpState.value = signUpState.value.copy(isLoading = true)
             // Split full name into first and last names
             val fullName = signUpState.value.fullName.trim()
-            val firstName = fullName.substringBeforeLast(" ").take(50) // Limit length and take first part
-            val lastName = fullName.substringAfterLast(" ", "").take(50) // Take last part, empty if no space
+//            val firstName = fullName.substringBeforeLast(" ").take(50) // Limit length and take first part
+//            val lastName = fullName.substringAfterLast(" ", "").take(50) // Take last part, empty if no space
             val result = repository.signUp(
                 email = signUpState.value.email,
                 password = signUpState.value.password,
-                firstName = firstName,
-                lastName = lastName,
+                name = fullName,
                 role = signUpState.value.selectedRoles.joinToString(", "),
                 isStudent = signUpState.value.isStudent,
                 collegeName = signUpState.value.collegeName,
@@ -223,7 +222,7 @@ class AuthVM @Inject constructor(
                 location = signUpState.value.location,
                 companyName = signUpState.value.companyName,
                 ctc = signUpState.value.ctc,
-                experience = signUpState.value.experience
+                experience = signUpState.value.experience,
             )
             signUpState.value = signUpState.value.copy(isLoading = false)
 

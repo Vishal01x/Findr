@@ -230,7 +230,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                     if (user.uid != userId) {  // Skip the current user
                         CustomMapMarker(
                             imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
-                            fullName = user.firstName + " " + user.lastName,
+                            fullName = user.name,
                             location = LatLng(user.lat, user.lng),
                             onClick = {
                                 selectedUser = user
@@ -538,7 +538,7 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = user.firstName.first().toString() + user.lastName.first().toString(),
+                        text = user.name,
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -548,7 +548,7 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
 
                 Column {
                     Text(
-                        text = "${user.firstName} ${user.lastName}",
+                        text = user.name,
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )

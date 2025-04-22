@@ -6,8 +6,9 @@ import com.google.firebase.Timestamp
 data class profileUser(
     val uid: String = "",
     val email: String = "",
-    val firstName: String = "",
-    val lastName: String = "",
+//    val firstName: String = "",
+//    val lastName: String = "",
+    val name : String = "",
     val role: String = "",
     val isStudent: Boolean = false,
     val createdAt: Timestamp? = null,
@@ -24,8 +25,7 @@ data class profileUser(
     constructor() : this(
         uid = "",
         email = "",
-        firstName = "",
-        lastName = "",
+        name = "",
         role = "",
         isStudent = false,
         createdAt = null,
@@ -47,8 +47,7 @@ data class profileUser(
             return profileUser(
                 uid = map["uid"] as? String ?: "",
                 email = map["email"] as? String ?: "",
-                firstName = map["firstName"] as? String ?: "",
-                lastName = map["lastName"] as? String ?: "",
+                name = map["name"] as? String ?: "",
                 role = map["role"] as? String ?: "",
                 isStudent = map["isStudent"] as? Boolean ?: false,
                 createdAt = map["createdAt"] as? Timestamp,

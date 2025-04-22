@@ -51,14 +51,14 @@ fun ProfileHeader(
     profileHeaderData: ProfileHeaderData,
     openChat: () -> Unit
 ) {
-    ProfileContent(userId != null, profileHeaderData) {
+    ProfileContent(userId == null, profileHeaderData) {
         openChat()
     }
 }
 
 
 @Composable
-fun ImageHeader(userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit) {
+fun ImageHeader(isCurUser: Boolean,userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit) {
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxWidth()) {
         // Banner Image
@@ -94,16 +94,18 @@ fun ImageHeader(userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit) {
                     )
                 }
         )
-        CircularIconCard(
-            Icons.Default.Edit,
-            {
-                onEditClick()
-            },
-            Modifier
-                .padding(8.dp)
-                .align(Alignment.BottomEnd)
-                .offset(y = 60.dp)
-        )
+        if(isCurUser) {
+            CircularIconCard(
+                Icons.Default.Edit,
+                {
+                    onEditClick()
+                },
+                Modifier
+                    .padding(8.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(y = 60.dp)
+            )
+        }
 
 
     }
@@ -153,27 +155,27 @@ private fun ProfileContent(
                 .padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (!userProfileHeader.socialLinks.youtube.isNullOrEmpty()) {
+            //if (!userProfileHeader.socialLinks.youtube.isNullOrEmpty()) {
                 CircularIconCardPainter(iconPainter = R.drawable.github, onClick = {
                     userProfileHeader.socialLinks.youtube?.let { openUrl(context, it) }
                 })
-            }
-            if (!userProfileHeader.socialLinks.linkedin.isNullOrEmpty()) {
+           // }
+            //if (!userProfileHeader.socialLinks.linkedin.isNullOrEmpty()) {
                 CircularIconCardPainter(
                      iconPainter = R.drawable.linedin,
                     onClick = {
                         userProfileHeader.socialLinks.linkedin?.let { openUrl(context, it) }
                     }
                 )
-            }
-            if (!userProfileHeader.socialLinks.email.isNullOrEmpty()) {
+            //}
+            //if (!userProfileHeader.socialLinks.email.isNullOrEmpty()) {
                 CircularIconCard(icon = Icons.Default.Email, onClick = {
                     userProfileHeader.socialLinks.email?.let {
                         if (it.isNotEmpty())
                             openUrl(context, "mailto:$it")
                     }
                 })
-            }
+            //}
 
 
             if (!isCurUser) {
@@ -200,7 +202,7 @@ private fun ProfileContent(
         }
 
         // Website and Join Date
-        if (!userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
+//        if (!userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
             Row(
                 modifier = Modifier
                     .padding(top = 6.dp, start = 4.dp)
@@ -226,7 +228,6 @@ private fun ProfileContent(
 //                modifier = Modifier.padding(start = 16.dp)
 //            )
             }
-        }
     }
 }
 

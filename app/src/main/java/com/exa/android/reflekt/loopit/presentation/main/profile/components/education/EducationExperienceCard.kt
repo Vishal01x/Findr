@@ -64,10 +64,10 @@ fun ExperienceCard(
                 }
             }
 
-            if (experienceInfo.title.isNotBlank()) {
+//            if (experienceInfo.title.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = experienceInfo.title,
+                    text = experienceInfo.title.ifBlank { "Unspecified" },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onTertiary
@@ -98,7 +98,6 @@ fun ExperienceCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-            }
         }
     }
 }

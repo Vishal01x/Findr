@@ -167,7 +167,7 @@ class ProjectListViewModel @Inject constructor(
             viewModelScope.launch {
                 try {
                     val profile = profileRepository.getUserProfile(userId)
-                    val userName = "${profile.firstName} ${profile.lastName}"
+                    val userName = profile.name
                     repository.enrollInProject(projectId, userId, userName)
                     loadProjects() // Refresh the list
                 } catch (e: Exception) {

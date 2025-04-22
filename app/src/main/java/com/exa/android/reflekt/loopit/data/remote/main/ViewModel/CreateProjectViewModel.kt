@@ -22,7 +22,7 @@ class CreateProjectViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val repository: ProjectRepository,
     private val auth: FirebaseAuth
-) : ViewModel(){
+) : ViewModel() {
 
     private val _state = mutableStateOf(CreateProjectState())
     val state: State<CreateProjectState> = _state
@@ -104,9 +104,7 @@ class CreateProjectViewModel @Inject constructor(
             }
             Log.d("project", "profile: $profileResult")
 
-            val fullName = if (profileResult.firstName.isNotBlank() && profileResult.lastName.isNotBlank()) {
-                "${profileResult.firstName} ${profileResult.lastName}"
-            } else {
+            val fullName = profileResult.name.ifBlank {
                 currentUser.displayName ?: "Anonymous"
             }
 
@@ -178,6 +176,7 @@ class CreateProjectViewModel @Inject constructor(
             }
         }
     }
+
     fun onNewRoleCreated(role: String) {
         if (role.isBlank()) return
 

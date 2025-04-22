@@ -86,7 +86,7 @@ class EditProfileViewModel @Inject constructor(
         profileImageUri = uri
     }
 
-    fun updateAbout(desc : String){
+    fun updateAbout(desc: String) {
         about = desc
     }
 
@@ -102,8 +102,8 @@ class EditProfileViewModel @Inject constructor(
     private val _stagedSkills = mutableStateOf(mutableListOf<String>())
     val stagedSkills: State<List<String>> = _stagedSkills
 
-    fun initialiseSkill(skill: MutableList<String>){
-        if(_updatedSkills.value.isEmpty()){
+    fun initialiseSkill(skill: MutableList<String>) {
+        if (_updatedSkills.value.isEmpty()) {
             _updatedSkills.value = skill
         }
     }
@@ -135,7 +135,7 @@ class EditProfileViewModel @Inject constructor(
         _updatedSkills.value.remove(skill)
     }
 
-    fun cancelEditing(oldSkills : MutableList<String>) {
+    fun cancelEditing(oldSkills: MutableList<String>) {
         _isEditing.value = false
         _skillInput.value = ""
         _stagedSkills.value.clear()
@@ -143,7 +143,7 @@ class EditProfileViewModel @Inject constructor(
         // Reset to current skills from backend if needed
     }
 
-    fun onSuccess(){
+    fun onSuccess() {
         val finalSkills = (_updatedSkills.value + _stagedSkills.value).distinct()
         _isEditing.value = false
         _updatedSkills.value.clear()
@@ -155,7 +155,7 @@ class EditProfileViewModel @Inject constructor(
     fun saveSkills() {
         val finalSkills = (_updatedSkills.value + _stagedSkills.value).distinct()
         updateUserSkills(finalSkills)
-        when(responseState){
+        when (responseState) {
             is Response.Error -> {}
             Response.Loading -> {}
             is Response.Success -> {
@@ -163,7 +163,8 @@ class EditProfileViewModel @Inject constructor(
                 _updatedSkills.value.clear()
                 _updatedSkills.value.addAll(finalSkills)
                 _stagedSkills.value.clear()
-               }
+            }
+
             null -> {}
         }
     }
@@ -171,7 +172,7 @@ class EditProfileViewModel @Inject constructor(
     fun updateUserSkills(newSkills: List<String>) {
         viewModelScope.launch {
             try {
-                userRepository.updateUserSkill(newSkills).collect{
+                userRepository.updateUserSkill(newSkills).collect {
                     responseState = it
                 }
             } catch (e: Exception) {
@@ -198,14 +199,15 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun loadUserProfileData(profileData : ProfileData) {
+    fun loadUserProfileData(profileData: ProfileData) {
         viewModelScope.launch {
             try {
                 profileData?.let {
                     name = it.profileHeader?.name.orEmpty()
                     headline = it.profileHeader?.headline.orEmpty()
                     role = it.profileHeader?.role.orEmpty()
-                    profileImageUri = it.profileHeader?.profileImageUrl?.let { url -> Uri.parse(url) }
+                    profileImageUri =
+                        it.profileHeader?.profileImageUrl?.let { url -> Uri.parse(url) }
                     bannerUri = it.profileHeader?.bannerImageUrl?.let { url -> Uri.parse(url) }
 
                     linkedin = it.profileHeader?.socialLinks?.linkedin.orEmpty()
@@ -228,7 +230,10 @@ class EditProfileViewModel @Inject constructor(
     var responseState by mutableStateOf<Response<Unit>?>(null)
         private set
 
-    fun saveProfile(profileHeaderData: ProfileHeaderData, mediaSharingViewModel: MediaSharingViewModel) {
+    fun saveProfile(
+        profileHeaderData: ProfileHeaderData,
+        mediaSharingViewModel: MediaSharingViewModel
+    ) {
         viewModelScope.launch {
             responseState = Response.Loading
             try {
@@ -238,7 +243,10 @@ class EditProfileViewModel @Inject constructor(
                     val profileDeferred = async {
                         if (profileHeaderData.profileImageUrl.isBlank() && profileImageUri != null) {
                             runCatching {
-                                val file = mediaSharingViewModel.createTempFileFromUri(context, profileImageUri!!)
+                                val file = mediaSharingViewModel.createTempFileFromUri(
+                                    context,
+                                    profileImageUri!!
+                                )
                                 mediaSharingViewModel.uploadFileToCloudinary(file)
                             }.getOrNull()
                         } else null
@@ -247,7 +255,10 @@ class EditProfileViewModel @Inject constructor(
                     val bannerDeferred = async {
                         if (profileHeaderData.bannerImageUrl.isBlank() && bannerUri != null) {
                             runCatching {
-                                val file = mediaSharingViewModel.createTempFileFromUri(context, bannerUri!!)
+                                val file = mediaSharingViewModel.createTempFileFromUri(
+                                    context,
+                                    bannerUri!!
+                                )
                                 mediaSharingViewModel.uploadFileToCloudinary(file)
                             }.getOrNull()
                         } else null
@@ -256,8 +267,10 @@ class EditProfileViewModel @Inject constructor(
                     Pair(profileDeferred.await(), bannerDeferred.await())
                 }
 
-                val newProfileUrl = profileHeaderData.profileImageUrl.ifBlank { profileUrl?.mediaUrl.orEmpty() }
-                val newBannerUrl = profileHeaderData.bannerImageUrl.ifBlank { bannerUrl?.mediaUrl.orEmpty() }
+                val newProfileUrl =
+                    profileHeaderData.profileImageUrl.ifBlank { profileUrl?.mediaUrl.orEmpty() }
+                val newBannerUrl =
+                    profileHeaderData.bannerImageUrl.ifBlank { bannerUrl?.mediaUrl.orEmpty() }
 
                 val profileHeader = ProfileHeaderData(
                     name = name,
@@ -273,9 +286,22 @@ class EditProfileViewModel @Inject constructor(
                     )
                 )
 
-                updateUserProfileHeader(profileHeader)
+                profileHeaderData.name = name
+                profileHeaderData.headline = headline
+                profileHeaderData.role = role
+                profileHeaderData.profileImageUrl = newProfileUrl
+                profileHeaderData.bannerImageUrl = newBannerUrl
+                profileHeaderData.socialLinks.portfolio = portfolio
+                profileHeaderData.socialLinks.linkedin = linkedin
+                profileHeaderData.socialLinks.youtube = youtube
+                profileHeaderData.socialLinks.email = email
+
+
+
+
+                updateUserProfileHeader(profileHeaderData)
                 responseState = Response.Success(Unit)
-                updateUserNameAndImage(profileHeader.name, profileHeader.profileImageUrl)
+                updateUserNameAndImage(profileHeaderData.name, profileHeaderData.profileImageUrl)
             } catch (e: Exception) {
                 responseState = Response.Error("Failed to update profile: ${e.localizedMessage}")
             }
@@ -283,20 +309,20 @@ class EditProfileViewModel @Inject constructor(
     }
 
 
-    fun updateUserProfileHeader(profileHeader : ProfileHeaderData){
+    fun updateUserProfileHeader(profileHeader: ProfileHeaderData) {
         viewModelScope.launch {
             userRepository.updateOrCreateProfileHeader(profileHeader)
         }
     }
 
-    fun updateUserNameAndImage(name :String, imageUrl : String){
+    fun updateUserNameAndImage(name: String, imageUrl: String) {
         viewModelScope.launch {
-            userRepository.updateUserNameAndImage(name,imageUrl)
+            userRepository.updateUserNameAndImage(name, imageUrl)
         }
     }
 
 
-    fun updateUserAbout(){
+    fun updateUserAbout() {
         viewModelScope.launch {
             userRepository.updateUserAbout(about).collect { result ->
                 responseState = result
@@ -304,17 +330,17 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateUserEducation(collegeInfo: CollegeInfo){
+    fun updateUserEducation(collegeInfo: CollegeInfo) {
         viewModelScope.launch {
-            userRepository.updateUserEducation(collegeInfo).collect{
+            userRepository.updateUserEducation(collegeInfo).collect {
                 responseState = it
             }
         }
     }
 
-    fun updateUserEducation(experienceInfo: ExperienceInfo){
+    fun updateUserEducation(experienceInfo: ExperienceInfo) {
         viewModelScope.launch {
-            userRepository.updateUserExperience(experienceInfo).collect{
+            userRepository.updateUserExperience(experienceInfo).collect {
                 responseState = it
             }
         }
