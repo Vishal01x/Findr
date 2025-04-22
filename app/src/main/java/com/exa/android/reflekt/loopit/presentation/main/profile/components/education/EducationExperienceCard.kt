@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,7 +54,7 @@ fun ExperienceCard(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onTertiary
                 )
-                if(isCurUser) {
+                if (isCurUser) {
                     IconButton(onClick = onEditExperience) {
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -64,49 +65,61 @@ fun ExperienceCard(
                 }
             }
 
-//            if (experienceInfo.title.isNotBlank()) {
+            if (isCurUser || !isCurUser && experienceInfo.title.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
-                Text(
-                    text = experienceInfo.title.ifBlank { "Unspecified" },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onTertiary
-                )
-                Text(
-                    text = experienceInfo.companyName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                val durationText = if (experienceInfo.currentlyWorking) {
-                    "${experienceInfo.startDate} - Present"
-                } else {
-                    "${experienceInfo.startDate} - ${experienceInfo.endDate}"
-                }
-
-                Text(
-                    text = "$durationText • ${experienceInfo.location}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-
-                if (experienceInfo.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = experienceInfo.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                Row {
+                    Icon(
+                        imageVector = Icons.Default.Work,
+                        contentDescription = "Work Icon",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = experienceInfo.title.ifBlank { "Unspecified" },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onTertiary
+                        )
+                        Text(
+                            text = experienceInfo.companyName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        val durationText = if (experienceInfo.currentlyWorking) {
+                            "${experienceInfo.startDate} - Present"
+                        } else {
+                            "${experienceInfo.startDate} - ${experienceInfo.endDate}"
+                        }
+
+                        Text(
+                            text = "$durationText • ${experienceInfo.location}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+
+                        if (experienceInfo.description.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = experienceInfo.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
+            }
+
         }
     }
 }
 
 
-
 @Composable
 fun EducationCard(
-    isCurUser :Boolean,
+    isCurUser: Boolean,
     collegeInfo: CollegeInfo,
     onEditEducation: () -> Unit
 ) {
@@ -129,7 +142,7 @@ fun EducationCard(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onTertiary
                 )
-                if(isCurUser) {
+                if (isCurUser) {
                     IconButton(onClick = onEditEducation) {
                         Icon(
                             imageVector = Icons.Default.Edit,

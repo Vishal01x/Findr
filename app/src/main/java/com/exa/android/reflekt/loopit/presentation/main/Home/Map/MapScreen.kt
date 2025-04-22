@@ -86,22 +86,28 @@ import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.google.accompanist.permissions.shouldShowRationale
 
 
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
+fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid ?: return
@@ -163,12 +169,16 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
         }
     }
 
-    Log.d("GeoFire", "MapScreen Composable, ${locationPermissionState.status}, ${currentLocation}, $selectedRole $radius $selectedLocation $currUserProfile $userLocations}")
+    Log.d(
+        "GeoFire",
+        "MapScreen Composable, ${locationPermissionState.status}, ${currentLocation}, $selectedRole $radius $selectedLocation $currUserProfile $userLocations}"
+    )
     // Initial data loading
     LaunchedEffect(locationPermissionState.status, currentLocation, selectedRole) {
         if (locationPermissionState.status.isGranted && currentLocation != null) {
 
-            Timber.tag("GeoFire").d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
+            Timber.tag("GeoFire")
+                .d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
             viewModel.fetchUserLocations(
                 location = selectedLocation ?: currentLocation!!,
                 radius = radius.toDouble(),
@@ -184,17 +194,16 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             showPermissionDialog = false
             isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
             showGpsDialog = !isGpsEnabled
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    location?.let {
-                        Timber.tag("GeoFire").d("Current Location: ${it.latitude}, ${it.longitude}")
-                        currentLocation = LatLng(it.latitude, it.longitude)
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(currentLocation!!, 12f)
-                    }
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    Timber.tag("GeoFire").d("Current Location: ${it.latitude}, ${it.longitude}")
+                    currentLocation = LatLng(it.latitude, it.longitude)
+                    cameraPositionState.position =
+                        CameraPosition.fromLatLngZoom(currentLocation!!, 12f)
                 }
-                .addOnFailureListener { e ->
-                    Timber.tag("GeoFire").e(e, "Error getting current location")
-                }
+            }.addOnFailureListener { e ->
+                Timber.tag("GeoFire").e(e, "Error getting current location")
+            }
 
             // Start location updates for the authenticated user
             viewModel.startLocationUpdates(userId, context)
@@ -206,21 +215,18 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showBottomSheet = true },
-                icon = { Icon(Icons.Default.Search, "Search") },
-                text = { Text("Search", style = MaterialTheme.typography.titleMedium) }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold(floatingActionButton = {
+        ExtendedFloatingActionButton(onClick = { showBottomSheet = true },
+            icon = { Icon(Icons.Default.Search, "Search") },
+            text = { Text("Search", style = MaterialTheme.typography.titleMedium) })
+    }) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Timber.tag("GeoFire").d("User Locations: $userLocations, $currUserProfile $currentLocation, $selectedLocation $radius $selectedRole")
+            Timber.tag("GeoFire")
+                .d("User Locations: $userLocations, $currUserProfile $currentLocation, $selectedLocation $radius $selectedRole")
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
@@ -229,14 +235,12 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                 userLocations.forEach { user ->
                     if (user.uid != userId) {  // Skip the current user
                         CustomMapMarker(
-                            imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
-                            fullName = user.name,
-                            location = LatLng(user.lat, user.lng),
-                            onClick = {
+                            //imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
+                            imageUrl = user.imageUrl, //.ifBlank { R.drawable.placeholder },
+                            fullName = user.name, location = LatLng(user.lat, user.lng), onClick = {
                                 selectedUser = user
                                 true
-                            }
-                        )
+                            })
                     }
                 }
 
@@ -252,16 +256,15 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             }
             // Profile Bottom Sheet
             selectedUser?.let { user ->
-                ProfileBottomSheet(
-                    user = user,
-                    onDismiss = { selectedUser = null }
-                )
+                ProfileBottomSheet(user = user,
+                    openProfile = { navController.navigate(ProfileRoute.UserProfile.createRoute(user.uid)) },
+                    openChat = { navController.navigate(HomeRoute.ChatDetail.createRoute(user.uid)) },
+                    onDismiss = { selectedUser = null })
             }
 
             // update
             if (showGpsDialog) {
-                AlertDialog(
-                    onDismissRequest = { showGpsDialog = false },
+                AlertDialog(onDismissRequest = { showGpsDialog = false },
                     title = { Text("GPS Required") },
                     text = { Text("Please enable GPS for accurate location services") },
                     confirmButton = {
@@ -277,16 +280,14 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                         TextButton(onClick = { showGpsDialog = false }) {
                             Text("Cancel")
                         }
-                    }
-                )
+                    })
             }
 
             if (showBottomSheet) {
                 ModalBottomSheet(
                     onDismissRequest = {
                         showBottomSheet = false
-                    },
-                    sheetState = sheetState
+                    }, sheetState = sheetState
                 ) {
                     Column(
                         modifier = Modifier
@@ -305,22 +306,23 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                                     shape = MaterialTheme.shapes.medium
                                 )
                         ) {
-                            SearchBar(
-                                onPlaceSelected = { place ->
-                                    viewModel.selectLocation(place, context)
-                                }
-                            )
+                            SearchBar(onPlaceSelected = { place ->
+                                viewModel.selectLocation(place, context)
+                            })
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = {
                                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                                     location?.let {
-                                        viewModel.setSelectedLocation(LatLng(it.latitude, it.longitude))
+                                        viewModel.setSelectedLocation(
+                                            LatLng(
+                                                it.latitude, it.longitude
+                                            )
+                                        )
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.LocationOn, "Current Location")
                             Spacer(modifier = Modifier.width(8.dp))
@@ -341,17 +343,16 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                         // Role Selection
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Select Role", style = MaterialTheme.typography.titleMedium)
-                        val roles = listOf("Software Engineer ", "Software Developer", "Android Developer")
+                        val roles =
+                            listOf("Software Engineer ", "Software Developer", "Android Developer")
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.horizontalScroll(rememberScrollState())
                         ) {
                             roles.forEach { role ->
-                                FilterChip(
-                                    selected = role == selectedRole,
+                                FilterChip(selected = role == selectedRole,
                                     onClick = { selectedRole = role },
-                                    label = { Text(role) }
-                                )
+                                    label = { Text(role) })
                             }
                         }
 
@@ -372,10 +373,8 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                                             // Move camera to selected location
                                             cameraPositionState.animate(
                                                 update = CameraUpdateFactory.newLatLngZoom(
-                                                    location,
-                                                    12f
-                                                ),
-                                                durationMs = 500
+                                                    location, 12f
+                                                ), durationMs = 500
                                             )
 
                                             // Fetch new data with current filters
@@ -385,12 +384,11 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                                                 role = selectedRole
                                             )
                                         }
-                                    }catch (e: Exception) {
+                                    } catch (e: Exception) {
                                         Timber.e(e, "Error applying filters")
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Apply Filters")
                         }
@@ -402,10 +400,10 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
 
     if (showPermissionDialog) {
         val permissionStatus = locationPermissionState.status
-        val isPermanentlyDenied = !permissionStatus.shouldShowRationale && !permissionStatus.isGranted
+        val isPermanentlyDenied =
+            !permissionStatus.shouldShowRationale && !permissionStatus.isGranted
 
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
+        AlertDialog(onDismissRequest = { showPermissionDialog = false },
             title = { Text("Permission Required") },
             text = {
                 if (isPermanentlyDenied) {
@@ -415,20 +413,18 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        showPermissionDialog = false
-                        if (isPermanentlyDenied) {
-                            // Open app settings
-                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                            context.startActivity(intent)
-                        } else {
-                            locationPermissionState.launchPermissionRequest()
+                Button(onClick = {
+                    showPermissionDialog = false
+                    if (isPermanentlyDenied) {
+                        // Open app settings
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
                         }
+                        context.startActivity(intent)
+                    } else {
+                        locationPermissionState.launchPermissionRequest()
                     }
-                ) {
+                }) {
                     Text(if (isPermanentlyDenied) "Open Settings" else "Grant Permission")
                 }
             },
@@ -438,16 +434,14 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                         Text("Cancel")
                     }
                 }
-            }
-        )
+            })
     }
 
 }
 
 @Composable
 fun SearchBar(
-    modifier: Modifier = Modifier,
-    onPlaceSelected: (String) -> Unit
+    modifier: Modifier = Modifier, onPlaceSelected: (String) -> Unit
 ) {
     // Determine the appropriate text color based on the current theme
     val textColor = if (isSystemInDarkTheme()) Color.White else Color.Black
@@ -462,14 +456,14 @@ fun SearchBar(
                 setHintTextColor(textColor.copy(alpha = 0.6f).toArgb())
 
                 layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 )
                 if (!Places.isInitialized()) {
                     Places.initialize(context, context.getString(R.string.PLACE_API_KEY))
                 }
 
-                val autocompleteAdapter = ArrayAdapter<String>(context, android.R.layout.simple_dropdown_item_1line)
+                val autocompleteAdapter =
+                    ArrayAdapter<String>(context, android.R.layout.simple_dropdown_item_1line)
                 val placesClient = Places.createClient(context)
                 val autocompleteSessionToken = AutocompleteSessionToken.newInstance()
 
@@ -478,29 +472,28 @@ fun SearchBar(
                     val query = editable?.toString() ?: ""
                     if (query.isNotEmpty()) {
                         val request = FindAutocompletePredictionsRequest.builder()
-                            .setSessionToken(autocompleteSessionToken)
-                            .setQuery(query)
-                            .build()
+                            .setSessionToken(autocompleteSessionToken).setQuery(query).build()
 
-                        placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
-                            autocompleteAdapter.clear()
-                            response.autocompletePredictions.forEach { prediction ->
-                                autocompleteAdapter.add(prediction.getFullText(null).toString())
+                        placesClient.findAutocompletePredictions(request)
+                            .addOnSuccessListener { response ->
+                                autocompleteAdapter.clear()
+                                response.autocompletePredictions.forEach { prediction ->
+                                    autocompleteAdapter.add(prediction.getFullText(null).toString())
+                                }
+                                autocompleteAdapter.notifyDataSetChanged()
                             }
-                            autocompleteAdapter.notifyDataSetChanged()
-                        }
                     }
                 }
 
                 setAdapter(autocompleteAdapter)
 
                 setOnItemClickListener { _, _, position, _ ->
-                    val selectedPlace = autocompleteAdapter.getItem(position) ?: return@setOnItemClickListener
+                    val selectedPlace =
+                        autocompleteAdapter.getItem(position) ?: return@setOnItemClickListener
                     onPlaceSelected(selectedPlace)
                 }
             }
-        },
-        modifier = modifier
+        }, modifier = modifier
             .fillMaxWidth()
             .padding(16.dp)
     )
@@ -508,39 +501,50 @@ fun SearchBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
+fun ProfileBottomSheet(
+    user: profileUser, openProfile: () -> Unit, openChat: () -> Unit, onDismiss: () -> Unit
+) {
     val sheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
+    ModalBottomSheet(onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.secondary,
         tonalElevation = 16.dp,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
-    ) {
+        dragHandle = { BottomSheetDefaults.DragHandle() }) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
             // Profile Header
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { openProfile() }) {
                 // Profile Image or Initials
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape
+                if (user.imageUrl.isNullOrEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = CircleShape
+                            )
+                            .padding(12.dp), contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = user.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = user.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    }
+                } else {
+                    ImageUsingCoil(
+                        context,
+                        user.imageUrl,
+                        R.drawable.placeholder,
+                        Modifier
+                            .size(64.dp)
                     )
                 }
 
@@ -570,22 +574,19 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = MaterialTheme.shapes.medium
                     )
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 InfoRow(
-                    icon = Icons.Default.Email,
-                    text = user.email
+                    icon = Icons.Default.Email, text = user.email
                 )
 
                 InfoRow(
-                    icon = Icons.Default.Phone,
-                    text = "Not available"
+                    icon = Icons.Default.Phone, text = "Not available"
                 )
 
                 InfoRow(
                     icon = Icons.Default.LocationOn,
-                    text = "${user.collegeName}"
+                    text = user.collegeName ?: user.companyName.ifBlank { "Not Available" }
                 )
             }
 
@@ -597,15 +598,13 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { /* Handle message action */ },
-                    modifier = Modifier.weight(1f)
+                    onClick = { openChat() }, modifier = Modifier.weight(1f)
                 ) {
                     Text("Send Message")
                 }
 
                 OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
+                    onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
                     Text("Close")
                 }
@@ -621,9 +620,7 @@ fun InfoRow(icon: ImageVector, text: String) {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
+            imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary
         )
         Text(
             text = text,
@@ -665,16 +662,15 @@ fun MapScreenn(viewModel: LocationViewModel = hiltViewModel()) {
             Timber.tag("GeoFire").d("Location updates started: $userId")
 
             // Get the current location and move the camera to it
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        val currentLatLng = LatLng(location.latitude, location.longitude)
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(currentLatLng, 12f)
-                    }
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val currentLatLng = LatLng(location.latitude, location.longitude)
+                    cameraPositionState.position =
+                        CameraPosition.fromLatLngZoom(currentLatLng, 12f)
                 }
-                .addOnFailureListener { e ->
-                    Timber.tag("GeoFire").e(e, "Error getting current location")
-                }
+            }.addOnFailureListener { e ->
+                Timber.tag("GeoFire").e(e, "Error getting current location")
+            }
         } else {
             // Request location permission if not granted
             locationPermissionState.launchPermissionRequest()
@@ -706,30 +702,22 @@ fun MapScreenn(viewModel: LocationViewModel = hiltViewModel()) {
 
 @Composable
 fun CustomMapMarkerr(
-    imageUrl: String?,
-    fullName: String,
-    location: LatLng,
-    onClick: () -> Unit
+    imageUrl: String?, fullName: String, location: LatLng, onClick: () -> Unit
 ) {
     val markerState = remember { MarkerState(position = location) }
     val shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 0.dp)
     val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl)
-            .allowHardware(false)
-            .build()
+        ImageRequest.Builder(LocalContext.current).data(imageUrl).allowHardware(false).build()
     )
 
-    MarkerComposable(
-        keys = arrayOf(fullName, painter.state),
+    MarkerComposable(keys = arrayOf(fullName, painter.state),
         state = markerState,
         title = fullName,
         anchor = Offset(0.5f, 1f),
         onClick = {
             onClick()
             true
-        }
-    ) {
+        }) {
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -759,31 +747,25 @@ fun CustomMapMarkerr(
 
 @Composable
 fun CustomMapMarker(
-    imageUrl: String?,
-    fullName: String,
-    location: LatLng,
-    onClick: () -> Unit
+    imageUrl: String?, fullName: String, location: LatLng, onClick: () -> Unit
 ) {
     val markerState = remember { MarkerState(position = location) }
     val context = LocalContext.current
 
     val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl)
-            .allowHardware(false)
+        ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
+            .placeholder(R.drawable.placeholder).error(R.drawable.placeholder).allowHardware(false)
             .build()
     )
 
-    MarkerComposable(
-        keys = arrayOf(fullName, painter.state),
+    MarkerComposable(keys = arrayOf(fullName, painter.state),
         state = markerState,
         title = fullName,
         anchor = Offset(0.5f, 1f),
         onClick = {
             onClick()
             true
-        }
-    ) {
+        }) {
         Box(
             modifier = Modifier
                 .wrapContentSize()
@@ -792,8 +774,7 @@ fun CustomMapMarker(
             // Marker Base Icon
             Image(
                 painter = painterResource(id = R.drawable.img), // Your marker base icon
-                contentDescription = "Map Marker",
-                modifier = Modifier.size(60.dp)
+                contentDescription = "Map Marker", modifier = Modifier.size(60.dp)
             )
 
             // Profile Image Positioned on Top
@@ -804,8 +785,7 @@ fun CustomMapMarker(
                     .offset(y = 2.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.White, CircleShape)
-                    .background(Color.Gray),
-                contentAlignment = Alignment.Center
+                    .background(Color.Gray), contentAlignment = Alignment.Center
             ) {
                 if (!imageUrl.isNullOrEmpty()) {
                     Image(

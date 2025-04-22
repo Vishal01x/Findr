@@ -296,9 +296,6 @@ class EditProfileViewModel @Inject constructor(
                 profileHeaderData.socialLinks.youtube = youtube
                 profileHeaderData.socialLinks.email = email
 
-
-
-
                 updateUserProfileHeader(profileHeaderData)
                 responseState = Response.Success(Unit)
                 updateUserNameAndImage(profileHeaderData.name, profileHeaderData.profileImageUrl)

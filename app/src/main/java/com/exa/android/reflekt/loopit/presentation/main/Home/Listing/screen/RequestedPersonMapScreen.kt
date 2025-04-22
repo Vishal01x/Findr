@@ -28,6 +28,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.Modifier
 import com.exa.android.reflekt.loopit.presentation.main.Home.Map.CustomMapMarker
 import com.exa.android.reflekt.loopit.presentation.main.Home.Map.ProfileBottomSheet
+import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.google.accompanist.permissions.isGranted
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
@@ -109,7 +111,7 @@ fun RequestedPersonMapScreen(
 
                 userLocations.forEach { user ->
                     CustomMapMarker(
-                        imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
+                        imageUrl = user.imageUrl, //.ifBlank {  "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg"},
                         fullName = user.name,
                         location = LatLng(user.lat, user.lng),
                         onClick = {
@@ -125,6 +127,8 @@ fun RequestedPersonMapScreen(
             selectedUser?.let { user ->
                 ProfileBottomSheet(
                     user = user,
+                    openProfile = {navController.navigate(ProfileRoute.UserProfile.createRoute(user.uid))},
+                    openChat = {navController.navigate(HomeRoute.ChatDetail.createRoute(user.uid))},
                     onDismiss = { selectedUser = null }
                 )
             }

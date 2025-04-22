@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.worker.PreferenceHelper
 import com.exa.android.reflekt.loopit.util.Response
@@ -26,6 +27,7 @@ class AuthVM @Inject constructor(
     val repository: AuthRepository,
     val auth: FirebaseAuth,
     private val preferenceHelper: PreferenceHelper,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     // Login State
@@ -225,7 +227,7 @@ class AuthVM @Inject constructor(
                 experience = signUpState.value.experience,
             )
             signUpState.value = signUpState.value.copy(isLoading = false)
-
+            userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
             when {
                 result.isSuccess -> {
                     signUpState.value = signUpState.value.copy(

@@ -6,6 +6,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
+import com.exa.android.reflekt.loopit.util.model.Profile.SocialLinks
 import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -109,16 +110,18 @@ class AuthRepositoryImpl @Inject constructor(
                 ctc = ctc,
                 experience = experience,
                 createdAt = Timestamp.now(),
+                socialLinks = SocialLinks(email = email)
             )
 
             val collegeInfo = CollegeInfo(
-                instituteName = collegeName
+                instituteName = collegeName,
+                year = year
             )
 
             val experienceInfo = ExperienceInfo(
                 companyName = companyName,
-                description = experience
-
+                experience = experience,
+                ctc = ctc
             )
 
             val profile = ProfileData(

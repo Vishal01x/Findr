@@ -292,7 +292,7 @@ private fun CollegeDatePicker(
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate,
-        yearRange = 1900..Calendar.getInstance().get(Calendar.YEAR)
+        yearRange = 1900..3000//Calendar.getInstance().get(Calendar.YEAR)
     )
 
     DatePickerDialog(

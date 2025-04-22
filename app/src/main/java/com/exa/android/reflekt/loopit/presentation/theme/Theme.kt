@@ -119,11 +119,13 @@ fun AppTheme(
   // Remember System UI Controller
   val systemUiController = rememberSystemUiController()
 
-  // Set the status bar color based on the theme
+  val useDarkIcons = true // dark icons = black icons
+  val statusBarColor = Color.White
+
   SideEffect {
     systemUiController.setStatusBarColor(
-      color = Color.Transparent,
-      darkIcons = !darkTheme
+      color = statusBarColor,
+      darkIcons = useDarkIcons
     )
   }
 

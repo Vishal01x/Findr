@@ -56,6 +56,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyViewMo
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getMediaTypeFromUri
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.isFileTooLarge
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.clearChatNotifications
 import com.exa.android.reflekt.loopit.util.model.MediaType
 import com.exa.android.reflekt.loopit.util.showToast
@@ -115,10 +116,10 @@ fun DetailChat(
 //    val otherUserId = otherUser.userId
 
     LaunchedEffect(otherUserId) {
+        userViewModel.getUserDetail(otherUserId)
         userViewModel.observeUserStatus(otherUserId)
         chatViewModel.getMessages(curUserId, otherUserId)
         userViewModel.updateUnreadMessages(curUserId, otherUserId)
-        userViewModel.getUserDetail(otherUserId)
         userViewModel.updateOnlineStatus(curUserId, true)
         // activeChatId = generateChatId(curUserId,otherUserId)
         clearChatNotifications(context, chatIdState.value)
@@ -205,7 +206,9 @@ fun DetailChat(
         topBar = {
             ChatHeader(
                 otherUserDetail.value, userStatus, curUserId, selectedMessages,
-                onProfileClick = { },
+                onProfileClick = {
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(otherUserId))
+                },
                 onBackClick = { navController.popBackStack() },
                 onVoiceCallClick = { },
                 onVideoCallClick = { },

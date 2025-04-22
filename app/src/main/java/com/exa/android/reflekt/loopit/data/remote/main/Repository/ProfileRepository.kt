@@ -24,6 +24,7 @@ class ProfileRepository @Inject constructor(
                     email = data.email,
                     name = data.name,
                     role = data.role,
+                    imageUrl = data.profileImageUrl,
                     isStudent = data.isStudent,
                     createdAt = data.createdAt,
                     collegeName = data.collegeName,

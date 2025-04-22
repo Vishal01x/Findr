@@ -120,22 +120,7 @@ fun CustomBottomNavigationBarr(
                 }
             }
         }),
-        BottomNavItemm(route = MainRoute.Profile.route,
-            icon = Icons.Default.Person,
-            label = "Profile",
-            onClick = {
-                //  if (selected != MainRoute.Profile.route) {
-                Log.d("profile", "2")
-                navController.navigate(MainRoute.Profile.route) {
-//                // Clear back stack up to start destination
-//                popUpTo(navController.graph.findStartDestination().id) {
-//                    saveState = true
-//                }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-                // }
-            }),
+
         BottomNavItemm(
             route = MainRoute.Map.route,
             icon = Icons.Default.LocationOn,
@@ -164,9 +149,24 @@ fun CustomBottomNavigationBarr(
                 }
                 // }
             }
-        )
+        ),
+        BottomNavItemm(route = MainRoute.Profile.route,
+            icon = Icons.Default.Person,
+            label = "Profile",
+            onClick = {
+                //  if (selected != MainRoute.Profile.route) {
+                Log.d("profile", "2")
+                navController.navigate(MainRoute.Profile.route) {
+//                // Clear back stack up to start destination
+//                popUpTo(navController.graph.findStartDestination().id) {
+//                    saveState = true
+//                }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                // }
+            })
     )
-
 
 
     // Render the custom navigation bar
@@ -282,12 +282,6 @@ fun CustomBottomNavigationBar(
             label = "Home"
         ),
         BottomNavItem(
-            route = MainRoute.Profile.route,
-            iconSelected = Icons.Filled.Person,
-            iconUnselected = Icons.Outlined.Person,
-            label = "Profile"
-        ),
-        BottomNavItem(
             route = MainRoute.Map.route,
             iconSelected = Icons.Filled.MyLocation,
             iconUnselected = Icons.Outlined.MyLocation,
@@ -298,6 +292,12 @@ fun CustomBottomNavigationBar(
             iconSelected = Icons.Filled.Work,
             iconUnselected = Icons.Outlined.Work,
             label = "Projects"
+        ),
+        BottomNavItem(
+            route = MainRoute.Profile.route,
+            iconSelected = Icons.Filled.Person,
+            iconUnselected = Icons.Outlined.Person,
+            label = "Profile"
         )
     )
 
@@ -334,6 +334,7 @@ fun CustomBottomNavigationBar(
         }
     }
 }
+
 @Composable
 private fun NavigationItem(
     item: BottomNavItem,
