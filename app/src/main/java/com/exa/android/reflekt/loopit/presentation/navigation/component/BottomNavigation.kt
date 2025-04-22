@@ -311,7 +311,7 @@ fun CustomBottomNavigationBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(70.dp)
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -344,8 +344,8 @@ private fun NavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .width(72.dp)
-            .padding(vertical = 8.dp)
+            .width(60.dp)
+            .padding(vertical = 6.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

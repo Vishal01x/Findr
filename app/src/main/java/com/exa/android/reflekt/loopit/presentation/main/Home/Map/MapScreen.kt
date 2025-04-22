@@ -82,6 +82,7 @@ import timber.log.Timber
 import android.content.Context
 import android.content.Intent
 import android.location.LocationManager
+import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -94,6 +95,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.google.accompanist.permissions.shouldShowRationale
 
 
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
@@ -118,10 +120,14 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
+    val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
     // Permission and location clients
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val cameraPositionState = rememberCameraPositionState()
+
+    val launchPermissionRequestState = rememberUpdatedState(locationPermissionState)
+    var showPermissionDialog by remember { mutableStateOf(true) }
 
     // Places API
     val placesClient = remember { Places.createClient(context) }
@@ -175,6 +181,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
     // Location permission handling
     LaunchedEffect(locationPermissionState.status) {
         if (locationPermissionState.status.isGranted) {
+            showPermissionDialog = false
             isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
             showGpsDialog = !isGpsEnabled
             fusedLocationClient.lastLocation
@@ -194,6 +201,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             Timber.tag("GeoFire").d("Location updates started: $userId")
 
         } else {
+            showPermissionDialog = true
             locationPermissionState.launchPermissionRequest()
         }
     }
@@ -392,18 +400,48 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
         }
     }
 
-    if (!locationPermissionState.status.isGranted) {
+    if (showPermissionDialog) {
+        val permissionStatus = locationPermissionState.status
+        val isPermanentlyDenied = !permissionStatus.shouldShowRationale && !permissionStatus.isGranted
+
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { showPermissionDialog = false },
             title = { Text("Permission Required") },
-            text = { Text("Location permission is needed to show nearby users") },
+            text = {
+                if (isPermanentlyDenied) {
+                    Text("Location permission was permanently denied. Please enable it in app settings.")
+                } else {
+                    Text("Location permission is needed to show nearby users.")
+                }
+            },
             confirmButton = {
-                Button(onClick = { locationPermissionState.launchPermissionRequest() }) {
-                    Text("Grant Permission")
+                Button(
+                    onClick = {
+                        showPermissionDialog = false
+                        if (isPermanentlyDenied) {
+                            // Open app settings
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                            context.startActivity(intent)
+                        } else {
+                            locationPermissionState.launchPermissionRequest()
+                        }
+                    }
+                ) {
+                    Text(if (isPermanentlyDenied) "Open Settings" else "Grant Permission")
+                }
+            },
+            dismissButton = {
+                if (!isPermanentlyDenied) {
+                    TextButton(onClick = { showPermissionDialog = false }) {
+                        Text("Cancel")
+                    }
                 }
             }
         )
     }
+
 }
 
 @Composable

@@ -42,7 +42,7 @@ private val LightColorScheme = lightColorScheme(
 
 // Dark Color Scheme (Updated)
 private val DarkColorScheme = darkColorScheme(
-  primary = Color(0xFFFFC107),
+  primary = Color(0xFF4875E1),
   onPrimary = Color.White,
   secondary = Color.White,
   onSecondary = Color.Black,
@@ -53,8 +53,10 @@ private val DarkColorScheme = darkColorScheme(
   onSurface = Color.White,
   onBackground = Color(0xFFE0E0E0),
   error = Color(0xFFEF5350),
-  primaryContainer = Color(0xFFFFC107),
-  secondaryContainer = Color(0xFFBDBDBD)
+  primaryContainer = Color(0xFF242424),
+  onPrimaryContainer = Color.White,
+  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
+  onSecondaryContainer = Color(0xFF4875E1),
 )
 
 // Extended Colors
@@ -110,7 +112,7 @@ fun AppTheme(
     }
 
      */
-    darkTheme -> DarkColorScheme
+    darkTheme -> LightColorScheme
     else -> LightColorScheme
   }
 

@@ -268,12 +268,13 @@ fun LoginScreen(
             Text(
                 text = "Welcome!",
                 style = typography.displayLarge,
-                color = colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onTertiary
             )
 
             Text(
                 text = "Findr",
-                style = typography.titleLarge
+                style = typography.titleLarge,
+                color = MaterialTheme.colorScheme.onTertiary
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -281,7 +282,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { viewModel.onLoginEvent(LoginEvent.EmailChanged(it)) },
-                label = { Text("Email ID", color = colorScheme.onSurface) },
+                label = { Text("Email ID") },
                 leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = "Email") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -289,7 +290,9 @@ fun LoginScreen(
                     focusedBorderColor = colorScheme.primary,
                     unfocusedBorderColor = colorScheme.onSurface.copy(alpha = 0.4f),
                     focusedLabelColor = colorScheme.primary,
-                    cursorColor = colorScheme.primary
+                    cursorColor = colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.onTertiary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onTertiary
                 )
             )
 
@@ -298,7 +301,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { viewModel.onLoginEvent(LoginEvent.PasswordChanged(it)) },
-                label = { Text("Password", color = colorScheme.onSurface) },
+                label = { Text("Password") },
                 leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = "Password") },
                 trailingIcon = {
                     IconButton(onClick = {
