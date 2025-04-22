@@ -87,6 +87,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
@@ -114,7 +115,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
     var selectedRole by remember { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
-    var selectedUser by remember { mutableStateOf<profileUser?>(null) }
+    var selectedUser by rememberSaveable  { mutableStateOf<profileUser?>(null) }
 
     // Bottom sheet state
     val sheetState = rememberModalBottomSheetState()
@@ -169,10 +170,17 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
         if (locationPermissionState.status.isGranted && currentLocation != null) {
 
             Timber.tag("GeoFire").d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
+            /*
             viewModel.fetchUserLocations(
                 location = selectedLocation ?: currentLocation!!,
                 radius = radius.toDouble(),
                 role = selectedRole
+            )
+
+             */
+            viewModel.fetchAllNearbyUsers(
+                radius = radius.toDouble(),
+                location = selectedLocation ?: currentLocation!!
             )
         }
     }

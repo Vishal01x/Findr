@@ -1233,6 +1233,7 @@ fun ProjectCard(
     onReject: (String) -> Unit,
     onViewOnMap: (List<String>) -> Unit,
     currentUserId: String?,
+    onAuthorProfileClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -1282,435 +1283,438 @@ fun ProjectCard(
     }
 
 
-        Card(
-            onClick = onClick,
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            shape = MaterialTheme.shapes.medium,
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 6.dp,  // Increased elevation
-                pressedElevation = 10.dp  // Increased from 8.dp
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            interactionSource = interactionSource
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp,  // Increased elevation
+            pressedElevation = 10.dp  // Increased from 8.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        interactionSource = interactionSource
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
+            // Header Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header Section
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = project.title,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.02).em
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    //Edit project
-                    if (isEditable) {
-                        Row {
-                            IconButton(
-                                onClick = { onEdit?.invoke() },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit Project",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            IconButton(
-                                onClick = { showDeleteDialog = true },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Project",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Description
-                var showFullDescription by remember { mutableStateOf(false) }
-                Column {
-                    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-                    var maxLines by remember { mutableStateOf(3) }
-
-                    Text(
-                        text = project.description,
-                        style = typography.bodyLarge,
-                        color = colors.onSurface,
-                        maxLines = maxLines,
-                        overflow = TextOverflow.Ellipsis,
-                        onTextLayout = { textLayoutResult = it }
-                    )
-
-                    if ((textLayoutResult?.lineCount ?: 0) > 3 && !showFullDescription) {
-                        TextButton(
-                            onClick = { showFullDescription = true },
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text("Read more", style = typography.labelMedium)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Roles Section
-                ExpandableSection(
-                    icon = Icons.Filled.Group,
-                    title = "Roles Needed (${project.rolesNeeded.size})",
-                    expanded = expandedRoles,
-                    onExpandChange = { expandedRoles = it },
-                    content = {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            project.rolesNeeded.forEach { role ->
-                                RoleChip(role = role)
-                            }
-                        }
-                    }
+                Text(
+                    text = project.title,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.02).em
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Tags Section
-                ExpandableSection(
-                    icon = Icons.Filled.Tag,
-                    title = "Tags (${project.tags.size})",
-                    expanded = expandedTags,
-                    onExpandChange = { expandedTags = it },
-                    content = {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            project.tags.forEach { tag ->
-                                TagChip(tag = tag)
-                            }
-                        }
-                    }
-                )
-
-                // Requested Members Section
+                //Edit project
                 if (isEditable) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clickable { expandedRequests = !expandedRequests }
-                                .padding(vertical = 4.dp)
+                    Row {
+                        IconButton(
+                            onClick = { onEdit?.invoke() },
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.PersonAddAlt1,
-                                contentDescription = "Enrolled",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Join Requests (${project.requestedPersons.size})",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Icon(
-                                imageVector = if (expandedRequests) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (expandedRequests) "Collapse members" else "Expand members",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Project",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
-                        // requested Persons
-                        AnimatedVisibility(
-                            visible = expandedRequests,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(top = 8.dp)
-                            ) {
-                                project.requestedPersons.forEach { (userId, userName) ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 6.dp).background(
-                                                color = MaterialTheme.colorScheme.primary.copy(0.2f),
-                                                shape = RoundedCornerShape(16.dp)
-                                            )
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .background(
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    shape = CircleShape
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = userName.take(1).uppercase(),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            text = userName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Row {
-                                            IconButton(
-                                                onClick = { onAccept(userId, userName) },
-                                                modifier = Modifier.size(28.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = "Accept",
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            IconButton(
-                                                onClick = { onReject(userId) },
-                                                modifier = Modifier.size(28.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Close,
-                                                    contentDescription = "Reject",
-                                                    tint = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                                FilledTonalButton(
-                                    onClick = {
-                                        if (project.requestedPersons.isNotEmpty()) {
-                                            onViewOnMap(project.requestedPersons.keys.toList())
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "No requested members",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    },
-                                    enabled = project.requestedPersons.isNotEmpty(),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (project.requestedPersons.isNotEmpty())
-                                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
-                                        else
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                    ),
-                                    shape = MaterialTheme.shapes.medium
-                                ) {
-                                    Icon(
-                                        Icons.Default.Map,
-                                        contentDescription = "View on map",
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("View Request on Map")
-                                }
-                            }
-                        }
-                    }
-                }
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                if (isEditable) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clickable { expandedEnrolled = !expandedEnrolled }
-                                .padding(vertical = 4.dp)
+                        IconButton(
+                            onClick = { showDeleteDialog = true },
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.People,
-                                contentDescription = "Team Members",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Project",
+                                tint = MaterialTheme.colorScheme.error
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Team Members (${project.enrolledPersons.size})",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Icon(
-                                imageVector = if (expandedEnrolled) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (expandedEnrolled) "Collapse members" else "Expand members",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = expandedEnrolled,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(top = 8.dp)
-                            ) {
-                                project.enrolledPersons.forEach { (userId, userName) ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 6.dp).background(
-                                                color = MaterialTheme.colorScheme.primary.copy(0.2f),
-                                                shape = RoundedCornerShape(16.dp)
-                                            )
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .background(
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    shape = CircleShape
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = userName.take(1).uppercase(),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = userName,
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
-                                            if (userId == project.createdBy) {
-                                                Text(
-                                                    text = "Creator",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Footer Section
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Author Info
-                    UserAvatar(
-                        name = project.createdByName,
-                        modifier = Modifier.size(40.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = project.createdByName,
-                            style = typography.labelLarge,
-                            color = colors.onSurface
-                        )
-                        project.createdAt?.toDate()?.let { date ->
-                            Text(
-                                text = date.formatAsTimeAgo(),
-                                style = typography.labelMedium,
-                                color = colors.outline
-                            )
-                        }
-                    }
-
-                    // Enroll/Withdraw Button
-                    if (!isEditable && currentUserId != null && currentUserId != project.createdBy) {
-                        FilledTonalButton(
-                            onClick = {
-                                if (isEnrolled) {
-                                    withdraw?.invoke()
-                                } else {
-                                    onEnroll?.invoke()
-                                }
-                            },
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (isEnrolled)
-                                    MaterialTheme.colorScheme.errorContainer
-                                else
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = if (isEnrolled)
-                                    MaterialTheme.colorScheme.onErrorContainer
-                                else
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isEnrolled)
-                                    MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                else
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 2.dp,
-                                pressedElevation = 4.dp
-                            )
-                        ) {
-                            Icon(
-                                imageVector = if (isEnrolled) Icons.Filled.ExitToApp
-                                else Icons.Filled.PersonAdd,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (isEnrolled) "Withdraw" else "Enroll")
                         }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Description
+            var showFullDescription by remember { mutableStateOf(false) }
+            Column {
+                var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+                var maxLines by remember { mutableStateOf(3) }
+
+                Text(
+                    text = project.description,
+                    style = typography.bodyLarge,
+                    color = colors.onSurface,
+                    maxLines = maxLines,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { textLayoutResult = it }
+                )
+
+                if ((textLayoutResult?.lineCount ?: 0) > 3 && !showFullDescription) {
+                    TextButton(
+                        onClick = { showFullDescription = true },
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("Read more", style = typography.labelMedium)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Roles Section
+            ExpandableSection(
+                icon = Icons.Filled.Group,
+                title = "Roles Needed (${project.rolesNeeded.size})",
+                expanded = expandedRoles,
+                onExpandChange = { expandedRoles = it },
+                content = {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        project.rolesNeeded.forEach { role ->
+                            RoleChip(role = role)
+                        }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Tags Section
+            ExpandableSection(
+                icon = Icons.Filled.Tag,
+                title = "Tags (${project.tags.size})",
+                expanded = expandedTags,
+                onExpandChange = { expandedTags = it },
+                content = {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        project.tags.forEach { tag ->
+                            TagChip(tag = tag)
+                        }
+                    }
+                }
+            )
+
+            // Requested Members Section
+            if (isEditable) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable { expandedRequests = !expandedRequests }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PersonAddAlt1,
+                            contentDescription = "Enrolled",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Join Requests (${project.requestedPersons.size})",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = if (expandedRequests) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = if (expandedRequests) "Collapse members" else "Expand members",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    // requested Persons
+                    AnimatedVisibility(
+                        visible = expandedRequests,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            project.requestedPersons.forEach { (userId, userName) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp).background(
+                                            color = MaterialTheme.colorScheme.primary.copy(0.2f),
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                shape = CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = userName.take(1).uppercase(),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = userName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Row {
+                                        IconButton(
+                                            onClick = { onAccept(userId, userName) },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Accept",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { onReject(userId) },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Reject",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = {
+                                    if (project.requestedPersons.isNotEmpty()) {
+                                        onViewOnMap(project.requestedPersons.keys.toList())
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "No requested members",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
+                                enabled = project.requestedPersons.isNotEmpty(),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (project.requestedPersons.isNotEmpty())
+                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                                    else
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                ),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Icon(
+                                    Icons.Default.Map,
+                                    contentDescription = "View on map",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("View Request on Map")
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (isEditable) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable { expandedEnrolled = !expandedEnrolled }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.People,
+                            contentDescription = "Team Members",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Team Members (${project.enrolledPersons.size})",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = if (expandedEnrolled) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = if (expandedEnrolled) "Collapse members" else "Expand members",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = expandedEnrolled,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            project.enrolledPersons.forEach { (userId, userName) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp).background(
+                                            color = MaterialTheme.colorScheme.primary.copy(0.2f),
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .background(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                shape = CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = userName.take(1).uppercase(),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = userName,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        if (userId == project.createdBy) {
+                                            Text(
+                                                text = "Creator",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Footer Section
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+                    .clickable {
+                        onAuthorProfileClick(project.createdBy)
+                    }
+            ) {
+                // Author Info
+                UserAvatar(
+                    name = project.createdByName,
+                    modifier = Modifier.size(40.dp)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = project.createdByName,
+                        style = typography.labelLarge,
+                        color = colors.onSurface
+                    )
+                    project.createdAt?.toDate()?.let { date ->
+                        Text(
+                            text = date.formatAsTimeAgo(),
+                            style = typography.labelMedium,
+                            color = colors.outline
+                        )
+                    }
+                }
+
+                // Enroll/Withdraw Button
+                if (!isEditable && currentUserId != null && currentUserId != project.createdBy) {
+                    FilledTonalButton(
+                        onClick = {
+                            if (isEnrolled) {
+                                withdraw?.invoke()
+                            } else {
+                                onEnroll?.invoke()
+                            }
+                        },
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (isEnrolled)
+                                MaterialTheme.colorScheme.errorContainer
+                            else
+                                MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = if (isEnrolled)
+                                MaterialTheme.colorScheme.onErrorContainer
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isEnrolled)
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                            else
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 2.dp,
+                            pressedElevation = 4.dp
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isEnrolled) Icons.Filled.ExitToApp
+                            else Icons.Filled.PersonAdd,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isEnrolled) "Withdraw" else "Enroll")
+                    }
+                }
+            }
         }
+    }
 
 }
 
@@ -2018,7 +2022,8 @@ fun ProjectCardPreview() {
             onReject = { _ -> },
             onViewOnMap = { _ -> },
             currentUserId = "creator1",
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            onAuthorProfileClick = {}
         )
     }
 }
@@ -2051,7 +2056,8 @@ fun ProjectCardNonEditablePreview() {
             onReject = { _ -> },
             onViewOnMap = { _ -> },
             currentUserId = "user3",
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+                onAuthorProfileClick = {}
         )
     }
 }

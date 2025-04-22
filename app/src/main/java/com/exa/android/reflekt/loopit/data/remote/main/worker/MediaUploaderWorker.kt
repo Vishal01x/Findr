@@ -20,7 +20,6 @@ class MediaUploadWorker @AssistedInject constructor(
     private val repository: MediaSharingRepository
 ) : CoroutineWorker(context, params) {
 
-
     override suspend fun doWork(): Result {
         val uriString = inputData.getString("uri") ?: return Result.failure()
         //val userId = inputData.getString("userId") ?: return Result.failure()
