@@ -23,8 +23,8 @@ sealed class MainRoute(val route : String){
     object Home : MainRoute("home")
     object Profile : MainRoute("profile")
     object Setting : MainRoute("setting")
-    object Map : MainRoute("map")
-    object Project : MainRoute("project")
+    object Map : MainRoute("map_graph")
+    object Project : MainRoute("project_graph")
     companion object{
         const val ROOT="main_app"
     }

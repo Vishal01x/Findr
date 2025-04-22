@@ -55,8 +55,6 @@ class ProjectRepositoryImpl @Inject constructor(
         userId: String?
     ): Flow<Result<List<Project>>> = flow {
         try {
-            emit(Result.success(emptyList())) // Initial loading state
-
             var query = db.collection(PROJECTS_COLLECTION)
                 .orderBy(Project.FIELD_CREATED_AT, Query.Direction.DESCENDING)
 

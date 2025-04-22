@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 import android.content.Context
 import com.exa.android.reflekt.loopit.data.remote.main.MapDataSource.FirebaseDataSource
 import com.exa.android.reflekt.loopit.data.remote.main.MapDataSource.LocationDataSource
+import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationForegroundService
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -21,15 +22,13 @@ import com.firebase.geofire.GeoQuery
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.Priority
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import timber.log.Timber
 
 @ViewModelScoped
 class LocationRepository @Inject constructor(
     private val firebaseDataSource: FirebaseDataSource,
-    private val locationDataSource: LocationDataSource
+    private val locationDataSource: LocationDataSource,
+    private val context: Context
 ) {
     private val _userLocations = MutableStateFlow<List<profileUser>>(emptyList())
     val userLocations: StateFlow<List<profileUser>> get() = _userLocations
@@ -65,6 +64,14 @@ class LocationRepository @Inject constructor(
         Timber.tag("GeoFire").d("Starting location updates for user $userId")
         locationDataSource.startLocationUpdates(context, locationRequest, locationCallback)
     }
+    fun startLocationUpdates(userId: String) {
+        Timber.tag("GeoFire").d("Starting foreground service for user $userId")
+        LocationForegroundService.Companion.startService(context, userId)
+    }
+
+    fun stopLocationUpdates() {
+        LocationForegroundService.Companion.stopService(context)
+    }
 
     fun fetchUserLocations(role: String, radius: Double, location: LatLng) {
         Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
@@ -75,12 +82,15 @@ class LocationRepository @Inject constructor(
                     onSuccess = { user ->
                         // Check if the fetched role matches the provided role
                         Timber.tag("Location").d("users: $user")
-                        if (role == user?.role && user.uid != currentUserId) {
+                        if (user != null && user.uid != currentUserId) {
+                            val userRoles = user.role.split(",").map {it}
+                            if (userRoles.any { it.equals(role, ignoreCase = true) }) {
+                                val updatedUser =
+                                    user.copy(lat = location.latitude, lng = location.longitude)
 
-                            val updatedUser = user.copy(lat = location.latitude, lng = location.longitude)
-
-                            Timber.tag("GeoFire").d("User location fetched: $updatedUser")
-                            _userLocations.value = _userLocations.value + updatedUser
+                                Timber.tag("GeoFire").d("User location fetched: $updatedUser")
+                                _userLocations.value = _userLocations.value + updatedUser
+                            }
                         }
                     },
                     onFailure = { exception ->
