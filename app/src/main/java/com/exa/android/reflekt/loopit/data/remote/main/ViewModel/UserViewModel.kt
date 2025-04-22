@@ -1,9 +1,13 @@
 package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.LocationRepository
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
 import com.exa.android.reflekt.loopit.util.model.Status
 import com.exa.android.reflekt.loopit.util.model.User
@@ -16,7 +20,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class UserViewModel @Inject constructor(private val userRepository: UserRepository) : ViewModel() {
+class UserViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+) : ViewModel() {
 
     private val _userStatus = MutableLiveData<Status>(Status()) // Default status
     val userStatus: LiveData<Status> = _userStatus

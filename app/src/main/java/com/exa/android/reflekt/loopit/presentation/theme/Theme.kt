@@ -22,18 +22,22 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 // Light Color Scheme (Updated)
 private val LightColorScheme = lightColorScheme(
-  primary = Color(0xFFFFC107),       // Yellow from the image
-  onPrimary = Color.Black,           // Black text/icons on yellow
-  secondary = Color.Black,
-  onSecondary = Color.White,
+  primary = Color(0xFF4875E1),
+  onPrimary = Color.White,
+  secondary = Color.White,
+  onSecondary = Color(0xFF4875E1),
   tertiary = Color.White,
   onTertiary = Color.Black,
   background = Color.White,          // White clean UI background
   surface = Color(0xFFF8F8F8),       // Light gray for chat backgrounds
   onSurface = Color(0xFF212121),     // Dark gray for text
   error = Color(0xFFE57373),         // Soft Red (for errors)
-  primaryContainer = Color(0xFFFFC107), // Container for primary
-  secondaryContainer = Color(0xFFBDBDBD) // Container for secondary
+  primaryContainer = Color(0xFF4875E1),
+  onPrimaryContainer = Color.White,
+  surfaceVariant = Color(0xFFF8F8F8),
+  onSurfaceVariant = Color(0xFF4875E1),
+  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
+  onSecondaryContainer = Color(0xFF4875E1),
 )
 
 // Dark Color Scheme (Updated)
@@ -99,10 +103,13 @@ fun AppTheme(
   content: @Composable () -> Unit
 ) {
   val colorScheme = when {
+    /*
     dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
       val context = LocalContext.current
       if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     }
+
+     */
     darkTheme -> DarkColorScheme
     else -> LightColorScheme
   }

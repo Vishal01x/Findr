@@ -84,6 +84,13 @@ class LocationViewModel @Inject constructor(
     fun fetchRequestedUserLocations(userIds: List<String>) {
         locationRepository.fetchRequestedUserLocations(userIds)
     }
+    fun startLocationUpdates(userId: String) {
+        locationRepository.startLocationUpdates(userId)
+    }
+
+    fun stopLocationUpdates() {
+        locationRepository.stopLocationUpdates()
+    }
 
     override fun onCleared() {
         locationRepository.clearRequestedUserLocations()

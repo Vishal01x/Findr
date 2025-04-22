@@ -12,7 +12,8 @@ data class ProjectListState(
     val availableRoles: List<String> = emptyList(),
     val selectedTags: Set<String> = emptySet(),
     val availableTags: List<String> = emptyList(),
-    val showMyProjectsOnly: Boolean = false
+    val showMyProjectsOnly: Boolean = false,
+    val isRefreshing: Boolean = false
 )
 
 sealed class ProjectListEvent {
@@ -25,4 +26,5 @@ sealed class ProjectListEvent {
     object Refresh : ProjectListEvent()
     object ToggleMyProjects : ProjectListEvent()
     object ClearFilters : ProjectListEvent()
+    object ClearError : ProjectListEvent()
 }

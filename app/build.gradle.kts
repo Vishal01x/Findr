@@ -65,7 +65,6 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.play.services.safetynet)
     implementation(libs.androidx.browser)
@@ -75,7 +74,9 @@ dependencies {
     implementation(libs.androidx.runner)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.firebase.messaging.ktx)
-    implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -83,6 +84,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation ("androidx.compose.foundation:foundation:1.7.8")
+    implementation ("androidx.compose.material3:material3:1.3.2")
+
+    implementation ("androidx.compose.material:material:1.7.8")
 
     // system ui
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
@@ -161,4 +166,21 @@ dependencies {
     // Kotlin + coroutines
     val work_version = "2.10.0"
     implementation( "androidx.work:work-runtime-ktx:$work_version")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+
+    // security crypto
+    implementation ("androidx.security:security-crypto:1.1.0-alpha07")
+
+    implementation ("androidx.media3:media3-exoplayer:1.6.1")
+    implementation ("androidx.media3:media3-ui:1.6.1")
+    implementation ("androidx.media3:media3-common:1.6.1")
+
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // Lottie animations
+    implementation ("com.airbnb.android:lottie-compose:6.1.0")
+
+    // Motion Layout
+    implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
+
 }

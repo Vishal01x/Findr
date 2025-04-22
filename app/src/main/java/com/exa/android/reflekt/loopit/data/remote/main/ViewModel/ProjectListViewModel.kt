@@ -71,6 +71,7 @@ class ProjectListViewModel @Inject constructor(
                 loadProjects()
             }
             ProjectListEvent.Refresh -> {
+                _state.update { it.copy(isRefreshing = true) }
                 loadProjects(forceRefresh = true)
             }
             ProjectListEvent.ClearFilters -> {
@@ -83,29 +84,55 @@ class ProjectListViewModel @Inject constructor(
                 }
                 loadProjects()
             }
-
+            ProjectListEvent.ClearError -> {
+                _state.update { it.copy(error = null) }
+            }
         }
     }
 
-    private fun loadProjects(forceRefresh: Boolean = false) {
+    fun loadProjects(forceRefresh: Boolean = false) {
         val load="loading"
         _state.update { it.copy(isLoading = true, error = null) }
         Timber.tag(load).d("Loading projects")
 
         viewModelScope.launch {
-            repository.getProjectsStream(
-                searchQuery = _state.value.searchQuery,
-                rolesFilter = _state.value.selectedRoles.toList(),
-                tagsFilter = _state.value.selectedTags.toList(),
-                showMyProjectsOnly = _state.value.showMyProjectsOnly,
-                userId = auth.currentUser?.uid
-            ).collect { result ->
-                Timber.tag(load).d("Projects loaded")
+            try {
+                repository.getProjectsStream(
+                    searchQuery = _state.value.searchQuery,
+                    rolesFilter = _state.value.selectedRoles.toList(),
+                    tagsFilter = _state.value.selectedTags.toList(),
+                    showMyProjectsOnly = _state.value.showMyProjectsOnly,
+                    userId = auth.currentUser?.uid
+                ).collect { result ->
+                    Timber.tag(load).d("Projects loaded")
+                    result.fold(
+                        onSuccess = { projects ->
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    projects = projects,
+                                    isRefreshing = false,
+                                    error = null
+                                )
+                            }
+                        },
+                        onFailure = { error ->
+                            _state.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isRefreshing = false,
+                                    error = error.message ?: "Failed to load projects"
+                                )
+                            }
+                        }
+                    )
+                }
+            } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        projects = result.getOrElse { emptyList() },
-                        error = result.exceptionOrNull()?.message
+                        isRefreshing = false,
+                        error = e.message ?: "Failed to load projects"
                     )
                 }
             }

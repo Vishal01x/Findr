@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Reflekt" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Reflekt" parent="android:Theme.Material.Light.NoActionBar">
+    </style>
+    <style name="Theme.Reflekt.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/colorPrimary</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_app_round</item>
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
+    </style>
 </resources>

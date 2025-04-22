@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.presentation.auth
 
 import android.util.Patterns
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
@@ -42,6 +43,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -67,6 +69,7 @@ import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.data.remote.authentication.vm.SignUpState
 
 // auth/SignUpScreen.kt
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -91,6 +94,13 @@ fun SignUpScreen(
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+    }
+    BackHandler {
+        if (state.selectedAccountType == "Professional") {
+            viewModel.onSignUpEvent(SignUpEvent.AccountTypeSelected("Personal"))
+        } else {
+            onNavigateBack()
         }
     }
 
@@ -132,7 +142,7 @@ fun SignUpScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        painter = painterResource(id = R.drawable.ic_app),
                         contentDescription = "Profile Creation",
                         modifier = Modifier.size(80.dp)
                     )
@@ -204,7 +214,7 @@ fun SignUpScreen(
                 }
 
 
-                if (!state.showNext) {
+                if (state.selectedAccountType == "Personal") {
                     // Basic Info Section
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -236,8 +246,15 @@ fun SignUpScreen(
                                 cursorColor = colorScheme.primary
                             ),
                             keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Next,  // This enables the Next button
                                 capitalization = KeyboardCapitalization.Words,
                                 autoCorrect = true
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    // Move focus to the next field (you'll need to add focus references)
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
                             )
                         )
 
@@ -267,8 +284,16 @@ fun SignUpScreen(
                                 cursorColor = colorScheme.primary
                             ),
                             keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Next,  // This enables the Next button
+                                capitalization = KeyboardCapitalization.Words,
                                 keyboardType = KeyboardType.Email,
-                                autoCorrect = false
+                                autoCorrect = true
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    // Move focus to the next field (you'll need to add focus references)
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
                             )
                         )
 
@@ -314,8 +339,15 @@ fun SignUpScreen(
                                 cursorColor = colorScheme.primary
                             ),
                             keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Next,
                                 keyboardType = KeyboardType.Password,
                                 autoCorrect = false
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = {
+                                    // Move focus to the next field (you'll need to add focus references)
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
                             )
                         )
                         // Role with suggestions
@@ -462,9 +494,8 @@ fun SignUpScreen(
                             onClick = {
                                 viewModel.onSignUpEvent(SignUpEvent.Continue)
                                 focusManager.clearFocus()
-                                if (state.selectedAccountType == "Personal") {
-                                    viewModel.onSignUpEvent(SignUpEvent.AccountTypeSelected("Professional"))
-                                }
+                                viewModel.onSignUpEvent(SignUpEvent.AccountTypeSelected("Professional"))
+
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -490,7 +521,8 @@ fun SignUpScreen(
                             )
                         }
                     }
-                } else {
+                }
+                else {
                     // Profile Details Section
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -557,6 +589,17 @@ fun SignUpScreen(
                                     focusedLabelColor = colorScheme.primary,
                                     cursorColor = colorScheme.primary
                                 ),
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Next,  // This enables the Next button
+                                    capitalization = KeyboardCapitalization.Words,
+                                    autoCorrect = true
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        // Move focus to the next field (you'll need to add focus references)
+                                        focusManager.moveFocus(FocusDirection.Down)
+                                    }
+                                )
                             )
 
                             OutlinedTextField(
@@ -584,10 +627,20 @@ fun SignUpScreen(
                                     cursorColor = colorScheme.primary
                                 ),
                                 keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Next,  // This enables the Next button
+                                    capitalization = KeyboardCapitalization.Words,
+                                    autoCorrect = true,
                                     keyboardType = KeyboardType.Number
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        // Move focus to the next field (you'll need to add focus references)
+                                        focusManager.moveFocus(FocusDirection.Down)
+                                    }
                                 )
                             )
-                        } else {
+                        }
+                        else {
                             // Professional fields
                             OutlinedTextField(
                                 value = state.location,
@@ -613,6 +666,17 @@ fun SignUpScreen(
                                     focusedLabelColor = colorScheme.primary,
                                     cursorColor = colorScheme.primary
                                 ),
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Next,  // This enables the Next button
+                                    capitalization = KeyboardCapitalization.Words,
+                                    autoCorrect = true
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        // Move focus to the next field (you'll need to add focus references)
+                                        focusManager.moveFocus(FocusDirection.Down)
+                                    }
+                                )
                             )
 
                             OutlinedTextField(
@@ -639,6 +703,17 @@ fun SignUpScreen(
                                     focusedLabelColor = colorScheme.primary,
                                     cursorColor = colorScheme.primary
                                 ),
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Next,  // This enables the Next button
+                                    capitalization = KeyboardCapitalization.Words,
+                                    autoCorrect = true
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = {
+                                        // Move focus to the next field (you'll need to add focus references)
+                                        focusManager.moveFocus(FocusDirection.Down)
+                                    }
+                                )
                             )
 
                             Row(
@@ -670,7 +745,15 @@ fun SignUpScreen(
                                         cursorColor = colorScheme.primary
                                     ),
                                     keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Number
+                                        imeAction = ImeAction.Next,  // This enables the Next button
+                                        capitalization = KeyboardCapitalization.Words,
+                                        keyboardType = KeyboardType.Number,
+                                        autoCorrect = true
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onNext = {
+                                            focusManager.moveFocus(FocusDirection.Down)
+                                        }
                                     )
                                 )
 
@@ -708,15 +791,6 @@ fun SignUpScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Sign Up Button
-                        val isFormComplete = if (state.isStudent) {
-                            state.collegeName.isNotBlank() && state.year.isNotBlank()
-                        } else {
-                            state.location.isNotBlank() &&
-                                    state.companyName.isNotBlank() &&
-                                    state.experience.isNotBlank() &&
-                                    state.ctc.isNotBlank()
-                        }
 
                         Button(
                             onClick = {
@@ -726,7 +800,7 @@ fun SignUpScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
-                            enabled = isFormComplete,
+                            enabled = isFormComplete(state),
                             shape = MaterialTheme.shapes.large,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -753,6 +827,23 @@ fun SignUpScreen(
                     }
                 }
             }
+        }
+    }
+}
+private fun isFormComplete(state: SignUpState): Boolean {
+    return if (state.selectedAccountType == "Personal") {
+        state.email.isNotBlank() &&
+                state.fullName.isNotBlank() &&
+                state.selectedRoles.isNotEmpty() &&
+                state.password.length >= 8
+    } else {
+        if (state.isStudent) {
+            state.collegeName.isNotBlank() && state.year.isNotBlank()
+        } else {
+            state.location.isNotBlank() &&
+                    state.companyName.isNotBlank() &&
+                    state.experience.isNotBlank() &&
+                    state.ctc.isNotBlank()
         }
     }
 }

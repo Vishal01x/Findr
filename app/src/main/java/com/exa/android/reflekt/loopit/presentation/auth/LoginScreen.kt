@@ -256,7 +256,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.chat_img3),
+                painter = painterResource(id = R.drawable.ic_app),
                 contentDescription = "App Logo",
                 modifier = Modifier
                     .size(width = 200.dp, height = 200.dp)
@@ -272,7 +272,7 @@ fun LoginScreen(
             )
 
             Text(
-                text = "Tech Connect",
+                text = "Findr",
                 style = typography.titleLarge
             )
 
@@ -346,7 +346,7 @@ fun LoginScreen(
                 if (state.isLoading) {
                     CircularProgressIndicator(color = colorScheme.onPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text("Login", fontWeight = FontWeight.Bold, color = colorScheme.onPrimary)
+                    Text("Login", fontWeight = FontWeight.Bold, color = colorScheme.onPrimary, fontSize = 18.sp)
                 }
             }
 

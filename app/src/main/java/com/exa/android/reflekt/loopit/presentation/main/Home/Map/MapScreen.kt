@@ -108,7 +108,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
     // Location and UI states
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
     // var searchLocation by remember { mutableStateOf<LatLng?>(null) }
-    var radius by remember { mutableStateOf(1f) }
+    var radius by remember { mutableStateOf(10f) }
     var selectedRole by remember { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
@@ -203,7 +203,7 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
             ExtendedFloatingActionButton(
                 onClick = { showBottomSheet = true },
                 icon = { Icon(Icons.Default.Search, "Search") },
-                text = { Text("Search") }
+                text = { Text("Search", style = MaterialTheme.typography.titleMedium) }
             )
         }
     ) { paddingValues ->
@@ -286,30 +286,8 @@ fun MapScreen(viewModel: LocationViewModel = hiltViewModel()) {
                             .padding(16.dp)
                     ) {
                         // Location Input
-                        Text("Search Location", style = MaterialTheme.typography.titleMedium)
+                        Text("Search Location", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        /*
-                        OutlinedTextField(
-                            value = searchLocation?.toString() ?: "Current Location",
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { Icon(Icons.Default.Search, null) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    val intentSender = Autocomplete.IntentBuilder(
-                                        AutocompleteActivityMode.FULLSCREEN,
-                                        listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
-                                    )
-                                        .setTypeFilter(TypeFilter.CITIES)
-                                        .build(context)
-                                    val intentRequest = IntentSenderRequest.Builder(intentSender).build()
-                                    autocompleteLauncher.launch(intentRequest)
-                                }
-                        )
-
-                         */
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -499,7 +477,7 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.secondary,
         tonalElevation = 16.dp,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
@@ -551,7 +529,7 @@ fun ProfileBottomSheet(user: profileUser, onDismiss: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = MaterialTheme.shapes.medium
                     )
                     .padding(16.dp),
