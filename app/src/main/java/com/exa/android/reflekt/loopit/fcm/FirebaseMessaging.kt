@@ -108,19 +108,34 @@ class FirebaseService : FirebaseMessagingService() {
         }
 
         // Pending Intent
-        val deepLinkIntent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("reflekt://chat/$senderId")).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
+        val deepLinkUri = Uri.parse("findr://chat/$senderId")
+
+        // Intent to open the deep link
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // ✅ Create PendingIntent
         val pendingIntent = PendingIntent.getActivity(
-            this, notificationId, deepLinkIntent,
+            this,
+            notificationId, // unique identifier for the pending intent
+            deepLinkIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // Build basic notification (no image yet)
+//        val builder = NotificationCompat.Builder(this, channelId)
+//            .setSmallIcon(R.drawable.findr_logo)
+//            .setStyle(messagingStyle)
+//            .setPriority(NotificationCompat.PRIORITY_HIGH)
+//            .setAutoCancel(true)
+//            .setContentIntent(pendingIntent)
+
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.findr_logo)
-            .setStyle(messagingStyle)
+            .setStyle(messagingStyle) //Makes it a conversation notification
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setShortcutId(senderName) //Groups messages from the same sender
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

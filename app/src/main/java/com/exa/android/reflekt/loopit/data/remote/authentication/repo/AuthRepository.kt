@@ -157,7 +157,7 @@ class AuthRepositoryImpl @Inject constructor(
             firestoreService.registerFCMToken()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.d("FireStore Service", "User Sign Up failed - ${e.localizedMessage}")
+           // Log.d("FireStore Service", "User Sign Up failed - ${e.localizedMessage}")
             Result.failure(e)
         }
     }

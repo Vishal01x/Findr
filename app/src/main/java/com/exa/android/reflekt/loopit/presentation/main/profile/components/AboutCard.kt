@@ -10,14 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -104,17 +107,33 @@ fun AboutCard(
                         localText = it
                         editProfileViewModel.updateAbout(it)
                     },
+                    placeholder = {
+                        Text("Write about yourself, your goals, passions, or interests...")
+                    },
+                    trailingIcon = {
+                        if (localText.isNotEmpty()) {
+                            IconButton(onClick = {
+                                localText = ""
+                                editProfileViewModel.updateAbout("")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear text"
+                                )
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.background),
                     maxLines = 5,
-                    label = { Text("About") } // Optional label
+                    label = { Text("About") }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
@@ -123,6 +142,8 @@ fun AboutCard(
                     ) {
                         Text("Cancel")
                     }
+
+                    Spacer(Modifier.width(12.dp))
 
                     TextButton(
                         onClick = {
@@ -154,7 +175,7 @@ fun AboutCard(
             } else {
                 // Normal about text with Show more/less
                 Text(
-                    text = content,
+                    text = content.ifBlank { if(isCurUser) "Describe who you are, what you do, and what you're passionate about" else "" },
                     maxLines = if (expanded) Int.MAX_VALUE else 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium.copy(

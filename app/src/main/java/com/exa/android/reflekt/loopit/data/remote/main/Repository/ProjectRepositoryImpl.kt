@@ -33,6 +33,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
     override suspend fun createProject(project: Project): Result<Unit> {
         return try {
+            Log.d("Firestore", "Creating project: $project")
             require(auth.currentUser != null) { "User must be authenticated" }
             require(project.title.isNotBlank()) { "Title cannot be empty" }
 

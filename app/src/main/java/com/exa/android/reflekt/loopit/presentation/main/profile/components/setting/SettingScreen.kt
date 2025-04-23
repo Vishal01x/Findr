@@ -1,9 +1,13 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.setting
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
@@ -15,10 +19,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.theme.Purple40
 import kotlinx.coroutines.launch
 
@@ -52,7 +62,6 @@ fun SettingsScreen(
     // Error states
     val passwordError by settingsViewModel.passwordChangeError.collectAsState()
     val emailError by settingsViewModel.emailUpdateError.collectAsState()
-
 
     LaunchedEffect(passwordError) {
         passwordError?.let {
@@ -118,6 +127,34 @@ fun SettingsScreen(
                         onLogOutClick()
                     }
                 )
+            }
+
+            val feedbackFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeprJ-ajG7DFUWgVHMVy7gglkcScwNDfx_NixnZsFZGXlPmBQ/viewform?usp=sharing"
+
+            item {
+                SectionHeader(title = "Feedback")
+            }
+
+            item {
+                Text(
+                    text = "We’d love to hear your thoughts!",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onTertiary
+                )
+            }
+
+
+            item {
+                Text(
+                    text = "Tell us what you think about our app. Whether it's a suggestion, something you'd love to see, expectations we should meet, bugs or issues you've encountered — we're here to listen and improve!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onTertiary,
+                    lineHeight = 20.sp
+                )
+            }
+
+            item {
+                Text(" -> Fill out form", modifier = Modifier.clickable { openUrl(context, feedbackFormUrl) })
             }
 
             // Privacy
@@ -200,12 +237,12 @@ fun SettingsScreen(
                     onClick = {}
                 )
             }
-
+            val updateLink = "https://drive.google.com/drive/u/1/folders/12zo8h7J_Utjk7OPgXldpaRBLsJoXKaLr"
             item {
                 SettingsItem(
-                    icon = Icons.Default.Star,
-                    title = "Rate the App",
-                    onClick = { /* Open Play Store */ }
+                    icon = Icons.Default.Update,
+                    title = "Update the App",
+                    onClick = { openUrl(context, updateLink) }
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.util.model
 
+import androidx.compose.runtime.saveable.Saver
 import com.google.firebase.Timestamp
 
 
@@ -63,5 +64,49 @@ data class profileUser(
                 experience = map["experience"] as? String ?: ""
             )
         }
+        val Saver: Saver<profileUser?, *> = Saver(
+            save = { user ->
+                user?.let {
+                    listOf(
+                        it.uid,
+                        it.email,
+                        it.name,
+                        it.role,
+                        it.imageUrl,
+                        it.isStudent,
+                        it.collegeName,
+                        it.year,
+                        it.lat,
+                        it.lng,
+                        it.location,
+                        it.companyName,
+                        it.ctc,
+                        it.experience
+                    )
+                }
+            },
+            restore = { data ->
+                if (data is List<*> && data.size >= 14) {
+                    profileUser(
+                        uid = data[0] as String,
+                        email = data[1] as String,
+                        name = data[2] as String,
+                        role = data[3] as String,
+                        imageUrl = data[4] as String,
+                        isStudent = data[5] as Boolean,
+                        collegeName = data[6] as? String,
+                        year = data[7] as String,
+                        lat = data[8] as Double,
+                        lng = data[9] as Double,
+                        location = data[10] as String,
+                        companyName = data[11] as String,
+                        ctc = data[12] as String,
+                        experience = data[13] as String
+                    )
+                } else null
+            }
+        )
+
     }
+
 }

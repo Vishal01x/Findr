@@ -47,6 +47,12 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/PLACE_API_KEY" />
 
+        <!-- REMOVE WorkManager auto-initializer -->
+        <meta-data
+            android:name="androidx.work.WorkManagerInitializer"
+            android:value="androidx.startup"
+            tools:node="remove" />
+
         <activity
             android:name=".MainActivity"
             android:exported="false"
@@ -62,7 +68,7 @@
                 <data
                     android:host="chat"
                     android:pathPrefix="/"
-                    android:scheme="reflekt" />
+                    android:scheme="findr" />
             </intent-filter>
         </activity>
 

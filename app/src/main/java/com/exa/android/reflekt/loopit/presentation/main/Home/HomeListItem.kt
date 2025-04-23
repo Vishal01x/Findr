@@ -94,7 +94,7 @@ fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (user : Use
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
+            Column(horizontalAlignment = Alignment.End , modifier = Modifier.padding(end = 4.dp)) {
                 val timestampInMillis = chat.lastMessageTimestamp.seconds * 1000L
                 Text(
                     formatTimestamp(timestampInMillis),

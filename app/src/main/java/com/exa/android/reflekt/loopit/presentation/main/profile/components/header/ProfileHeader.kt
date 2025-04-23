@@ -58,7 +58,7 @@ fun ProfileHeader(
 
 
 @Composable
-fun ImageHeader(isCurUser: Boolean,userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit) {
+fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit) {
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxWidth()) {
         // Banner Image
@@ -94,7 +94,7 @@ fun ImageHeader(isCurUser: Boolean,userProfileHeader: ProfileHeaderData, onEditC
                     )
                 }
         )
-        if(isCurUser) {
+        if (isCurUser) {
             CircularIconCard(
                 Icons.Default.Edit,
                 {
@@ -138,7 +138,8 @@ private fun ProfileContent(
         }
         // Bio
         Text(
-            text = userProfileHeader.headline
+            text = userProfileHeader.headline.ifBlank { if (isCurUser) "Write a catchy headline about your role/goal " +
+                    "e.g. Software Developer @ xyz | CP rating | Proficient in xyz technology" else "" }
                 ?: "Co-founder, Apna College | Ex-Microsoft | Google SPS'20",
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = Color.Black,
@@ -156,25 +157,25 @@ private fun ProfileContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             //if (!userProfileHeader.socialLinks.youtube.isNullOrEmpty()) {
-                CircularIconCardPainter(iconPainter = R.drawable.github, onClick = {
-                    userProfileHeader.socialLinks.youtube?.let { openUrl(context, it) }
-                })
-           // }
+            CircularIconCardPainter(iconPainter = R.drawable.github, onClick = {
+                userProfileHeader.socialLinks.youtube?.let { openUrl(context, it) }
+            })
+            // }
             //if (!userProfileHeader.socialLinks.linkedin.isNullOrEmpty()) {
-                CircularIconCardPainter(
-                     iconPainter = R.drawable.linedin,
-                    onClick = {
-                        userProfileHeader.socialLinks.linkedin?.let { openUrl(context, it) }
-                    }
-                )
+            CircularIconCardPainter(
+                iconPainter = R.drawable.linedin,
+                onClick = {
+                    userProfileHeader.socialLinks.linkedin?.let { openUrl(context, it) }
+                }
+            )
             //}
             //if (!userProfileHeader.socialLinks.email.isNullOrEmpty()) {
-                CircularIconCard(icon = Icons.Default.Email, onClick = {
-                    userProfileHeader.socialLinks.email?.let {
-                        if (it.isNotEmpty())
-                            openUrl(context, "mailto:$it")
-                    }
-                })
+            CircularIconCard(icon = Icons.Default.Email, onClick = {
+                userProfileHeader.socialLinks.email?.let {
+                    if (it.isNotEmpty())
+                        openUrl(context, "mailto:$it")
+                }
+            })
             //}
 
 
@@ -185,10 +186,10 @@ private fun ProfileContent(
                 // Chat Button
                 FilledTonalButton(
                     onClick = { openChat() },
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     elevation = ButtonDefaults.buttonElevation(8.dp)
                 ) {
                     Icon(
@@ -203,23 +204,23 @@ private fun ProfileContent(
 
         // Website and Join Date
 //        if (!userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
-            Row(
-                modifier = Modifier
-                    .padding(top = 6.dp, start = 4.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text =  "Portfolio.in",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color(0xFF4285F4),
-                        fontSize = 18.sp,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    modifier = Modifier.clickable(!userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
-                        openUrl(context, userProfileHeader.socialLinks.portfolio!!)
-                    }
-                )
+        Row(
+            modifier = Modifier
+                .padding(top = 6.dp, start = 4.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Portfolio.in",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color(0xFF4285F4),
+                    fontSize = 18.sp,
+                    fontStyle = FontStyle.Italic
+                ),
+                modifier = Modifier.clickable(!userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
+                    openUrl(context, userProfileHeader.socialLinks.portfolio!!)
+                }
+            )
 //            Text(
 //                text = "Joined February 2020",
 //                style = MaterialTheme.typography.bodyMedium.copy(
@@ -227,7 +228,7 @@ private fun ProfileContent(
 //                ),
 //                modifier = Modifier.padding(start = 16.dp)
 //            )
-            }
+        }
     }
 }
 
@@ -256,8 +257,6 @@ fun CircularIconCardPainter(
         }
     }
 }
-
-
 
 
 @Composable

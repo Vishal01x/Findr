@@ -102,6 +102,7 @@ import androidx.navigation.NavHostController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.ProjectCard
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.SearchFilterBar
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import kotlinx.coroutines.delay
@@ -437,7 +438,10 @@ fun ListedProjectsScreen(
                                 modifier = Modifier
                                     .animateItemPlacement()
                                     .fillMaxWidth()
-                                    .clipToBounds()
+                                    .clipToBounds(),
+                                onAuthorProfileClick = { autherId->
+                                    navController.navigate(ProfileRoute.UserProfile.createRoute(autherId))
+                                }
                             )
                         }
 
@@ -765,7 +769,10 @@ fun ListedProjectsScreenn(
                                     navController.navigate("map_screen/${userIds.joinToString(",")}")
                                 },
                                 currentUserId = FirebaseAuth.getInstance().currentUser?.uid,
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItemPlacement(),
+                                onAuthorProfileClick = { autherId ->
+                                    navController.navigate(ProfileRoute.UserProfile.createRoute(autherId))
+                                }
                             )
                         }
                     }

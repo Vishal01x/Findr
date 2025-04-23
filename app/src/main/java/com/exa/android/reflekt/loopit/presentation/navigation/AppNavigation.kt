@@ -1,6 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.navigation
 
 
+import android.content.Intent
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -11,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.exa.android.reflekt.MainActivity
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.ProjectCard
 import com.exa.android.reflekt.loopit.presentation.main.Home.Map.MapScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.header.Profile
@@ -31,16 +34,18 @@ fun AppNavigation(
     otherUserId: String? = null
 ) {
     //OnBackPressed(navController)
+    val activity = LocalActivity.current
 
     LaunchedEffect(otherUserId) {
-        otherUserId?.let {
+        if (!otherUserId.isNullOrBlank()) {
             navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId)) {
                 popUpTo(HomeRoute.ChatList.route) {
                     inclusive = false
-                } // Ensure HomeScreen is in the back stack
-                launchSingleTop = true  // Avoid creating duplicate instances
+                }
+                launchSingleTop = true
             }
-
+//            // Clear the intent to avoid re-navigation on recomposition
+//            activity?.intent = Intent(activity, MainActivity::class.java)
         }
     }
 
