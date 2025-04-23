@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
@@ -146,6 +147,7 @@ fun SignUpScreen(
                         painter = painterResource(id = R.drawable.ic_app),
                         contentDescription = "Profile Creation",
                         modifier = Modifier.size(80.dp)
+                            .clip(RoundedCornerShape(20.dp))
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))

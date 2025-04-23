@@ -88,6 +88,7 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
@@ -115,11 +116,13 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     // Location and UI states
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
     // var searchLocation by remember { mutableStateOf<LatLng?>(null) }
-    var radius by remember { mutableStateOf(10f) }
-    var selectedRole by remember { mutableStateOf("") }
+    var radius by rememberSaveable { mutableStateOf(10f) }
+    var selectedRole by rememberSaveable { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
-    var selectedUser by remember { mutableStateOf<profileUser?>(null) }
+    var selectedUser by rememberSaveable (stateSaver = profileUser.Saver) {
+        mutableStateOf<profileUser?>(null)
+    }
 
     // Bottom sheet state
     val sheetState = rememberModalBottomSheetState()
@@ -552,9 +555,10 @@ fun ProfileBottomSheet(
                             .padding(12.dp), contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = user.name,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            text = user.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.align(Alignment.Center)
                         )
                     }
                 } else {
@@ -564,6 +568,8 @@ fun ProfileBottomSheet(
                         R.drawable.placeholder,
                         Modifier
                             .size(64.dp)
+                            .clip(RoundedCornerShape(12.dp))
+
                     )
                 }
 
