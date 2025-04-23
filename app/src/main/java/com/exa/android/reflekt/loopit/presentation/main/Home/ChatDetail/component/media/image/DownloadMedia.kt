@@ -6,7 +6,7 @@ import android.net.Uri
 import android.util.Log
 
 fun downloadMedia(context: Context, mediaUrl: String, fileName: String) {
-    Log.d("Storage Cloudinary", "Starting download from $mediaUrl")
+    //Log.d("Storage Cloudinary", "Starting download from $mediaUrl")
 
     val request = DownloadManager.Request(Uri.parse(mediaUrl))
         .setTitle(fileName)
@@ -21,5 +21,5 @@ fun downloadMedia(context: Context, mediaUrl: String, fileName: String) {
     val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     dm.enqueue(request)
 
-    Log.d("Storage Cloudinary", "Download enqueued for $fileName")
+    //Log.d("Storage Cloudinary", "Download enqueued for $fileName")
 }

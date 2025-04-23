@@ -59,10 +59,10 @@ fun MediaPickerHandler(
                 if (byteArray != null && byteArray.isNotEmpty()) {
                     onLaunch(uri)
                 } else {
-                    Log.e("Upload", "Captured image is empty")
+                   // Log.e("Upload", "Captured image is empty")
                 }
             } catch (e: Exception) {
-                Log.e("Upload", "Error reading image: ${e.message}")
+               // Log.e("Upload", "Error reading image: ${e.message}")
             }
         }
     }

@@ -1,7 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home
 
 import android.app.Activity
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,13 +59,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNotificationPermissionIfNeeded
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.google.gson.Gson
-
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
@@ -75,7 +74,10 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
         (context as Activity).finish()
     }
 
-    var isQueryClicker by remember { mutableStateOf(false) }
+
+    RequestNotificationPermissionIfNeeded(true)
+
+        var isQueryClicker by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
 
@@ -201,6 +203,160 @@ fun QuerySection(
 }
 
 @Composable
+fun StoriesSection() {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 12.dp), // No padding at the end
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Add "Add Story" item
+        item {
+            AddStoryItem()
+        }
+
+        // Add stories
+        items(storyList) { story ->
+            StoryItem(image = story.image, name = story.name)
+        }
+    }
+}
+
+@Composable
+fun AddStoryItem() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(start = 12.dp) // Padding for the first item
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(54.dp)
+                .border(
+                    width = 1.dp,
+                    color = Color.Gray.copy(alpha = 0.5f),
+                    shape = CircleShape
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Story",
+                tint = Color.Black,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = "Add Story",
+            style = MaterialTheme.typography.titleSmall,
+            color = Color.Black
+        )
+    }
+}
+/*
+@Composable
+fun ChatsSection(
+    navController: NavController,
+    isQueryActive : Boolean,
+    updateChatList: List<ChatList>,
+    viewModel: ChatViewModel,
+    onSuccess: (List<ChatList>) -> Unit
+) {
+    val chatList by viewModel.chatList.collectAsState()
+    Log.d("chatsSection", chatList.toString())
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp), // Avoid spacing issues
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        // Add a title to the chat list
+//        item {
+//            ChatTitle()
+//        }
+
+        // Handle the state of the chat list
+        when (val response = chatList) {
+            is Response.Loading -> {
+                // Show a loading indicator
+                item {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .wrapContentWidth(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+
+            is Response.Success -> {
+                onSuccess(response.data)
+                // Display the chat list
+                if (response.data.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "No chats Yet",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route) }) {
+                                Text(text = "New Chat")
+                            }
+                        }
+                    }
+                }
+                val data = if(isQueryActive)updateChatList else response.data
+                items(response.data) { chat ->
+                    ChatListItem(
+                        chat = chat,
+                        zoomImage = { imageId ->
+                            navController.navigate("zoomImage/$imageId")
+                        },
+                        openChat = { user ->
+//                            val userJson = Gson().toJson(user)
+//                            val encodedUserJson = java.net.URLEncoder.encode(userJson, "UTF-8")
+//                            navController.navigate(HomeRoute.ChatDetail.createRoute(encodedUserJson))
+
+                            navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId))
+                        }
+                    )
+                }
+            }
+
+            is Response.Error -> {
+
+                Log.d("ChatList", response.message)
+                // Show a friendly error message and optional retry button
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Failed to load chats. Please try again.",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { viewModel.getChatList() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+ */
+
+
+@Composable
 fun ChatsSection(
     navController: NavController,
     isQueryActive: Boolean,
@@ -265,6 +421,80 @@ fun ChatsSection(
     }
 }
 
+@Composable
+fun ChatTitle(modifier: Modifier = Modifier) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Chats",
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.Black,
+            fontWeight = FontWeight.Bold,
+            fontSize = 19.sp
+        )
+
+        Icon(
+            imageVector = Icons.Default.Menu,
+            contentDescription = "search chat",
+            tint = Color.Black,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
+fun ShowbottomSheet(modifier: Modifier = Modifier) {
+    var showDialog by remember { mutableStateOf(bottomSheet) }
+    var textState by remember { mutableStateOf("") }
+
+    // Show the dialog box if showDialog is true
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { bottomSheet = false },  // Dismiss the dialog on outside click
+            title = { Text("Enter Text") },
+            text = {
+                Column {
+                    Text("Please enter something below:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = textState,
+                        onValueChange = { textState = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Input") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Handle the OK button action
+                        bottomSheet = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        // Handle the Cancel button action
+                        bottomSheet = false
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+
+// Sample data classes
+data class Story(val image: Int, val name: String)
+
 
 data class Chat(
     val image: Int,
@@ -272,4 +502,60 @@ data class Chat(
     val lastMessage: String,
     val time: String,
     val unreadCount: Int
+)
+
+// Sample data
+val storyList = listOf(
+    Story(R.drawable.chat_img3, "Terry"),
+    Story(R.drawable.chat_img3, "Craig"),
+    Story(R.drawable.chat_img3, "Roger"),
+    Story(R.drawable.chat_img3, "Nolan"),
+    Story(R.drawable.chat_img3, "Terry"),
+    Story(R.drawable.chat_img3, "Craig"),
+    Story(R.drawable.chat_img3, "Roger"),
+    Story(R.drawable.chat_img3, "Nolan"),
+    Story(R.drawable.chat_img3, "Terry"),
+    Story(R.drawable.chat_img3, "Craig"),
+    Story(R.drawable.chat_img3, "Roger"),
+    Story(R.drawable.chat_img3, "Nolan")
+
+)
+
+val chatList = listOf(
+    Chat(
+        R.drawable.chat_img3,
+        "Angel Curtis",
+        "Please help me find a good monitor...",
+        "02:11",
+        2
+    ),
+    Chat(R.drawable.chat_img3, "Zaire Dorwart", "Gacor pisan kang", "02:11", 2),
+    Chat(R.drawable.chat_img3, "Kelas Malam", "Bima: No one can come today?", "02:11", 2),
+    Chat(R.drawable.chat_img3, "Jocelyn Gouse", "You're now an admin", "02:11", 0),
+    Chat(R.drawable.chat_img3, "Jaylon Dias", "Buy back 10k gallons...", "02:11", 0),
+    Chat(R.drawable.chat_img3, "Chance Rhiel Madsen", "Thank you mate!", "02:11", 2),
+    Chat(
+        R.drawable.chat_img3,
+        "Angel Curtis",
+        "Please help me find a good monitor...",
+        "02:11",
+        2
+    ),
+    Chat(R.drawable.chat_img3, "Zaire Dorwart", "Gacor pisan kang", "02:11", 2),
+    Chat(R.drawable.chat_img3, "Kelas Malam", "Bima: No one can come today?", "02:11", 2),
+    Chat(R.drawable.chat_img3, "Jocelyn Gouse", "You're now an admin", "02:11", 0),
+    Chat(R.drawable.chat_img3, "Jaylon Dias", "Buy back 10k gallons...", "02:11", 0),
+    Chat(R.drawable.chat_img3, "Chance Rhiel Madsen", "Thank you mate!", "02:11", 2),
+    Chat(
+        R.drawable.chat_img3,
+        "Angel Curtis",
+        "Please help me find a good monitor...",
+        "02:11",
+        2
+    ),
+    Chat(R.drawable.chat_img3, "Zaire Dorwart", "Gacor pisan kang", "02:11", 2),
+    Chat(R.drawable.chat_img3, "Kelas Malam", "Bima: No one can come today?", "02:11", 2),
+    Chat(R.drawable.chat_img3, "Jocelyn Gouse", "You're now an admin", "02:11", 0),
+    Chat(R.drawable.chat_img3, "Jaylon Dias", "Buy back 10k gallons...", "02:11", 0),
+    Chat(R.drawable.chat_img3, "Chance Rhiel Madsen", "Thank you mate!", "02:11", 2)
 )

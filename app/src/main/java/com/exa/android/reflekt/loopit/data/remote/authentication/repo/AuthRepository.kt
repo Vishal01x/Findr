@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.authentication.repo
 
+import android.util.Log
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
@@ -135,6 +136,7 @@ class AuthRepositoryImpl @Inject constructor(
             firestoreService.registerFCMToken()
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.d("FireStore Service", "User Sign Up failed - ${e.localizedMessage}")
             Result.failure(e)
         }
     }

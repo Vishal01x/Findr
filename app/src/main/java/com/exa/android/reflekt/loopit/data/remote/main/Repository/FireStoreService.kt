@@ -261,10 +261,7 @@ class FirestoreService @Inject constructor(
             }
 
             if (!receiverToken.isNullOrEmpty()) {
-                // Log.d("FireStore Service", "receiver Token - $receiverToken")
                 sendPushNotification(receiverToken, message, curUser)
-            }else{
-                // Log.d("FireStore Service", "no receiver Toke")
             }
 
             return finalMessageId
