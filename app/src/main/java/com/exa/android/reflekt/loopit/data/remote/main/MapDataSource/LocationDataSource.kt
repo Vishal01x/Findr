@@ -23,10 +23,10 @@ class LocationDataSource @Inject constructor(
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(context, Manifest.   permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         ) {
-            Timber.tag("Location").d("Permission granted")
+            //Timber.tag("Location").d("Permission granted")
             locationProvider.requestLocationUpdates(locationRequest, callback, Looper.getMainLooper())
         } else {
-            Timber.tag("Location").e("Permission not granted")
+            //Timber.tag("Location").e("Permission not granted")
         }
     }
 
