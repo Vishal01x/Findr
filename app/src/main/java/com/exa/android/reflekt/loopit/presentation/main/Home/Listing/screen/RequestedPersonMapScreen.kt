@@ -107,7 +107,7 @@ fun RequestedPersonMapScreen(
                 properties = MapProperties(isMyLocationEnabled = locationPermissionState.status.isGranted)
             ) {
 
-                Log.d(tag, "userLocations: $userLocations")
+                // Log.d(tag, "userLocations: $userLocations")
 
                 userLocations.forEach { user ->
                     CustomMapMarker(

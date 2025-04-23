@@ -106,19 +106,19 @@ class MediaSharingViewModel @Inject constructor(
                 }
 
             } catch (e: UnknownHostException) {
-                Log.e("UploadFlow", "No internet connection", e)
+                // Log.e("UploadFlow", "No internet connection", e)
                 handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType,uri, e, onError, onProgress)
 
             } catch (e: SocketTimeoutException) {
-                Log.e("UploadFlow", "Upload timed out", e)
+                // Log.e("UploadFlow", "Upload timed out", e)
                 handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType, uri,e, onError, onProgress)
 
             } catch (e: IOException) {
-                Log.e("UploadFlow", "IO error during upload", e)
+                // Log.e("UploadFlow", "IO error during upload", e)
                 handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType, uri, e, onError, onProgress)
 
             } catch (e: Exception) {
-                Log.e("UploadFlow", "Unexpected error", e)
+                // Log.e("UploadFlow", "Unexpected error", e)
                 handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType, uri,e, onError, onProgress)
             }
         }
@@ -154,7 +154,7 @@ class MediaSharingViewModel @Inject constructor(
 
     private suspend fun tryUploadFileToCloudinary(file: File, mediaType: MediaType): Media {
         return uploadFileToCloudinary(file) ?: throw IOException("Upload File Failed").also {
-            Log.e("Upload", "uploadFileToCloudinary returned null")
+            // Log.e("Upload", "uploadFileToCloudinary returned null")
         }
     }
 
@@ -286,11 +286,11 @@ class MediaSharingViewModel @Inject constructor(
                 val uploadedUrl = mediaSharingRepository.uploadFileToCloudinary(file)
                 if (uploadedUrl != null) {
                     val type = getMediaTypeFromUrl(uploadedUrl)
-                    Log.d("Storage Cloudinary", "${uploadedUrl} , type : ${type}")
+                    // Log.d("Storage Cloudinary", "${uploadedUrl} , type : ${type}")
                     Media(mediaType = type, mediaUrl = uploadedUrl)
                 } else null
             } catch (e: Exception) {
-                Log.e("Storage Cloudinary", "Upload failed", e)
+                // Log.e("Storage Cloudinary", "Upload failed", e)
                 null
             }
         }
@@ -332,7 +332,7 @@ class MediaSharingViewModel @Inject constructor(
 
     suspend fun createTempFileFromUri(context: Context, uri: Uri): File =
         withContext(Dispatchers.IO) {
-            Log.d("Storage Cloudinary", "Creating file from URI: $uri")
+            // Log.d("Storage Cloudinary", "Creating file from URI: $uri")
 
             val contentResolver = context.contentResolver
             var fileName = "default_file"
@@ -363,7 +363,7 @@ class MediaSharingViewModel @Inject constructor(
                 }
             }
 
-            Log.d("Storage Cloudinary", "File created with original name: ${file.absolutePath}")
+            // Log.d("Storage Cloudinary", "File created with original name: ${file.absolutePath}")
             file
         }
 
@@ -379,14 +379,14 @@ class MediaSharingViewModel @Inject constructor(
         tempFiles?.forEach { file ->
             try {
                 if (file.delete()) {
-                    Log.d("TempCleanup", "Deleted: ${file.name}")
+                    // Log.d("TempCleanup", "Deleted: ${file.name}")
                 } else {
-                    Log.w("TempCleanup", "Failed to delete: ${file.name}")
+                    // Log.w("TempCleanup", "Failed to delete: ${file.name}")
                 }
             } catch (e: SecurityException) {
-                Log.e("TempCleanup", "Security error deleting ${file.name}: ${e.message}")
+                // Log.e("TempCleanup", "Security error deleting ${file.name}: ${e.message}")
             } catch (e: Exception) {
-                Log.e("TempCleanup", "Error deleting ${file.name}: ${e.message}")
+                // Log.e("TempCleanup", "Error deleting ${file.name}: ${e.message}")
             }
         }
     }

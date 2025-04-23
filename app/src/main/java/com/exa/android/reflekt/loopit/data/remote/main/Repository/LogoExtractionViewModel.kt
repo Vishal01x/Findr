@@ -30,11 +30,11 @@ class BrandfetchViewModel @Inject constructor(
             if (response.isSuccessful) {
                 response.body()
             } else {
-                Log.e("Brandfetch", "Error response: ${response.errorBody()?.string()}")
+                // Log.e("Brandfetch", "Error response: ${response.errorBody()?.string()}")
                 null
             }
         } catch (e: Exception) {
-            Log.e("Brandfetch", "Exception: ${e.localizedMessage}", e)
+            //Log.e("Brandfetch", "Exception: ${e.localizedMessage}", e)
             null
         }
     }

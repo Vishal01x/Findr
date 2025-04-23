@@ -140,114 +140,97 @@ fun ExtracurricularCard(
 
 
 
-    @Composable
-    fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
-        val context = LocalContext.current
-//    val domain = remember(link) { Uri.parse(link).host?.removePrefix("www.") ?: "" }
-//    val viewModel: BrandfetchViewModel = hiltViewModel()
-//
-//    var brandData by remember(domain) { mutableStateOf<BrandfetchResponse?>(null) }
-//    var isLoading by remember(domain) { mutableStateOf(false) }
-//
-//    LaunchedEffect(domain) {
-//        if (domain.isNotEmpty()) {
-//            isLoading = true
-//            try {
-//                val result = viewModel.fetchBrandInfoSingle(domain)
-//                brandData = result
-//            } finally {
-//                isLoading = false
-//            }
-//        }
-//    }
+@Composable
+fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
+    val context = LocalContext.current
 
-        Card(
+    Card(
+        modifier = Modifier
+            .width(180.dp)
+            .wrapContentHeight()
+            .clickable { onAddClick() }
+            .padding(8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
+    ) {
+        Column(
             modifier = Modifier
-                .width(180.dp)
-                .wrapContentHeight()
-                .clickable { onAddClick() }
                 .padding(8.dp),
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(4.dp),
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
+            horizontalAlignment = Alignment.Start
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(8.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text("Link", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiary, modifier =
-                Modifier.clickable { openUrl(context, extraActivity.link) })
+            Text("Link", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiary, modifier =
+            Modifier.clickable { openUrl(context, extraActivity.link) })
 
-                Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
 //            if (isLoading) {
 //                CircularProgressIndicator(modifier = Modifier.size(40.dp))
 //            } else {
-                val logoUrl = extraActivity.media
-                if (!logoUrl.isNullOrEmpty()) {
-                    ImageUsingCoil(
-                        context = context,
-                        imageUrl = logoUrl,
-                        placeholder = R.drawable.htmx_ic,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .align(Alignment.CenterHorizontally),
-                        errorImage = R.drawable.htmx_ic
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(R.drawable.htmx_ic),
-                        contentDescription = "Default icon",
-                        modifier = Modifier.size(80.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .align(Alignment.CenterHorizontally)
-                    )
-                }
-                //}
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = extraActivity.domain.ifBlank { ".com" },
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(.6f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = extraActivity.name.ifBlank { "No Title" },
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onTertiary
-                )
-
-                Text(
-                    text = extraActivity.description,
-                    style = MaterialTheme.typography.bodySmall,
+            val logoUrl = extraActivity.media
+            if (!logoUrl.isNullOrEmpty()) {
+                ImageUsingCoil(
+                    context = context,
+                    imageUrl = logoUrl,
+                    placeholder = R.drawable.htmx_ic,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp)
-                        .animateContentSize(),
-                    minLines = 2,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onTertiary
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .align(Alignment.CenterHorizontally),
+                    errorImage = R.drawable.htmx_ic
+                )
+            } else {
+                Icon(
+                    painter = painterResource(R.drawable.htmx_ic),
+                    contentDescription = "Default icon",
+                    modifier = Modifier.size(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .align(Alignment.CenterHorizontally)
                 )
             }
+            //}
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = extraActivity.domain.ifBlank { ".com" },
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(.6f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = extraActivity.name.ifBlank { "No Title" },
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 2.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onTertiary
+            )
+
+            Text(
+                text = extraActivity.description,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .animateContentSize(),
+                minLines = 2,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onTertiary
+            )
         }
     }
+}
 
 
-    fun openUrl(context: Context, url: String) {
-        try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        } catch (e: Exception) {
-            Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
-        }
+fun openUrl(context: Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (e: Exception) {
+        Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
     }
+}

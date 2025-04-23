@@ -16,12 +16,14 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
@@ -204,6 +206,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
 //        val deepLinkUri = intent.data
 //        deepLinkUri?.let {
 //            val userId = it.lastPathSegment // Extract userId from notification
@@ -239,22 +242,14 @@ class MainActivity : ComponentActivity() {
         val viewModel: AuthVM = hiltViewModel()
         val isLoggedIn = viewModel.loginState.value.loginSuccess
         val navController = rememberNavController()  // Assign instance to class property
+        val currentIntent = rememberUpdatedState(LocalActivity.current).value?.intent
 
+        val senderId = currentIntent?.data?.lastPathSegment
         //val intent = Intent()
-        val senderId = intent?.data?.lastPathSegment
+        //val senderId = intent?.data?.lastPathSegment
 
         AppNavigation(navController, isLoggedIn, senderId)
     }
-
-}
-
-@Composable
-fun GlobalScreen(modifier: Modifier = Modifier) {
-
-}
-
-@Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
 
 }
 

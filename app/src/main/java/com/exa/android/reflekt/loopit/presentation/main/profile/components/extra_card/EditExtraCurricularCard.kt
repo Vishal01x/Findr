@@ -219,42 +219,6 @@ fun EditExtracurricularScreen(
 }
 
 @Composable
-private fun ImageSection(imageUri: String?, logoUrl: String?, onImageClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .padding(16.dp)
-    ) {
-        AsyncImage(
-            model = imageUri ?: logoUrl ?: R.drawable.placeholder,
-            contentDescription = "Activity Logo",
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp)),
-            contentScale = ContentScale.Crop
-        )
-
-        IconButton(
-            onClick = onImageClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = 16.dp, y = 16.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = CircleShape
-                )
-        ) {
-            Icon(
-                imageVector = Icons.Default.PhotoCamera,
-                contentDescription = "Add logo",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
 private fun InputSection(
     name: String,
     link: String,
@@ -339,18 +303,6 @@ private fun ActionButtons(loading: Boolean, onCancel: () -> Unit, onSave: () -> 
        // }
     }
 }
-
-@Composable
-private fun FullScreenLoader() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Saving Activity...", style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
 
 // Updated ViewModel
 @HiltViewModel
@@ -456,18 +408,6 @@ class ExtracurricularViewModel @Inject constructor(
 
 }
 
-
-// Additional composables
-@Composable
-private fun LogoLoader() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
-            Spacer(Modifier.height(8.dp))
-            Text("Fetching logo...", style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
 
 @Composable
 private fun ImageSection(

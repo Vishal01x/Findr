@@ -33,7 +33,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
     override suspend fun createProject(project: Project): Result<Unit> {
         return try {
-            Log.d("Firestore", "Creating project: $project")
+            //Log.d("Firestore", "Creating project: $project")
             require(auth.currentUser != null) { "User must be authenticated" }
             require(project.title.isNotBlank()) { "Title cannot be empty" }
 
@@ -43,7 +43,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error creating project", e)
+            // Log.e("Firestore", "Error creating project", e)
             Result.failure(e)
         }
     }
@@ -81,7 +81,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             emit(Result.success(projects))
         } catch (e: Exception) {
-            Log.e("Firestore", "Error getting projects", e)
+            // Log.e("Firestore", "Error getting projects", e)
             emit(Result.failure(e))
         }
     }
@@ -97,7 +97,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 ?.let { Result.success(it) }
                 ?: Result.failure(Exception("Project not found"))
         } catch (e: Exception) {
-            Log.e("Firestore", "Error getting project by ID", e)
+            // Log.e("Firestore", "Error getting project by ID", e)
             Result.failure(e)
         }
     }
@@ -112,7 +112,7 @@ class ProjectRepositoryImpl @Inject constructor(
             val roles = doc.get(ROLES_FIELD) as? List<String> ?: emptyList()
             Result.success(roles)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error getting available roles", e)
+            // Log.e("Firestore", "Error getting available roles", e)
             Result.failure(e)
         }
     }
@@ -127,7 +127,7 @@ class ProjectRepositoryImpl @Inject constructor(
             val tags = doc.get(TAGS_FIELD) as? List<String> ?: emptyList()
             Result.success(tags)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error getting available tags", e)
+            // Log.e("Firestore", "Error getting available tags", e)
             Result.failure(e)
         }
     }
@@ -144,7 +144,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error updating project", e)
+            // Log.e("Firestore", "Error updating project", e)
             Result.failure(e)
         }
     }
@@ -162,7 +162,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error deleting project", e)
+            // Log.e("Firestore", "Error deleting project", e)
             Result.failure(e)
         }
     }
@@ -182,7 +182,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error adding role", e)
+            // Log.e("Firestore", "Error adding role", e)
             Result.failure(e)
         }
     }
@@ -202,7 +202,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error adding tag", e)
+            // Log.e("Firestore", "Error adding tag", e)
             Result.failure(e)
         }
     }
@@ -225,7 +225,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error enrolling in project", e)
+            // Log.e("Firestore", "Error enrolling in project", e)
             Result.failure(e)
         }
     }
@@ -250,7 +250,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error withdrawing from project", e)
+            // Log.e("Firestore", "Error withdrawing from project", e)
             Result.failure(e)
         }
     }
@@ -270,7 +270,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error accepting join request", e)
+            // Log.e("Firestore", "Error accepting join request", e)
             Result.failure(e)
         }
     }
@@ -285,7 +285,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("Firestore", "Error rejecting join request", e)
+            // Log.e("Firestore", "Error rejecting join request", e)
             Result.failure(e)
         }
     }

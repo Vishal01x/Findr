@@ -10,7 +10,9 @@ plugins {
 android {
     namespace = "com.exa.android.reflekt"
     compileSdk = 35
-
+    // Add this line to enable legacy Apache HTTP support
+    //useLibrary("org.apache.http.legacy")
+    
     defaultConfig {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
@@ -24,6 +26,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+//            isMinifyEnabled = true // <--- Enable shrinking
+//            isShrinkResources = true // Optional: Remove unused resources
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -54,6 +58,8 @@ android {
             excludes += "mozilla/public-suffix-list.txt"
         }
     }
+
+
 }
 
 dependencies {
@@ -152,9 +158,6 @@ dependencies {
     // new dependency
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
 
-    // new dependency
-    implementation("androidx.compose.material:material-icons-extended:1.7.0")
-
 
     // All:
     implementation("com.cloudinary:cloudinary-android:3.0.2")
@@ -170,18 +173,18 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
 
     // security crypto
-    implementation ("androidx.security:security-crypto:1.1.0-alpha07")
-
-    implementation ("androidx.media3:media3-exoplayer:1.6.1")
-    implementation ("androidx.media3:media3-ui:1.6.1")
-    implementation ("androidx.media3:media3-common:1.6.1")
+   implementation ("androidx.security:security-crypto:1.1.0-alpha07")
+//
+//    implementation ("androidx.media3:media3-exoplayer:1.6.1")
+//    implementation ("androidx.media3:media3-ui:1.6.1")
+//    implementation ("androidx.media3:media3-common:1.6.1")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
-
-    // Lottie animations
-    implementation ("com.airbnb.android:lottie-compose:6.1.0")
-
-    // Motion Layout
-    implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
+//
+//    // Lottie animations
+//    implementation ("com.airbnb.android:lottie-compose:6.1.0")
+//
+//    // Motion Layout
+//    implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
 
 }

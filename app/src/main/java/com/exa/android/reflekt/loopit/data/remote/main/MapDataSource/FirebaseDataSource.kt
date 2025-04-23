@@ -1,4 +1,5 @@
 package com.exa.android.reflekt.loopit.data.remote.main.MapDataSource
+
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository.ProfileDataWrapper
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.exa.android.reflekt.loopit.util.model.profileUser
@@ -25,7 +26,7 @@ class FirebaseDataSource @Inject constructor() {
     private val firestore = FirebaseFirestore.getInstance()
 
     fun saveUserLocation(userId: String, location: GeoLocation, onComplete: (String?, DatabaseError?) -> Unit) {
-        Timber.tag("GeoFire").d("Saving location for user $userId: $location")
+        // Timber.tag("GeoFire").d("Saving location for user $userId: $location")
         geoFire.setLocation(userId, location, onComplete)
     }
 
@@ -52,7 +53,7 @@ class FirebaseDataSource @Inject constructor() {
                                 lat = data.lat,  // Safe conversion
                                 lng = data.lng  // Safe conversion
                             )
-                            Timber.tag("GeoFire").d("User profile fetched from Firestore: $profile")
+                            // Timber.tag("GeoFire").d("User profile fetched from Firestore: $profile")
                             onSuccess(profile)
                         } else {
                             onSuccess(null)
@@ -90,12 +91,12 @@ class FirebaseDataSource @Inject constructor() {
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.tag("GeoFire").e(e, "Error parsing location data")
+                    // Timber.tag("GeoFire").e(e, "Error parsing location data")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Timber.tag("GeoFire").e("Location listener cancelled: ${error.message}")
+                // Timber.tag("GeoFire").e("Location listener cancelled: ${error.message}")
             }
         }
         database.child(userId).addValueEventListener(listener)

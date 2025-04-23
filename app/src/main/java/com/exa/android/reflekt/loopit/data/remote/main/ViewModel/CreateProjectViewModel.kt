@@ -82,7 +82,7 @@ class CreateProjectViewModel @Inject constructor(
                 error = null,
                 isSuccess = false
             )
-            Log.d("project", "profile: ${auth.currentUser} ${auth.currentUser?.uid}")
+            // Log.d("project", "profile: ${auth.currentUser} ${auth.currentUser?.uid}")
 
             val currentUser = auth.currentUser ?: run {
                 _state.value = _state.value.copy(
@@ -91,7 +91,7 @@ class CreateProjectViewModel @Inject constructor(
                 )
                 return@launch
             }
-            Log.d("project", "profile: $currentUser")
+            // Log.d("project", "profile: $currentUser")
             val profileResult = try {
                 profileRepository.getUserProfile(currentUser.uid)
             } catch (e: Exception) {
@@ -99,16 +99,16 @@ class CreateProjectViewModel @Inject constructor(
                     isLoading = false,
                     error = "Failed to fetch user profile: ${e.message}"
                 )
-                Log.d("project", "profile: ${e.message}")
+                // Log.d("project", "profile: ${e.message}")
                 return@launch
             }
-            Log.d("project", "profile: $profileResult")
+            // Log.d("project", "profile: $profileResult")
 
             val fullName = profileResult.name.ifBlank {
                 currentUser.displayName ?: "Anonymous"
             }
 
-            Log.d("project", "profile full name: $fullName")
+            // Log.d("project", "profile full name: $fullName")
 
             val project = Project(
                 id = UUID.randomUUID().toString(),
@@ -119,7 +119,7 @@ class CreateProjectViewModel @Inject constructor(
                 createdBy = currentUser.uid,
                 createdByName = fullName
             )
-            Log.d("project", "createProject: $project")
+            // Log.d("project", "createProject: $project")
             try {
                 repository.createProject(project)
                 _state.value = _state.value.copy(
@@ -182,7 +182,7 @@ class CreateProjectViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                Log.d("role", "New Role create viewModel: $role")
+                // Log.d("role", "New Role create viewModel: $role")
                 repository.addNewRole(role).getOrThrow()
                 // Refresh available roles
                 val roles = repository.getAvailableRoles().getOrThrow()
@@ -190,7 +190,7 @@ class CreateProjectViewModel @Inject constructor(
                     availableRoles = roles,
                     selectedRoles = _state.value.selectedRoles + role
                 )
-                Log.d("role", "New Role create viewModel: ${_state.value.selectedRoles}")
+                // Log.d("role", "New Role create viewModel: ${_state.value.selectedRoles}")
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     error = "Failed to add role: ${e.message}"

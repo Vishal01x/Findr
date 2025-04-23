@@ -379,7 +379,7 @@ fun MessageBubble(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_seen),
                                 contentDescription = "Seen",
-                                tint = Color.Yellow,  // Blue color for seen
+                                tint = MaterialTheme.colorScheme.primary,  // Blue color for seen
                                 modifier = Modifier.size(14.dp)
                             )
                         }

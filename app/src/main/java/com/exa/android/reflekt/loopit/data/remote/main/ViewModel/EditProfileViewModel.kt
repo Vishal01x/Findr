@@ -176,7 +176,7 @@ class EditProfileViewModel @Inject constructor(
                     responseState = it
                 }
             } catch (e: Exception) {
-                Log.e("ViewModel", "Error updating skills", e)
+                // Log.e("ViewModel", "Error updating skills", e)
             }
         }
     }
@@ -221,7 +221,7 @@ class EditProfileViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
 //                responseState = Response.Error("Failed to load profile data: ${e.localizedMessage}")
-                Log.d("ProfileScreen", "Failed to load profile data : ${e.localizedMessage}")
+                // Log.d("ProfileScreen", "Failed to load profile data : ${e.localizedMessage}")
             }
         }
     }

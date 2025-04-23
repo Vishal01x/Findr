@@ -61,32 +61,3 @@ object LinkUtils {
     }
     data class LinkSpan(val url: String, val start: Int, val end: Int)
 }
-
-/*
-// Mock metadata fetch function
-private suspend fun fetchLinkMetadata(url: String): LinkMetadata? {
-    return try {
-        val connection =
-            withContext(Dispatchers.IO) {
-                URL(url).openConnection()
-            }
-
-        withContext(Dispatchers.IO) {
-            connection.connect()
-        }
-
-        // Parse HTML meta tags here
-        LinkMetadata(
-            url = url,
-            title = connection.getHeaderField("og:title") ?: "Untitled",
-            description = connection.getHeaderField("og:description"),
-            imageUrl = connection.getHeaderField("og:image"),
-            domain = TODO(),
-            timestamp = TODO()
-        )
-    } catch (e: Exception) {
-        null
-    }
-}
-
-*/

@@ -82,9 +82,11 @@ class FirestoreService @Inject constructor(
             userCollection.document(user.userId).set(user)
                 .addOnSuccessListener {
                     registerFCMToken()
-                    Log.d("FireStoreService", "New user added Successfully")
+                    //Log.d("FireStoreService", "New user added Successfully")
                 }
-                .addOnFailureListener { Log.d("FireStoreService", "New user added Failed") }
+                .addOnFailureListener {
+                    // Log.d("FireStoreService", "New user added Failed")
+                }
         } catch (e: Exception) {
             // handel Exception
         }
@@ -93,103 +95,111 @@ class FirestoreService @Inject constructor(
     fun registerFCMToken() {
         FirebaseMessaging.getInstance().token
             .addOnSuccessListener { token ->
-                Log.d("FCM", "Token: $token")
+                // Log.d("FCM", "Token: $token")
                 updateToken(token) // Store in Firestore
             }
             .addOnFailureListener {
-                Log.e("FCM", "Failed to get token", it)
+               // Log.e("FCM", "Failed to get token", it)
             }
     }
 
     fun updateToken(token: String?) {
         if (token.isNullOrEmpty() || currentUser.isNullOrEmpty()) return
+
         val userRef = userCollection.document(currentUser)
 
-        userRef.update("fcmToken", token)
-            .addOnSuccessListener { Log.d("FCM", "Token updated in Firestore") }
-            .addOnFailureListener { Log.e("FCM", "Failed to update token", it) }
-    }
-/*
-    suspend fun createChatAndSendMessage(
-        userId2: String,
-        text: String,
-        media: Media?,
-        receiverToken: String?,
-        curUser: User?,
-        messageId: String? = null
-    ) : String? {
-        val userId1 = auth.currentUser?.uid ?: return null
-        val chatId = generateChatId(userId1, userId2)
-        val message = Message(
-            chatId = chatId,
-            senderId = userId1,
-            receiverId = userId2,
-            message = text,
-            media = media,
-            members = listOf(userId1, userId2)
-        )
+        val data = mapOf("fcmToken" to token)
 
-        if (messageId != null) {
-            message.messageId = messageId
-            updateMessage(message, "")
-            if (receiverToken != null) {
-                sendPushNotification(receiverToken,message,curUser)
+        userRef.set(data, SetOptions.merge())
+            .addOnSuccessListener {
+                // Log.d("FCM", "Token set/updated in Firestore")
+            }
+            .addOnFailureListener {
+                // Log.e("FCM", "Failed to set/update token", it)
+            }
+    }
+
+    /*
+        suspend fun createChatAndSendMessage(
+            userId2: String,
+            text: String,
+            media: Media?,
+            receiverToken: String?,
+            curUser: User?,
+            messageId: String? = null
+        ) : String? {
+            val userId1 = auth.currentUser?.uid ?: return null
+            val chatId = generateChatId(userId1, userId2)
+            val message = Message(
+                chatId = chatId,
+                senderId = userId1,
+                receiverId = userId2,
+                message = text,
+                media = media,
+                members = listOf(userId1, userId2)
+            )
+
+            if (messageId != null) {
+                message.messageId = messageId
+                updateMessage(message, "")
+                if (receiverToken != null) {
+                    sendPushNotification(receiverToken,message,curUser)
+                }
+                return null
+            }
+
+            Log.d("FireStore Operation", "receiver Token - $receiverToken")
+
+            try {
+                withContext(Dispatchers.IO) {
+                    updateUserList(userId1, userId2)
+                    updateUserList(userId2, userId1)
+
+                    val messageRef = chatCollection.document(chatId).collection("messages")
+                    messageRef.document(message.messageId).set(message).await()
+
+                    // Update last message and timestamp in the chat document
+                    val chatDoc = chatCollection.document(chatId)
+                    val snapshot = chatDoc.get().await()
+
+                    if (snapshot.exists()) {
+                        chatDoc.update(
+                            mapOf(
+                                "lastMessage" to message.message,
+                                "lastMessageTimestamp" to message.timestamp,
+                                "unreadMessages.$userId2" to FieldValue.increment(1),
+                                "unreadMessages.$userId1" to 0
+                            )
+                        ).await()
+                    } else {
+                        chatDoc.set(
+                            mapOf(
+                                "lastMessage" to message.message,
+                                "lastMessageTimestamp" to message.timestamp,
+                                "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
+                            )
+                        ).await()
+                    }
+
+                    // Insert or update the chat document for both users
+                    val chatData = mapOf("users" to listOf(userId1, userId2))
+                    chatCollection.document(chatId).set(chatData, SetOptions.merge()).await()
+                }
+
+                Log.d("FireStoreService", "New message added Successfully")
+
+                // Send push notification outside of the Firestore coroutine scope
+                if (!receiverToken.isNullOrEmpty() && message.media != null
+                    && message.media.uploadStatus != UploadStatus.SUCCESS) {
+                    sendPushNotification(receiverToken, message, curUser)
+                }
+                return message.messageId
+            } catch (e: Exception) {
+                Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
             }
             return null
         }
-
-        Log.d("FireStore Operation", "receiver Token - $receiverToken")
-
-        try {
-            withContext(Dispatchers.IO) {
-                updateUserList(userId1, userId2)
-                updateUserList(userId2, userId1)
-
-                val messageRef = chatCollection.document(chatId).collection("messages")
-                messageRef.document(message.messageId).set(message).await()
-
-                // Update last message and timestamp in the chat document
-                val chatDoc = chatCollection.document(chatId)
-                val snapshot = chatDoc.get().await()
-
-                if (snapshot.exists()) {
-                    chatDoc.update(
-                        mapOf(
-                            "lastMessage" to message.message,
-                            "lastMessageTimestamp" to message.timestamp,
-                            "unreadMessages.$userId2" to FieldValue.increment(1),
-                            "unreadMessages.$userId1" to 0
-                        )
-                    ).await()
-                } else {
-                    chatDoc.set(
-                        mapOf(
-                            "lastMessage" to message.message,
-                            "lastMessageTimestamp" to message.timestamp,
-                            "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
-                        )
-                    ).await()
-                }
-
-                // Insert or update the chat document for both users
-                val chatData = mapOf("users" to listOf(userId1, userId2))
-                chatCollection.document(chatId).set(chatData, SetOptions.merge()).await()
-            }
-
-            Log.d("FireStoreService", "New message added Successfully")
-
-            // Send push notification outside of the Firestore coroutine scope
-            if (!receiverToken.isNullOrEmpty() && message.media != null
-                && message.media.uploadStatus != UploadStatus.SUCCESS) {
-                sendPushNotification(receiverToken, message, curUser)
-            }
-            return message.messageId
-        } catch (e: Exception) {
-            Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
-        }
-        return null
-    }
-*/
+    */
 
     suspend fun createChatAndSendMessage(
         userId2: String,
@@ -251,12 +261,15 @@ class FirestoreService @Inject constructor(
             }
 
             if (!receiverToken.isNullOrEmpty()) {
+                // Log.d("FireStore Service", "receiver Token - $receiverToken")
                 sendPushNotification(receiverToken, message, curUser)
+            }else{
+                // Log.d("FireStore Service", "no receiver Toke")
             }
 
             return finalMessageId
         } catch (e: Exception) {
-            Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
+            // Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
             return null
         }
     }
@@ -287,18 +300,24 @@ class FirestoreService @Inject constructor(
                     RetrofitInstance.api.sendNotification("Bearer $accessToken", request).execute()
 
                 if (response.isSuccessful) {
+                    /*
                     Log.d(
                         "FireStore Operation",
                         "Notification sent successfully: ${response.body()}"
                     )
+
+                     */
                 } else {
+                    /*
                     Log.e(
                         "FireStore Operation",
                         "Error sending notification: ${response.errorBody()?.string()}"
                     )
+
+                     */
                 }
             } catch (e: Exception) {
-                Log.e("FireStore Operation", "FCM Request Failed", e)
+                // Log.e("FireStore Operation", "FCM Request Failed", e)
             }
         }
     }
@@ -319,9 +338,9 @@ class FirestoreService @Inject constructor(
         try {
             batch.update(messageRef, mapOf("message" to newText))
             batch.commit().await()
-            Log.d("FireStore Operation", "Messages Edited Successfully")
+            // Log.d("FireStore Operation", "Messages Edited Successfully")
         } catch (e: Exception) {
-            Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
+            // Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
         }
     }
 
@@ -333,9 +352,9 @@ class FirestoreService @Inject constructor(
         try {
             batch.update(messageRef, "media", media)
             batch.commit().await()
-            Log.d("FireStore Operation", "Messages Edited Successfully")
+            // Log.d("FireStore Operation", "Messages Edited Successfully")
         } catch (e: Exception) {
-            Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
+            // Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
         }
     }
 
@@ -366,10 +385,10 @@ class FirestoreService @Inject constructor(
             }
             batch.commit().await()
 
-            Log.d("FireStore Operation", "Messages Deleted Successfully")
+            // Log.d("FireStore Operation", "Messages Deleted Successfully")
             onCleared()
         } catch (e: Exception) {
-            Log.d("FireStore Operation", "Error in Message Deletion - ${e.message}")
+            // Log.d("FireStore Operation", "Error in Message Deletion - ${e.message}")
         }
     }
 
@@ -388,9 +407,9 @@ class FirestoreService @Inject constructor(
 
         batch.commit().addOnCompleteListener {
             if (it.isSuccessful) {
-                Log.d("FireStore Operation", "All messages status updated to 'seen'")
+                // Log.d("FireStore Operation", "All messages status updated to 'seen'")
             } else {
-                Log.e("FireStore Operation", "Error updating messages status", it.exception)
+                // Log.e("FireStore Operation", "Error updating messages status", it.exception)
             }
         }
     }
@@ -420,7 +439,7 @@ class FirestoreService @Inject constructor(
                             val result = trySend(Response.Success(messages))
                             if (result.isFailure) {
                                 // Log or handle the failure (optional)
-                                Log.e("Firestore", "Failed to send messages to the flow.")
+                                // Log.e("Firestore", "Failed to send messages to the flow.")
                             }
 
                         }

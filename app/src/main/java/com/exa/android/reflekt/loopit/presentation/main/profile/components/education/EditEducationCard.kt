@@ -221,17 +221,6 @@ fun DatePickerField(
         onValueChange = {},
         readOnly = true,
         isError = isError,
-//        supportingText = {
-//            // Show date error message
-//            if (isError) {
-//                Text(
-//                    text = "Start date must be before end date",
-//                    color = MaterialTheme.colorScheme.error,
-//                    style = MaterialTheme.typography.labelSmall,
-//                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-//                )
-//            }
-//        },
         label = { Text(label) },
         trailingIcon = {
             IconButton(onClick = { showDatePicker = true }) {
@@ -268,63 +257,5 @@ private fun validateDates(start: String, end: String): Boolean {
         startDate?.before(endDate) ?: false
     } catch (e: Exception) {
         false
-    }
-}
-
-// Modified CollegeDatePicker to restrict dates
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CollegeDatePicker(
-    selectedDate: String,
-    onDateSelected: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val calendar = Calendar.getInstance()
-    val dateFormatter = remember {
-        SimpleDateFormat("MMM yyyy", Locale.getDefault())
-    }
-
-    val initialDate = try {
-        dateFormatter.parse(selectedDate)?.time ?: System.currentTimeMillis()
-    } catch (e: Exception) {
-        System.currentTimeMillis()
-    }
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate,
-        yearRange = 1900..3000//Calendar.getInstance().get(Calendar.YEAR)
-    )
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        calendar.timeInMillis = it
-                        onDateSelected(dateFormatter.format(calendar.time))
-                    }
-                    onDismiss()
-                }
-            ) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    ) {
-        DatePicker(
-            state = datePickerState,
-            showModeToggle = false,
-            title = {
-                Text(
-                    text = "Select Month and Year",
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        )
     }
 }

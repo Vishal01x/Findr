@@ -58,9 +58,9 @@ class UserRepository @Inject constructor(
         )
         try {
             userStatusRef.updateChildren(data).await()
-            Log.d("Firebase Operation", "User status updated for $curUser to $data.")
+            // Log.d("Firebase Operation", "User status updated for $curUser to $data.")
         } catch (e: Exception) {
-            Log.e("Firebase Operation", "Failed to update user status", e)
+            // Log.e("Firebase Operation", "Failed to update user status", e)
         }
     }
 
@@ -75,7 +75,7 @@ class UserRepository @Inject constructor(
             "lastSeen" to Timestamp.now().seconds,
             "typingTo" to ""
         )
-        Log.d("Firebase Operation", "User status updated for $currentUser to $onlineStatus.")
+        // Log.d("Firebase Operation", "User status updated for $currentUser to $onlineStatus.")
         val connectRef = rdb.getReference(".info/connected")
         connectRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -83,19 +83,22 @@ class UserRepository @Inject constructor(
                 if (connected) {
                     userStatusRef.setValue(onlineStatus)
                     userStatusRef.onDisconnect().setValue(offlineStatus)
-                    Log.d("Firebase Operation", "User is online, status updated.")
+                    // Log.d("Firebase Operation", "User is online, status updated.")
                 } else {
                     userStatusRef.setValue(offlineStatus)
-                    Log.d("Firebase Operation", "User is offline, status updated.")
+                    // Log.d("Firebase Operation", "User is offline, status updated.")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                /*
                 Log.e(
                     "Firebase Operation",
                     "Error observing connection status",
                     error.toException()
                 )
+
+                 */
             }
         })
     }
@@ -119,12 +122,15 @@ class UserRepository @Inject constructor(
                     currentData: DataSnapshot?
                 ) {
                     if (error != null) {
-                        Log.e("Firebase Operation", "Transaction failed: $error")
+                        //  Log.e("Firebase Operation", "Transaction failed: $error")
                     } else {
+                        /*
                         Log.d(
                             "Firebase Operation",
                             "Transaction completed with success: $committed"
                         )
+
+                         */
                     }
                 }
             })
@@ -132,9 +138,9 @@ class UserRepository @Inject constructor(
             // Set up onDisconnect to clear typing status
             statusRef.onDisconnect().setValue("").await()
 
-            Log.d("Firebase Operation", "Typing status updated for $id.")
+            // Log.d("Firebase Operation", "Typing status updated for $id.")
         } catch (e: Exception) {
-            Log.e("Firebase Operation", "Failed to update typing status", e)
+            // Log.e("Firebase Operation", "Failed to update typing status", e)
         }
     }
 
@@ -143,12 +149,15 @@ class UserRepository @Inject constructor(
         val chatDocRef = chatCollection.document(chatId)
         try {
             chatDocRef.update("unreadMessages.$currentUser", 0).await()
+            /*
             Log.d(
                 "Firebase Operation",
                 "Unread messages for ${currentUser} successfully reset to 0."
             )
+
+             */
         } catch (e: Exception) {
-            Log.e("Firebase Operation", "Failed to reset unread messages", e)
+            // Log.e("Firebase Operation", "Failed to reset unread messages", e)
         }
     }
 
@@ -171,11 +180,11 @@ class UserRepository @Inject constructor(
                             trySend(Response.Success(chat))
                         } else {
                             trySend(Response.Error("Failed to parse user data"))
-                            Log.e("Firebae Operation", "Failed to parse user data")
+                            // Log.e("Firebae Operation", "Failed to parse user data")
                         }
                     } else {
                         trySend(Response.Error("User not found"))
-                        Log.e("Firebae Operation", "User not found")
+                        // Log.e("Firebae Operation", "User not found")
                     }
                 }
 
@@ -184,7 +193,7 @@ class UserRepository @Inject constructor(
             }
         } catch (e: Exception) {
             trySend(Response.Error(e.localizedMessage ?: "Unknown error"))
-            Log.e("Firebae Operation", e.localizedMessage ?: "Unknown error")
+            // Log.e("Firebae Operation", e.localizedMessage ?: "Unknown error")
         }
     }
 
@@ -204,7 +213,7 @@ class UserRepository @Inject constructor(
                 val status = Status(isOnline, lastSeen, typingTo)// Default to Status()
 
                 liveData.postValue(status)
-                Log.d("Firebase Operation", status.toString())
+                // Log.d("Firebase Operation", status.toString())
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -215,25 +224,25 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun getAllUser(): Flow<Response<List<User?>>> = flow {
-        Log.d("FireStore Operation", " users - ")
+        // Log.d("FireStore Operation", " users - ")
         emit(Response.Loading)
         try {
             val snapshotFlow = callbackFlow {
 
                 val usersPath = userCollection.addSnapshotListener { snapshot, exception ->
                     if (exception != null) {
-                        Log.d("FireStore Operation", " users - ${exception.message}")
+                        // Log.d("FireStore Operation", " users - ${exception.message}")
                         exception.message?.let { Response.Error(it) }
                             ?.let { trySend(it) }?.isFailure
                     } else {
                         val users = snapshot?.toObjects(User::class.java) ?: emptyList()
-                        Log.d("FireStore Operation", " users - $users")
+                        // Log.d("FireStore Operation", " users - $users")
                         val updatedUsers =
                             users.filter { it.userId != currentUser }.sortedBy { it.name }
                         val result = trySend(Response.Success(updatedUsers))
                         if (result.isFailure) {
                             // Log or handle the failure (optional)
-                            Log.e("FireStore Operation", "Failed to send messages to the flow.")
+                            // Log.e("FireStore Operation", "Failed to send messages to the flow.")
                         }
                     }
                 }
@@ -264,9 +273,11 @@ class UserRepository @Inject constructor(
                     } else if (snapshot != null && snapshot.exists()) {
                         val name = snapshot.getString("name") ?: "Name"
                         val profilePic = snapshot.getString("profilePicture") ?: ""
+                        val fcmToken = snapshot.getString("fcmToken") ?: ""
                         val user = User(
                             name = name,
-                            profilePicture = profilePic
+                            profilePicture = profilePic,
+                            fcmToken = fcmToken
                         )
                         if (user != null) {
                             trySend(Response.Success(user)).isFailure
@@ -289,9 +300,9 @@ class UserRepository @Inject constructor(
         val chatDocRef = chatCollection.document(chatID)
         try {
             chatDocRef.update("unreadMessages.$curUser", 0).await()
-            Log.d("Firebase Operation", "Unread messages for $curUser successfully reset to 0.")
+            // Log.d("Firebase Operation", "Unread messages for $curUser successfully reset to 0.")
         } catch (e: Exception) {
-            Log.e("Firebase Operation", "Failed to reset unread messages", e)
+            // Log.e("Firebase Operation", "Failed to reset unread messages", e)
         }
     }
 
@@ -331,7 +342,7 @@ class UserRepository @Inject constructor(
             Response.Success(Unit)
         } catch (e: Exception) {
             // You can log the error to Crashlytics or a logging system
-            Log.e("Firestore Service", "Failed to update user profile", e)
+            // Log.e("Firestore Service", "Failed to update user profile", e)
             Response.Error(e.localizedMessage ?: "Unknown error occurred")
         }
 

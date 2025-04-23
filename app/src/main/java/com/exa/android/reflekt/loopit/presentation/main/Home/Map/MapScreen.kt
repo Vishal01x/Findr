@@ -78,13 +78,13 @@ import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
-import timber.log.Timber
+//import timber.log.Timber
 import android.content.Context
 import android.content.Intent
 import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
-import android.util.Log
+//import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -171,12 +171,12 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
         }
     }
 
-    Log.d("GeoFire", "MapScreen Composable, ${locationPermissionState.status}, ${currentLocation}, $selectedRole $radius $selectedLocation $currUserProfile $userLocations}")
+    // Log.d("GeoFire", "MapScreen Composable, ${locationPermissionState.status}, ${currentLocation}, $selectedRole $radius $selectedLocation $currUserProfile $userLocations}")
     // Initial data loading
     LaunchedEffect(locationPermissionState.status, currentLocation, selectedRole) {
         if (locationPermissionState.status.isGranted && currentLocation != null) {
 
-            Timber.tag("GeoFire").d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
+            // Timber.tag("GeoFire").d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
             /*
             viewModel.fetchUserLocations(
                 location = selectedLocation ?: currentLocation!!,
@@ -202,18 +202,18 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
                     location?.let {
-                        Timber.tag("GeoFire").d("Current Location: ${it.latitude}, ${it.longitude}")
+                        // Timber.tag("GeoFire").d("Current Location: ${it.latitude}, ${it.longitude}")
                         currentLocation = LatLng(it.latitude, it.longitude)
                         cameraPositionState.position = CameraPosition.fromLatLngZoom(currentLocation!!, 12f)
                     }
                 }
                 .addOnFailureListener { e ->
-                    Timber.tag("GeoFire").e(e, "Error getting current location")
+                    // Timber.tag("GeoFire").e(e, "Error getting current location")
                 }
 
             // Start location updates for the authenticated user
             viewModel.startLocationUpdates(userId, context)
-            Timber.tag("GeoFire").d("Location updates started: $userId")
+            // Timber.tag("GeoFire").d("Location updates started: $userId")
 
         } else {
             showPermissionDialog = true
@@ -235,7 +235,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Timber.tag("GeoFire").d("User Locations: $userLocations, $currUserProfile $currentLocation, $selectedLocation $radius $selectedRole")
+            // Timber.tag("GeoFire").d("User Locations: $userLocations, $currUserProfile $currentLocation, $selectedLocation $radius $selectedRole")
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
@@ -399,7 +399,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                                             )
                                         }
                                     }catch (e: Exception) {
-                                        Timber.e(e, "Error applying filters")
+                                        // Timber.e(e, "Error applying filters")
                                     }
                                 }
                             },
@@ -655,127 +655,6 @@ fun InfoRow(icon: ImageVector, text: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
-    }
-}
-
-
-@SuppressLint("UnrememberedMutableState", "MissingPermission")
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun MapScreenn(viewModel: LocationViewModel = hiltViewModel()) {
-    // Collect the authenticated user's ID (e.g., from Firebase Auth)
-    val auth = FirebaseAuth.getInstance()
-    val userId = auth.currentUser?.uid ?: return // Exit if user is not authenticated
-
-    // Collect user locations from the ViewModel
-    val userLocations by viewModel.userLocations.collectAsState()
-
-    // Camera position for the map
-    val cameraPositionState = rememberCameraPositionState()
-
-    // Get the context for permission checks
-    val context = LocalContext.current
-
-    // FusedLocationProviderClient to get the current location
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    // Check for location permissions
-    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-
-    // Fetch the current location and move the camera to it
-    LaunchedEffect(locationPermissionState.status) {
-        if (locationPermissionState.status.isGranted) {
-            // Start location updates for the authenticated user
-            viewModel.startLocationUpdates(userId, context)
-            Timber.tag("GeoFire").d("Location updates started: $userId")
-
-            // Get the current location and move the camera to it
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        val currentLatLng = LatLng(location.latitude, location.longitude)
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(currentLatLng, 12f)
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Timber.tag("GeoFire").e(e, "Error getting current location")
-                }
-        } else {
-            // Request location permission if not granted
-            locationPermissionState.launchPermissionRequest()
-        }
-    }
-
-    // Display the Google Map with markers for user locations
-    if (locationPermissionState.status.isGranted) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = MapProperties(
-                isMyLocationEnabled = true // Enable the "My Location" button
-            )
-        ) {
-            // Add markers for user locations
-            userLocations.forEach { user ->
-                Marker(
-                    state = MarkerState(position = LatLng(user.lat, user.lng)),
-                    title = user.role // Display the user's role as the marker title
-                )
-            }
-        }
-    } else {
-        // Show a message if location permission is not granted
-        Text("Location permission is required to use this feature.")
-    }
-}
-
-@Composable
-fun CustomMapMarkerr(
-    imageUrl: String?, fullName: String, location: LatLng, onClick: () -> Unit
-) {
-    val markerState = remember { MarkerState(position = location) }
-    val shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 0.dp)
-    val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(LocalContext.current)
-            .data(imageUrl)
-            .allowHardware(false)
-            .build()
-    )
-
-    MarkerComposable(
-        keys = arrayOf(fullName, painter.state),
-        state = markerState,
-        title = fullName,
-        anchor = Offset(0.5f, 1f),
-        onClick = {
-            onClick()
-            true
-        }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(shape)
-                .background(Color.LightGray)
-                .padding(4.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            if (!imageUrl.isNullOrEmpty()) {
-                Image(
-                    painter = painter,
-                    contentDescription = "Profile Image",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Text(
-                    text = fullName.take(1).uppercase(),
-                    color = Color.White,
-                    style = MaterialTheme.typography.displayMedium,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
     }
 }
 

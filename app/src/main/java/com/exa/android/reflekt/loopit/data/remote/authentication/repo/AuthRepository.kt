@@ -1,6 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.authentication.repo
 
-import android.util.Log
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
@@ -47,7 +47,8 @@ interface AuthRepository {
 
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val firestoreService: FirestoreService
 ) : AuthRepository {
 
     override suspend fun login(email: String, password: String): Result<Unit> {
@@ -57,7 +58,9 @@ class AuthRepositoryImpl @Inject constructor(
                 auth.signOut()
                 Result.failure(Exception("Please verify your email before logging in."))
             } else {
+                firestoreService.registerFCMToken()
                 Result.success(Unit)
+
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,22 +83,6 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             result.user?.sendEmailVerification()?.await()
-
-//            val user = profileUser(
-//                uid = result.user?.uid ?: "",
-//                email = email,
-//                firstName = firstName,
-//                lastName = lastName,
-//                role = role,
-//                isStudent = isStudent,
-//                collegeName = collegeName,
-//                year = year,
-//                location = location,
-//                companyName = companyName,
-//                ctc = ctc,
-//                experience = experience,
-//                createdAt = Timestamp.now(),
-//            )
             val userDocRef = firestore.collection("users").document(result.user?.uid ?: "")
             val profileHeader = ProfileHeaderData(
                 uid = result.user?.uid ?: "",
@@ -130,11 +117,6 @@ class AuthRepositoryImpl @Inject constructor(
                 experienceInfo = experienceInfo
             )
 
-
-
-
-//            firestore.collection("user").document(result.user?.uid ?: "").set(user).await()
-
             Firebase.firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(userDocRef)
 
@@ -150,10 +132,9 @@ class AuthRepositoryImpl @Inject constructor(
                     transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
                 }
             }
-
+            firestoreService.registerFCMToken()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.d("FireStore Service", "User Sign Up failed - ${e.localizedMessage}")
             Result.failure(e)
         }
     }

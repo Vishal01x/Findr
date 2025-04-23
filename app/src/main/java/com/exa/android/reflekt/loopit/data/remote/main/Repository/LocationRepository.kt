@@ -53,19 +53,19 @@ class LocationRepository @Inject constructor(
                 locationResult.lastLocation?.let { location ->
                     firebaseDataSource.saveUserLocation(userId, GeoLocation(location.latitude, location.longitude)) { key, error ->
                         if (error != null) {
-                            Timber.tag("GeoFire").e("Error saving location: ${error.message}")
+                            //Timber.tag("GeoFire").e("Error saving location: ${error.message}")
                         } else {
-                            Timber.tag("GeoFire").d("Location saved for $key")
+                            // Timber.tag("GeoFire").d("Location saved for $key")
                         }
                     }
                 }
             }
         }
-        Timber.tag("GeoFire").d("Starting location updates for user $userId")
+        // Timber.tag("GeoFire").d("Starting location updates for user $userId")
         locationDataSource.startLocationUpdates(context, locationRequest, locationCallback)
     }
     fun startLocationUpdates(userId: String) {
-        Timber.tag("GeoFire").d("Starting foreground service for user $userId")
+        // Timber.tag("GeoFire").d("Starting foreground service for user $userId")
         LocationForegroundService.Companion.startService(context, userId)
     }
 
@@ -74,18 +74,18 @@ class LocationRepository @Inject constructor(
     }
 
     fun fetchUserLocations(role: String, radius: Double, location: LatLng) {
-        Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
+        // Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
         // clearUserLocations()
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {
                 firebaseDataSource.fetchUser(key,
                     onSuccess = { user ->
                         // Check if the fetched role matches the provided role
-                        Timber.tag("LocationSearch").d("Match users: $user")
+                        // Timber.tag("LocationSearch").d("Match users: $user")
                         if (user != null && user.uid != currentUserId) {
                             val userRoles = user.role.split(",").map { it.trim().lowercase() }
                             val targetRoles = role.split(",").map { it.trim().lowercase() }
-                            Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
+                            // Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
                             // Check if any role from userRoles matches any role from targetRoles
                             val isMatching = userRoles.any { userRole ->
                                 targetRoles.any { targetRole ->
@@ -97,13 +97,13 @@ class LocationRepository @Inject constructor(
                                 val updatedUser =
                                     user.copy(lat = location.latitude, lng = location.longitude)
 
-                                Timber.tag("GeoFire").d("User location fetched: $updatedUser")
+                                // Timber.tag("GeoFire").d("User location fetched: $updatedUser")
                                 _userLocations.value = _userLocations.value + updatedUser
                             }
                         }
                     },
                     onFailure = { exception ->
-                        Timber.tag("GeoFire").e(exception, "Error fetching role for user $key")
+                        // Timber.tag("GeoFire").e(exception, "Error fetching role for user $key")
                     }
                 )
             }
@@ -119,11 +119,11 @@ class LocationRepository @Inject constructor(
             }
 
             override fun onGeoQueryReady() {
-                Timber.tag("GeoFire").d("All initial data loaded.")
+                // Timber.tag("GeoFire").d("All initial data loaded.")
             }
 
             override fun onGeoQueryError(error: DatabaseError) {
-                Timber.tag("GeoFire").e("GeoQuery error: ${error.message}")
+                // Timber.tag("GeoFire").e("GeoQuery error: ${error.message}")
             }
         }
 
@@ -136,21 +136,21 @@ class LocationRepository @Inject constructor(
     }
 
     fun fetchAllNearbyUsers(radius: Double, location: LatLng) {
-        Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
+        // Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
 
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {
                 firebaseDataSource.fetchUser(key,
                     onSuccess = { user ->
-                        Timber.tag("NearbyUsers").d("Fetched user: $user")
+                        // Timber.tag("NearbyUsers").d("Fetched user: $user")
                         if (user != null && user.uid != currentUserId) {
                             val updatedUser = user.copy(lat = location.latitude, lng = location.longitude)
-                            Timber.tag("NearbyUsers").d("User location added: $updatedUser")
+                            // Timber.tag("NearbyUsers").d("User location added: $updatedUser")
                             _userLocations.value = _userLocations.value + updatedUser
                         }
                     },
                     onFailure = { exception ->
-                        Timber.tag("NearbyUsers").e(exception, "Error fetching user $key")
+                        // Timber.tag("NearbyUsers").e(exception, "Error fetching user $key")
                     }
                 )
             }
@@ -166,11 +166,11 @@ class LocationRepository @Inject constructor(
             }
 
             override fun onGeoQueryReady() {
-                Timber.tag("NearbyUsers").d("All nearby users loaded.")
+                // Timber.tag("NearbyUsers").d("All nearby users loaded.")
             }
 
             override fun onGeoQueryError(error: DatabaseError) {
-                Timber.tag("NearbyUsers").e("GeoQuery error: ${error.message}")
+                // Timber.tag("NearbyUsers").e("GeoQuery error: ${error.message}")
             }
         }
 
@@ -192,7 +192,7 @@ class LocationRepository @Inject constructor(
                 }
             },
             onFailure = { exception ->
-                Timber.tag("GeoFire").e(exception, "Error fetching role for user $userId")
+                // Timber.tag("GeoFire").e(exception, "Error fetching role for user $userId")
             }
         )
     }
@@ -205,14 +205,14 @@ class LocationRepository @Inject constructor(
 
     fun fetchRequestedUserLocations(userIds: List<String>) {
         val tag = "LocationDirectFetch"
-        Timber.tag(tag).d("Fetching locations directly for users: $userIds")
+        // Timber.tag(tag).d("Fetching locations directly for users: $userIds")
 
         // Clear previous data and listeners
         clearRequestedUserLocations()
 
         userIds.forEach { userId ->
             val listener = firebaseDataSource.listenToUserLocation(userId) { geoLocation ->
-                Timber.tag(tag).d("Location update for $userId: $geoLocation")
+                // Timber.tag(tag).d("Location update for $userId: $geoLocation")
 
                 firebaseDataSource.fetchUser(userId,
                     onSuccess = { user ->
@@ -226,7 +226,7 @@ class LocationRepository @Inject constructor(
                         }
                     },
                     onFailure = { exception ->
-                        Timber.tag(tag).e(exception, "Error fetching user $userId")
+                        // Timber.tag(tag).e(exception, "Error fetching user $userId")
                     }
                 )
             }
@@ -240,29 +240,5 @@ class LocationRepository @Inject constructor(
         }
         locationListeners.clear()
         _requestedUserLocations.value = emptyList()
-    }
-}
-
-
-class LocationRepositor @Inject constructor() {
-    private val database: DatabaseReference = FirebaseDatabase.getInstance().getReference("user_locations")
-    private val geoFire = GeoFire(database)
-
-    fun getNearbyUsers(city: String, callback: (List<UserLocation>) -> Unit) {
-        val users = mutableListOf<UserLocation>()
-        database.get().addOnSuccessListener { snapshot ->
-            snapshot.children.forEach { child ->
-                val lat = child.child("lat").getValue(Double::class.java) ?: 0.0
-                val lng = child.child("lng").getValue(Double::class.java) ?: 0.0
-                val role = child.child("role").getValue(String::class.java) ?: ""
-                val uid = child.child("uid").getValue(String::class.java) ?: ""
-                if (role == "Software Developer") {
-                    users.add(UserLocation(lat, lng, role, uid))
-                }
-            }
-            callback(users)
-        }.addOnFailureListener {
-            Timber.tag("GeoFire").e(it, "Error fetching user locations")
-        }
     }
 }

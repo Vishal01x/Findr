@@ -53,7 +53,7 @@ class FirebaseService : FirebaseMessagingService() {
         val chatId = message.data["chatId"] ?: return
         if (chatId == activeChatId) return // Ignore messages from the active chat
 
-        val imageUrl = "" //message.data["imageUrl"]
+        val imageUrl =  message.data["imageUrl"]
         val title = message.data["title"] ?: "New Message"
         val body = message.data["body"] ?: "You have a new message"
 
@@ -102,25 +102,40 @@ class FirebaseService : FirebaseMessagingService() {
         // Messaging Style
         val messagingStyle =
             NotificationCompat.MessagingStyle(Person.Builder().setName("Chat").build())
-                .setConversationTitle(senderName)
+                .setConversationTitle("Findr")
         for (msg in messagesSet) {
             messagingStyle.addMessage(msg, System.currentTimeMillis(), senderName)
         }
 
         // Pending Intent
-        val deepLinkIntent =
-            Intent(Intent.ACTION_VIEW, Uri.parse("reflekt://chat/$senderId")).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
+        val deepLinkUri = Uri.parse("findr://chat/$senderId")
+
+        // Intent to open the deep link
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // ✅ Create PendingIntent
         val pendingIntent = PendingIntent.getActivity(
-            this, notificationId, deepLinkIntent,
+            this,
+            notificationId, // unique identifier for the pending intent
+            deepLinkIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // Build basic notification (no image yet)
+//        val builder = NotificationCompat.Builder(this, channelId)
+//            .setSmallIcon(R.drawable.findr_logo)
+//            .setStyle(messagingStyle)
+//            .setPriority(NotificationCompat.PRIORITY_HIGH)
+//            .setAutoCancel(true)
+//            .setContentIntent(pendingIntent)
+
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.findr_logo)
-            .setStyle(messagingStyle)
+            .setStyle(messagingStyle) //Makes it a conversation notification
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setShortcutId(senderName) //Groups messages from the same sender
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
@@ -129,26 +144,26 @@ class FirebaseService : FirebaseMessagingService() {
         notificationManager.notify(notificationId, builder.build()) // Show immediately
 
         // Load image in background, update notification
-//        if (!imageUrl.isNullOrEmpty()) {
-//            Glide.with(this)
-//                .asBitmap()
-//                .load(imageUrl)
-//                .transform(CircleCrop())
-//                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
-//                    override fun onResourceReady(
-//                        resource: Bitmap,
-//                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
-//                    ) {
-//                        builder.setLargeIcon(resource)
-//                        notificationManager.notify(
-//                            notificationId,
-//                            builder.build()
-//                        ) // Update with image
-//                    }
-//
-//                    override fun onLoadCleared(placeholder: Drawable?) {}
-//                })
-//        }
+        if (!imageUrl.isNullOrEmpty()) {
+            Glide.with(this)
+                .asBitmap()
+                .load(imageUrl)
+                .transform(CircleCrop())
+                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
+                    ) {
+                        builder.setLargeIcon(resource)
+                        notificationManager.notify(
+                            notificationId,
+                            builder.build()
+                        ) // Update with image
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {}
+                })
+        }
 
 
 

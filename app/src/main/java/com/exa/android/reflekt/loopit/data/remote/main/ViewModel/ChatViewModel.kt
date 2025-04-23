@@ -43,6 +43,7 @@ class ChatViewModel @Inject constructor(
                 curUserId.value = user
                 getChatList()
                 getCurUser()
+                repo.registerFCMToken()
             } ?: run {
                 _chatList.value = Response.Error("Current user is null")
             }

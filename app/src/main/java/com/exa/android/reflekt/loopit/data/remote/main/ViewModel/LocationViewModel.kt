@@ -71,9 +71,9 @@ class LocationViewModel @Inject constructor(
                 val address = addresses[0]
                 val latLng = LatLng(address.latitude, address.longitude)
                 _selectedLocation.value = latLng
-                Timber.tag("MapScreen").d("Selected Location: $latLng $selectedPlace $selectedLocation")
+                // Timber.tag("MapScreen").d("Selected Location: $latLng $selectedPlace $selectedLocation")
             } else {
-                Timber.tag("MapScreen").e("No location found for the selected place.")
+                // Timber.tag("MapScreen").e("No location found for the selected place.")
             }
         }
     }

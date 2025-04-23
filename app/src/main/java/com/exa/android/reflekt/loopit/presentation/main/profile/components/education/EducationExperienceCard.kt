@@ -203,15 +203,6 @@ fun EducationCard(
                             )
                         }
 
-                        // Optional description (uncomment if needed)
-                        // if (!collegeInfo.description.isNullOrBlank()) {
-                        //     Spacer(modifier = Modifier.height(6.dp))
-                        //     Text(
-                        //         text = collegeInfo.description,
-                        //         style = MaterialTheme.typography.bodyMedium,
-                        //         color = MaterialTheme.colorScheme.onSurfaceVariant
-                        //     )
-                        // }
                     }
                 }
             }

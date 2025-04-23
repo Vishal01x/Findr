@@ -36,7 +36,7 @@ class MediaUploadWorker @AssistedInject constructor(
                 ?: throw Exception("Upload failed")
 
             val media = Media(mediaType, uploadedMedia, uriString, UploadStatus.SUCCESS)
-            Log.d("MediaUploadWorker", "Upload success: $uploadedMedia")
+            // Log.d("MediaUploadWorker", "Upload success: $uploadedMedia")
 
             val output = workDataOf(
                 "mediaUrl" to uploadedMedia,
@@ -46,7 +46,7 @@ class MediaUploadWorker @AssistedInject constructor(
             )
             Result.success(output)
         } catch (e: Exception) {
-            Log.e("MediaUploadWorker", "Upload failed", e)
+            // Log.e("MediaUploadWorker", "Upload failed", e)
             Result.failure()
         }
     }

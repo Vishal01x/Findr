@@ -23,7 +23,7 @@ class MediaSharingRepository @Inject constructor(
 
 
     suspend fun uploadFileToCloudinary(file: File): String? = withContext(Dispatchers.IO) {
-        Log.d("Storage Cloudinary", "Preparing file for upload: ${file.name}")
+        //Log.d("Storage Cloudinary", "Preparing file for upload: ${file.name}")
 
 //        val retrofit = Retrofit.Builder()
 //            .baseUrl("https://api.cloudinary.com/")
@@ -42,11 +42,11 @@ class MediaSharingRepository @Inject constructor(
 
         return@withContext try {
             val response = cloudinaryApi.uploadFile(body, uploadPreset)
-            Log.d("Storage Cloudinary", "Upload successful: ${response.secure_url}")
+            //Log.d("Storage Cloudinary", "Upload successful: ${response.secure_url}")
             response.secure_url
         } catch (e: Exception) {
-            Log.d("Storage Cloudinary", "Upload failed")
-            Log.e("Storage Cloudinary", "Upload failed", e)
+            //Log.d("Storage Cloudinary", "Upload failed")
+            // Log.e("Storage Cloudinary", "Upload failed", e)
             throw e
         }
     }
