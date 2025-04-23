@@ -1,9 +1,11 @@
 package com.exa.android.reflekt.loopit.util.model.Profile
 
+import android.os.Parcelable
 import com.google.firebase.Timestamp
+import kotlinx.parcelize.Parcelize
 import java.util.UUID
 
-
+@Parcelize
 data class ProfileData(
     val profileHeader: ProfileHeaderData = ProfileHeaderData(),
     val about : About = About(),
@@ -11,15 +13,15 @@ data class ProfileData(
     val collegeInfo: CollegeInfo = CollegeInfo(),
     val experienceInfo: ExperienceInfo = ExperienceInfo(),
     val activities : List<ExtraActivity> = emptyList()
-)
+): Parcelable
 
-
+@Parcelize
 data class ProfileHeaderData(
     val uid: String = "",
     val email: String = "",
     val isStudent: Boolean = false,
     val createdAt: Timestamp? = null,
-    val collegeName: String? = null,
+    val collegeName: String = "",
     val year: String? = "",
     val lat: Double = 0.0,
     val lng: Double = 0.0,
@@ -34,12 +36,14 @@ data class ProfileHeaderData(
     var bannerImageUrl: String = "",
     val skills: List<String> = emptyList(),
     val socialLinks: SocialLinks = SocialLinks()
-)
+): Parcelable
 
+@Parcelize
 data class About(
     val description : String = ""
-)
+): Parcelable
 
+@Parcelize
 data class CollegeInfo(
     val instituteName: String = "",
     val stream: String = "",
@@ -47,21 +51,23 @@ data class CollegeInfo(
     val endDate: String = "",
     val grade: String = "",
     val year: String  = ""
-)
+): Parcelable
 
+@Parcelize
 data class ExperienceInfo(
     val title: String = "",
     val employmentType: String = "",
     val companyName: String = "",
     val location: String = "",
     val startDate: String = "",
-    val endDate: String? = null, // nullable if 'Currently Working Here' is true
+    val endDate: String = "", // nullable if 'Currently Working Here' is true
     val currentlyWorking: Boolean = false,
     val description: String = "",
     val experience : String = "",
     val ctc: String = ""
-)
+): Parcelable
 
+@Parcelize
 data class ExtraActivity(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -69,14 +75,15 @@ data class ExtraActivity(
     val description :String = "",
     val media : String = "",
     val domain : String = ""
-)
+): Parcelable
 
+@Parcelize
 data class SocialLinks(
     var linkedin: String? = "",
     var youtube: String? = "",
     var email: String? = "",
     var portfolio: String? = ""
-)
+): Parcelable
 
 
 //data class ProfileData(

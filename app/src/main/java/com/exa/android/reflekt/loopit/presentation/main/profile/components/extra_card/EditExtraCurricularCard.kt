@@ -40,6 +40,7 @@ import javax.inject.Inject
 
 // Android
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -99,7 +100,7 @@ fun EditExtracurricularScreen(
     }
 
     // Brandfetch logo loading state
-    LaunchedEffect(domain) {
+    LaunchedEffect(domain,isValidUrl) {
         if (domain.isNotEmpty() && isValidUrl) {
             try {
                 extracurricularViewModel.setLogoLoadingState(true)
@@ -206,7 +207,10 @@ fun EditExtracurricularScreen(
                     },
                     onLinkChange = extracurricularViewModel::updateLink,
                     onDescriptionChange = extracurricularViewModel::updateDescription,
-                    onFetchLogo = { isValidUrl = true }
+                    onFetchLogo = {
+                        isValidUrl = true
+
+                    }
                 )
             }
 
@@ -243,7 +247,7 @@ private fun InputSection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LinkInputRow(link = link, onLinkChange = onLinkChange, onFetchLogo = onFetchLogo)
+        LinkInputRow(link = link, onLinkChange = onLinkChange, onFetchLogo = { onFetchLogo() })
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -274,7 +278,7 @@ private fun LinkInputRow(link: String, onLinkChange: (String) -> Unit, onFetchLo
         Spacer(modifier = Modifier.width(8.dp))
 
         Button(
-            onClick = onFetchLogo,
+            onClick = { onFetchLogo() },
             enabled = link.isNotBlank()
         ) {
             Text("Add")

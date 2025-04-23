@@ -37,16 +37,17 @@ fun EditExperienceScreen(
     viewModel: EditProfileViewModel = hiltViewModel()
 ) {
     val response = viewModel.responseState
+    val snackbarHostState = remember { SnackbarHostState() }
 
-
-    var title by rememberSaveable { mutableStateOf(initialData.title) }
-    var employmentType by rememberSaveable { mutableStateOf(initialData.employmentType) }
-    var company by rememberSaveable { mutableStateOf(initialData.companyName) }
-    var location by rememberSaveable { mutableStateOf(initialData.location) }
-    var startDate by rememberSaveable { mutableStateOf(initialData.startDate) }
+    var title by rememberSaveable { mutableStateOf(initialData.title ?: "") }
+    var employmentType by rememberSaveable { mutableStateOf(initialData.employmentType ?: "") }
+    var company by rememberSaveable { mutableStateOf(initialData.companyName ?: "") }
+    var location by rememberSaveable { mutableStateOf(initialData.location ?: "") }
+    var startDate by rememberSaveable { mutableStateOf(initialData.startDate ?: "") }
     var endDate by rememberSaveable { mutableStateOf(initialData.endDate ?: "") }
-    var currentlyWorking by rememberSaveable { mutableStateOf(initialData.currentlyWorking) }
-    var description by rememberSaveable { mutableStateOf(initialData.description) }
+    var currentlyWorking by rememberSaveable { mutableStateOf(initialData.currentlyWorking ?: false) }
+    var description by rememberSaveable { mutableStateOf(initialData.description ?: "") }
+
 
     var titleError by remember { mutableStateOf<String?>(null) }
     var companyError by remember { mutableStateOf<String?>(null) }
@@ -57,6 +58,7 @@ fun EditExperienceScreen(
     LaunchedEffect(response) {
         when (response) {
             is Response.Success -> navController.popBackStack()
+            is Response.Error -> snackbarHostState.showSnackbar(response.message)
             else -> {}
         }
     }
@@ -79,7 +81,8 @@ fun EditExperienceScreen(
                     titleContentColor = MaterialTheme.colorScheme.primary
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -231,7 +234,7 @@ fun EditExperienceScreen(
                                     company,
                                     location,
                                     startDate,
-                                    if (currentlyWorking) null else endDate,
+                                    if (currentlyWorking) "" else endDate,
                                     currentlyWorking,
                                     description
                                     )

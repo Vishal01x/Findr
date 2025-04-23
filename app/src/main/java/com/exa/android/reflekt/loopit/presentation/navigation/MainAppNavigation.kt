@@ -70,24 +70,13 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                 userId,
                 navController,
                 onEditHeaderClick = {profileData ->
-                    navController.navigate(ProfileRoute.EditProfileHeader.createRoute(profileData)){
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    ProfileRoute.EditProfileHeader.createRoute(navController,profileData)
                 },
                 onAddExtraCard = {id,extra->
                     if(extra == null){
-                        navController.navigate(ProfileRoute.EditExtraCurricularScreen.createRoute(
-                            ExtraActivity()
-                        )){
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        ProfileRoute.EditExtraCurricularScreen.createRoute(navController,ExtraActivity())
                     }else {
-                        navController.navigate(ProfileRoute.FullExtraCard.createRoute(id,extra)){
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        ProfileRoute.FullExtraCard.createRoute(navController,id,extra)
                     }
                 },
                 openChat = { userId ->
@@ -99,17 +88,11 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                     }
                 },
                 onEditEducation = {
-                    navController.navigate(ProfileRoute.EditEducation.createRoute(it ?: CollegeInfo())){
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    ProfileRoute.EditEducation.createRoute(navController,it ?: CollegeInfo())
                 },
 
                 onEditExperience = {
-                    navController.navigate(ProfileRoute.EditExperience.createRoute(it ?: ExperienceInfo())){
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    ProfileRoute.EditExperience.createRoute(navController,it ?: ExperienceInfo())
                 }
 
             )
@@ -117,90 +100,70 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
 
         composable(
             route = ProfileRoute.EditProfileHeader.route,
-            arguments = listOf(navArgument("itemJson") { type = NavType.StringType })
+            //arguments = listOf(navArgument("itemJson") { type = NavType.StringType })
         ) {
-            val itemJson = it.arguments?.getString("itemJson")
-            val item = remember(itemJson) {
-                itemJson?.let {
-                    val decoded = URLDecoder.decode(it, "UTF-8")
-                    Gson().fromJson(decoded, ProfileData::class.java)
-                }
-            }
+            val item = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<ProfileData>("header")
 
             EditProfileHeader(item ?:ProfileData(),navController)
         }
 
         composable(
             route = ProfileRoute.EditExtraCurricularScreen.route,
-            arguments = listOf(navArgument("itemJson") { type = NavType.StringType })
+           // arguments = listOf(navArgument("itemJson") { type = NavType.StringType })
         ) {
 
-            val itemJson = it.arguments?.getString("itemJson")
-            val item = remember(itemJson) {
-                itemJson?.let {
-                    val decoded = URLDecoder.decode(it, "UTF-8")
-                    Gson().fromJson(decoded, ExtraActivity::class.java)
-                }
-            }
+            val item = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<ExtraActivity>("extra")
             EditExtracurricularScreen(item ?: ExtraActivity(),navController)
         }
 
         composable(
             route = ProfileRoute.EditEducation.route,
-            arguments = listOf(navArgument("itemJson") { type = NavType.StringType })
+            //arguments = listOf(navArgument("itemJson") { type = NavType.StringType })
         ) {
 
-            val itemJson = it.arguments?.getString("itemJson")
-            val item = remember(itemJson) {
-                itemJson?.let {
-                    val decoded = URLDecoder.decode(it, "UTF-8")
-                    Gson().fromJson(decoded, CollegeInfo::class.java)
-                }
-            }
+            val item = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<CollegeInfo?>("college")
+
             EditEducationScreen(navController,item ?: CollegeInfo())
         }
 
         composable(
             route = ProfileRoute.EditExperience.route,
-            arguments = listOf(
-                navArgument("itemJson") { type = NavType.StringType })
+//            arguments = listOf(
+//                navArgument("itemJson") { type = NavType.StringType })
         ) {
 
-            val itemJson = it.arguments?.getString("itemJson")
-            val item = remember(itemJson) {
-                itemJson?.let {
-                    val decoded = URLDecoder.decode(it, "UTF-8")
-                    Gson().fromJson(decoded, ExperienceInfo::class.java)
-                }
-            }
+//
+            val item = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<ExperienceInfo>("experience")
+
+
             EditExperienceScreen(navController,item ?: ExperienceInfo())
         }
 
         composable(
-            route = ProfileRoute.FullExtraCard.route,
-            arguments = listOf(
-                navArgument("userId") { type = NavType.StringType
-                                      nullable = true
-                                      defaultValue = null},
-                navArgument("itemJson") { type = NavType.StringType })
-        ) {
-
-            val userId = it.arguments?.getString("userId")
-            val itemJson = it.arguments?.getString("itemJson")
-            val item = remember(itemJson) {
-                itemJson?.let {
-                    val decoded = URLDecoder.decode(it, "UTF-8")
-                    Gson().fromJson(decoded, ExtraActivity::class.java)
-                }
-            }
+            "full_extra_card/{userId}",
+            arguments = listOf(navArgument("userId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")
+            val item = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<ExtraActivity>("extra_card_data") ?: ExtraActivity()
 
             if (item != null) {
                 FullExtraCardScreen(navController,
                     userId.isNullOrEmpty(), item, onEditClick =  {
-                    navController.navigate(ProfileRoute.EditExtraCurricularScreen.createRoute(it)){
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    ProfileRoute.EditExtraCurricularScreen.createRoute(navController,it)
                 })
             }
         }

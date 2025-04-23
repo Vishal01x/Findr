@@ -1,10 +1,12 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
+import com.exa.android.reflekt.loopit.util.isNetworkAvailable
 import com.exa.android.reflekt.loopit.util.model.Chat
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
@@ -25,6 +27,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -36,7 +39,8 @@ import javax.inject.Inject
 class UserRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
-    private val rdb: FirebaseDatabase // Realtime Database
+    private val rdb: FirebaseDatabase, // Realtime Database
+    @ApplicationContext private val context : Context
 ) {
 
     val currentUser = auth.currentUser?.uid
@@ -467,7 +471,10 @@ class UserRepository @Inject constructor(
             emit(Response.Error("User not logged in"))
             return@flow
         }
-
+        if(!isNetworkAvailable(context)){
+            emit(Response.Error("Failed Education update. Check Internet Connection"))
+            return@flow
+        }
         val userRef = userCollection.document(userId)
 
         try {
@@ -501,7 +508,10 @@ class UserRepository @Inject constructor(
             emit(Response.Error("User not logged in"))
             return@flow
         }
-
+        if(!isNetworkAvailable(context)){
+            emit(Response.Error("Failed Experience update. Check Internet Connection"))
+            return@flow
+        }
         val userRef = userCollection.document(userId)
 
         try {

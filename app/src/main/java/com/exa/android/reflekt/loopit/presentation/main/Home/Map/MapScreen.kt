@@ -99,6 +99,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.google.accompanist.permissions.shouldShowRationale
@@ -603,7 +604,9 @@ fun ProfileBottomSheet(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 InfoRow(
-                    icon = Icons.Default.Email, text = user.email
+                    icon = Icons.Default.Email, text = user.email, Modifier.clickable {
+                        if (user.email.isNotEmpty())
+                        openUrl(context, "mailto:${user.email}") }
                 )
 
                 InfoRow(
@@ -640,10 +643,11 @@ fun ProfileBottomSheet(
 }
 
 @Composable
-fun InfoRow(icon: ImageVector, text: String) {
+fun InfoRow(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier
     ) {
         Icon(
             imageVector = icon,

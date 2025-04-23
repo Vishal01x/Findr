@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card
 
+import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -234,3 +235,20 @@ fun openUrl(context: Context, url: String) {
         Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
     }
 }
+
+//fun openUrl(context: Context, url: String) {
+//    try {
+//        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+//            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+//        }
+//
+//        // Ensure back press returns to your app
+//        TaskStackBuilder.create(context).apply {
+//            addNextIntentWithParentStack(intent)
+//        }.startActivities()
+//
+//    } catch (e: Exception) {
+//        Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
+//    }
+//}
+
