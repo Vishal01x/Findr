@@ -49,43 +49,6 @@ fun DatePickerDemo() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FullDatePickerDialog(
-    onDateSelected: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-    val currentMillis = System.currentTimeMillis()
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = currentMillis,
-        yearRange = 1900..Calendar.getInstance().get(Calendar.YEAR) + 20
-    )
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                datePickerState.selectedDateMillis?.let {
-                    onDateSelected(dateFormatter.format(Date(it)))
-                }
-            }) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    ) {
-        DatePicker(
-            state = datePickerState,
-            showModeToggle = true // allows switching between calendar and text input
-        )
-    }
-}
 
 
 @Preview
