@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,9 +27,11 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
+    onLogOutClick : () -> Unit,
     modifier: Modifier = Modifier,
     authViewModel: AuthVM = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -103,6 +106,17 @@ fun SettingsScreen(
                     icon = Icons.Default.Email,
                     title = "Update Email Address",
                     onClick = { showUpdateEmailDialog = true }
+                )
+            }
+
+            item {
+                SettingsItem(
+                    icon = Icons.AutoMirrored.Filled.Logout,
+                    title = "Logout",
+                    onClick = {
+                        authViewModel.logout()
+                        onLogOutClick()
+                    }
                 )
             }
 
@@ -424,7 +438,7 @@ fun SettingsItem(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = if(title != "Logout" )MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -440,11 +454,13 @@ fun SettingsItem(
                 )
             }
         }
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
+        if(title != "Logout") {
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
     }
 }
 

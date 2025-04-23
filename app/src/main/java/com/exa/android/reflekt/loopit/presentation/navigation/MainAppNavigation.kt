@@ -25,6 +25,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.heade
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.HelpScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.SettingsScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsPrivacyScreen
+import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
@@ -207,7 +208,12 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
         composable(route = ProfileRoute.ProfileSetting.route) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                onNavigate = {route-> navController.navigate(route) }
+                onNavigate = {route-> navController.navigate(route) },
+                onLogOutClick = {navController.navigate(AuthRoute.Login.route){
+                    popUpTo(0) { inclusive = true } // Pops everything
+                    launchSingleTop = true // Avoid multiple instances
+                } }
+
             )
         }
 

@@ -264,9 +264,11 @@ class UserRepository @Inject constructor(
                     } else if (snapshot != null && snapshot.exists()) {
                         val name = snapshot.getString("name") ?: "Name"
                         val profilePic = snapshot.getString("profilePicture") ?: ""
+                        val fcmToken = snapshot.getString("fcmToken") ?: ""
                         val user = User(
                             name = name,
-                            profilePicture = profilePic
+                            profilePicture = profilePic,
+                            fcmToken = fcmToken
                         )
                         if (user != null) {
                             trySend(Response.Success(user)).isFailure

@@ -103,93 +103,97 @@ class FirestoreService @Inject constructor(
 
     fun updateToken(token: String?) {
         if (token.isNullOrEmpty() || currentUser.isNullOrEmpty()) return
+
         val userRef = userCollection.document(currentUser)
 
-        userRef.update("fcmToken", token)
-            .addOnSuccessListener { Log.d("FCM", "Token updated in Firestore") }
-            .addOnFailureListener { Log.e("FCM", "Failed to update token", it) }
-    }
-/*
-    suspend fun createChatAndSendMessage(
-        userId2: String,
-        text: String,
-        media: Media?,
-        receiverToken: String?,
-        curUser: User?,
-        messageId: String? = null
-    ) : String? {
-        val userId1 = auth.currentUser?.uid ?: return null
-        val chatId = generateChatId(userId1, userId2)
-        val message = Message(
-            chatId = chatId,
-            senderId = userId1,
-            receiverId = userId2,
-            message = text,
-            media = media,
-            members = listOf(userId1, userId2)
-        )
+        val data = mapOf("fcmToken" to token)
 
-        if (messageId != null) {
-            message.messageId = messageId
-            updateMessage(message, "")
-            if (receiverToken != null) {
-                sendPushNotification(receiverToken,message,curUser)
+        userRef.set(data, SetOptions.merge())
+            .addOnSuccessListener { Log.d("FCM", "Token set/updated in Firestore") }
+            .addOnFailureListener { Log.e("FCM", "Failed to set/update token", it) }
+    }
+
+    /*
+        suspend fun createChatAndSendMessage(
+            userId2: String,
+            text: String,
+            media: Media?,
+            receiverToken: String?,
+            curUser: User?,
+            messageId: String? = null
+        ) : String? {
+            val userId1 = auth.currentUser?.uid ?: return null
+            val chatId = generateChatId(userId1, userId2)
+            val message = Message(
+                chatId = chatId,
+                senderId = userId1,
+                receiverId = userId2,
+                message = text,
+                media = media,
+                members = listOf(userId1, userId2)
+            )
+
+            if (messageId != null) {
+                message.messageId = messageId
+                updateMessage(message, "")
+                if (receiverToken != null) {
+                    sendPushNotification(receiverToken,message,curUser)
+                }
+                return null
+            }
+
+            Log.d("FireStore Operation", "receiver Token - $receiverToken")
+
+            try {
+                withContext(Dispatchers.IO) {
+                    updateUserList(userId1, userId2)
+                    updateUserList(userId2, userId1)
+
+                    val messageRef = chatCollection.document(chatId).collection("messages")
+                    messageRef.document(message.messageId).set(message).await()
+
+                    // Update last message and timestamp in the chat document
+                    val chatDoc = chatCollection.document(chatId)
+                    val snapshot = chatDoc.get().await()
+
+                    if (snapshot.exists()) {
+                        chatDoc.update(
+                            mapOf(
+                                "lastMessage" to message.message,
+                                "lastMessageTimestamp" to message.timestamp,
+                                "unreadMessages.$userId2" to FieldValue.increment(1),
+                                "unreadMessages.$userId1" to 0
+                            )
+                        ).await()
+                    } else {
+                        chatDoc.set(
+                            mapOf(
+                                "lastMessage" to message.message,
+                                "lastMessageTimestamp" to message.timestamp,
+                                "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
+                            )
+                        ).await()
+                    }
+
+                    // Insert or update the chat document for both users
+                    val chatData = mapOf("users" to listOf(userId1, userId2))
+                    chatCollection.document(chatId).set(chatData, SetOptions.merge()).await()
+                }
+
+                Log.d("FireStoreService", "New message added Successfully")
+
+                // Send push notification outside of the Firestore coroutine scope
+                if (!receiverToken.isNullOrEmpty() && message.media != null
+                    && message.media.uploadStatus != UploadStatus.SUCCESS) {
+                    sendPushNotification(receiverToken, message, curUser)
+                }
+                return message.messageId
+            } catch (e: Exception) {
+                Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
             }
             return null
         }
-
-        Log.d("FireStore Operation", "receiver Token - $receiverToken")
-
-        try {
-            withContext(Dispatchers.IO) {
-                updateUserList(userId1, userId2)
-                updateUserList(userId2, userId1)
-
-                val messageRef = chatCollection.document(chatId).collection("messages")
-                messageRef.document(message.messageId).set(message).await()
-
-                // Update last message and timestamp in the chat document
-                val chatDoc = chatCollection.document(chatId)
-                val snapshot = chatDoc.get().await()
-
-                if (snapshot.exists()) {
-                    chatDoc.update(
-                        mapOf(
-                            "lastMessage" to message.message,
-                            "lastMessageTimestamp" to message.timestamp,
-                            "unreadMessages.$userId2" to FieldValue.increment(1),
-                            "unreadMessages.$userId1" to 0
-                        )
-                    ).await()
-                } else {
-                    chatDoc.set(
-                        mapOf(
-                            "lastMessage" to message.message,
-                            "lastMessageTimestamp" to message.timestamp,
-                            "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
-                        )
-                    ).await()
-                }
-
-                // Insert or update the chat document for both users
-                val chatData = mapOf("users" to listOf(userId1, userId2))
-                chatCollection.document(chatId).set(chatData, SetOptions.merge()).await()
-            }
-
-            Log.d("FireStoreService", "New message added Successfully")
-
-            // Send push notification outside of the Firestore coroutine scope
-            if (!receiverToken.isNullOrEmpty() && message.media != null
-                && message.media.uploadStatus != UploadStatus.SUCCESS) {
-                sendPushNotification(receiverToken, message, curUser)
-            }
-            return message.messageId
-        } catch (e: Exception) {
-            Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
-        }
-        return null
-    }
-*/
+    */
 
     suspend fun createChatAndSendMessage(
         userId2: String,
@@ -251,7 +255,10 @@ class FirestoreService @Inject constructor(
             }
 
             if (!receiverToken.isNullOrEmpty()) {
+                Log.d("FireStore Service", "receiver Token - $receiverToken")
                 sendPushNotification(receiverToken, message, curUser)
+            }else{
+                Log.d("FireStore Service", "no receiver Toke")
             }
 
             return finalMessageId

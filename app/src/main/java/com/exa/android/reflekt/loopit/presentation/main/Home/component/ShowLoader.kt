@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.dp
 fun showLoader(message: String = "Saving Changes...", modifier: Modifier = Modifier) {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.3f)),
+            .fillMaxSize(),
+            //.background(Color.Black.copy(alpha = 0.1f)),
         contentAlignment = Alignment.Center
     ) {
         Row(

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.worker.PreferenceHelper
@@ -27,7 +28,8 @@ class AuthVM @Inject constructor(
     val repository: AuthRepository,
     val auth: FirebaseAuth,
     private val preferenceHelper: PreferenceHelper,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val firestoreService: FirestoreService
 ) : ViewModel() {
 
     // Login State
@@ -190,6 +192,7 @@ class AuthVM @Inject constructor(
 
             when {
                 result.isSuccess -> {
+                    firestoreService.registerFCMToken()
                     val userId = repository.getCurrentUser()?.uid ?: ""
                     preferenceHelper.saveUserId(userId)
                     loginState.value = loginState.value.copy(
@@ -227,9 +230,11 @@ class AuthVM @Inject constructor(
                 experience = signUpState.value.experience,
             )
             signUpState.value = signUpState.value.copy(isLoading = false)
-            userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
+//            userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
             when {
                 result.isSuccess -> {
+                    userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
+                    firestoreService.registerFCMToken()
                     signUpState.value = signUpState.value.copy(
                         signUpSuccess = true,
                         errorMessage = null

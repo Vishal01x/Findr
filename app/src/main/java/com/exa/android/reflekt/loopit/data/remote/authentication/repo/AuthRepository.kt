@@ -1,6 +1,7 @@
 package com.exa.android.reflekt.loopit.data.remote.authentication.repo
 
 import android.util.Log
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
@@ -47,7 +48,8 @@ interface AuthRepository {
 
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val firestoreService: FirestoreService
 ) : AuthRepository {
 
     override suspend fun login(email: String, password: String): Result<Unit> {
@@ -57,7 +59,9 @@ class AuthRepositoryImpl @Inject constructor(
                 auth.signOut()
                 Result.failure(Exception("Please verify your email before logging in."))
             } else {
+                firestoreService.registerFCMToken()
                 Result.success(Unit)
+
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -150,7 +154,7 @@ class AuthRepositoryImpl @Inject constructor(
                     transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
                 }
             }
-
+            firestoreService.registerFCMToken()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.d("FireStore Service", "User Sign Up failed - ${e.localizedMessage}")

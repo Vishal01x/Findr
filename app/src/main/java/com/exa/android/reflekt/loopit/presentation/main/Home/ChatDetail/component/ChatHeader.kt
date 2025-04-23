@@ -347,7 +347,7 @@ fun HeaderWithProfile(
             Text(
                 text = statusText,
                 style = MaterialTheme.typography.labelSmall,
-                color = if(statusText == "•Active") Color.Green else Color.Gray,
+                color = if(statusText == "•Active") Color(0xFF4CAF50) else Color.Gray,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping

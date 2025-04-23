@@ -28,7 +28,7 @@ private val LightColorScheme = lightColorScheme(
   onSecondary = Color(0xFF4875E1),
   tertiary = Color.White,
   onTertiary = Color.Black,
-  background = Color.White,          // White clean UI background
+  background = Color(0xFFF8F8F8),          // White clean UI background
   surface = Color(0xFFF8F8F8),       // Light gray for chat backgrounds
   onSurface = Color(0xFF212121),     // Dark gray for text
   error = Color(0xFFE57373),         // Soft Red (for errors)
@@ -65,6 +65,7 @@ object AppColors {
   val DividerColor = Color(0xFFE0E0E0) // Light gray for dividers
   val cardButtonColor1 = Color.White
   val cardButtonColor2 = Color.Black
+  val whiteBlue = Color(0xFFF8F8F8)
 }
 
 // Typography Setup
@@ -120,7 +121,7 @@ fun AppTheme(
   val systemUiController = rememberSystemUiController()
 
   val useDarkIcons = true // dark icons = black icons
-  val statusBarColor = Color.White
+  val statusBarColor = AppColors.whiteBlue
 
   SideEffect {
     systemUiController.setStatusBarColor(

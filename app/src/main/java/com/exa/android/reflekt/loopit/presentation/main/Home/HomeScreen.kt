@@ -270,8 +270,8 @@ fun QuerySection(
             onValueChange = onQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .background(MaterialTheme.colorScheme.secondary, CircleShape)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.onSurface
