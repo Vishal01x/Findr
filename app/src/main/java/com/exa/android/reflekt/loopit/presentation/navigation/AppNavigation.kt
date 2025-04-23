@@ -39,9 +39,9 @@ fun AppNavigation(
     LaunchedEffect(otherUserId) {
         if (!otherUserId.isNullOrBlank()) {
             navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId)) {
-                popUpTo(HomeRoute.ChatList.route) {
-                    inclusive = false
-                }
+//                popUpTo(HomeRoute.ChatList.route) {
+//                    inclusive = false
+//                }
                 launchSingleTop = true
             }
 //            // Clear the intent to avoid re-navigation on recomposition

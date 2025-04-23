@@ -1,7 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home
 
 import android.app.Activity
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNotificationPermissionIfNeeded
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
@@ -67,49 +67,6 @@ import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.google.gson.Gson
 
-/*
-@Composable
-fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
-
-    val context = LocalContext.current
-    // Handle back press to exit app when at Home
-    BackHandler(enabled = true) {
-//        if (!navController.popBackStack()) {
-        (context as Activity).finish()
-    }
-
-    var isQueryClicker by remember { mutableStateOf(false) }
-    var chatList = remember { mutableStateListOf<ChatList>() }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(top = 2.dp)
-    ) {
-        if (!isQueryClicker) {
-            HeaderSection(navController) {
-                isQueryClicker = true
-            }
-
-        } else {
-            QuerySection(chatList, onBackClick = { isQueryClicker = false }) {
-//                chatList.clear()
-                chatList.addAll(it)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-        //StoriesSection()
-        // Spacer(modifier = Modifier.height(16.dp))
-        ChatsSection(navController, isQueryClicker, chatList, viewModel) { data ->
-            chatList.clear()
-            chatList.addAll(data)
-        }
-
-    }
-}*/
-
 @Composable
 fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     val context = LocalContext.current
@@ -117,7 +74,10 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
         (context as Activity).finish()
     }
 
-    var isQueryClicker by remember { mutableStateOf(false) }
+
+    RequestNotificationPermissionIfNeeded(true)
+
+        var isQueryClicker by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
 
@@ -195,67 +155,6 @@ fun HeaderSection(navController: NavController, onClick: () -> Unit) {
     }
 }
 
-/*
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun QuerySection(
-    chatList: List<ChatList>,
-    onBackClick: () -> Unit,
-    onResult: (List<ChatList>) -> Unit
-) {
-    val searchQuery = remember { mutableStateOf(TextFieldValue("")) }
-
-    // Filter logic
-    val filteredChats = remember(searchQuery.value.text, chatList) {
-        if (searchQuery.value.text.isBlank()) chatList
-        else {
-            val queryWords = searchQuery.value.text.trim().lowercase().split("\\s+".toRegex())
-            chatList.filter { chat ->
-                queryWords.all { word ->
-                    chat.name.lowercase().contains(word)
-                }
-            }
-        }
-    }
-
-    // Callback with filtered results
-    LaunchedEffect(filteredChats) {
-        onResult(filteredChats)
-    }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        BasicTextField(
-            value = searchQuery.value,
-            onValueChange = { searchQuery.value = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            singleLine = true,
-            decorationBox = { innerTextField ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    if (searchQuery.value.text.isEmpty()) {
-                        Text(
-                            "Search chats...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    innerTextField()
-                }
-            }
-        )
-    }
-}
- */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

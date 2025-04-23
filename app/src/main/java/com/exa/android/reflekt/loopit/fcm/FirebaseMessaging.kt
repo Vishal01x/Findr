@@ -79,8 +79,8 @@ class FirebaseService : FirebaseMessagingService() {
             ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.e("Notification", "Notification permission not granted")
-            return
+            //Log.e("Notification", "Notification permission not granted")
+
         }
 
         // Notification Channel

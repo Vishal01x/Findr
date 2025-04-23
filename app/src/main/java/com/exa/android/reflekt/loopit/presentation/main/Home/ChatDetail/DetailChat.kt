@@ -3,7 +3,7 @@ package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
-import android.util.Log
+//import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,6 +62,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyViewMo
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getMediaTypeFromUri
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.isFileTooLarge
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNotificationPermissionIfNeeded
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.clearChatNotifications
 import com.exa.android.reflekt.loopit.util.model.MediaType
@@ -137,12 +138,12 @@ fun DetailChat(
         }
 
         is Response.Success -> {
-            Log.d("Detail Chat", "Success in userDetail")
+           // Log.d("Detail Chat", "Success in userDetail")
             otherUserDetail.value = response.data
         }
 
         else -> {
-            Log.d("Detail Chat", "Error in userDetail")
+           // Log.d("Detail Chat", "Error in userDetail")
         }
     }
 
@@ -151,14 +152,6 @@ fun DetailChat(
         is Response.Error -> Text(text = response.message)
         else -> {}
     }
-//
-//    DisposableEffect(key1 = Unit) {// when the user while typing navigate to somewhere eelse then update its typingto null
-//        onDispose {
-//            userViewModel.setTypingStatus(curUserId, "")
-//            activeChatId = null
-//        }
-//    }
-
 
 // ✅ Lifecycle Observer: Ensures activeChatId updates when app resumes
     DisposableEffect(lifecycleOwner) {
@@ -166,12 +159,12 @@ fun DetailChat(
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     activeChatId = chatIdState.value // Update chat ID when app resumes
-                    Log.d("ChatScreen", "App Resumed: ActiveChatId updated to $activeChatId")
+                    //Log.d("ChatScreen", "App Resumed: ActiveChatId updated to $activeChatId")
                 }
 
                 Lifecycle.Event.ON_STOP -> {
                     activeChatId = null // Reset chat when app goes to background
-                    Log.d("ChatScreen", "App in Background: ActiveChatId Cleared")
+                    //Log.d("ChatScreen", "App in Background: ActiveChatId Cleared")
                 }
 
                 else -> {}
@@ -294,7 +287,7 @@ fun DetailChat(
                 onAddClick = {
 //                    filePickerLauncher.launch("*/*")
                     mediaSharingViewModel.showMediaPickerSheet = true
-                    Log.d("Storage Cloudinary", "mediaPicker - $mediaSharingViewModel.showMediaPickerSheet")
+                    //Log.d("Storage Cloudinary", "mediaPicker - $mediaSharingViewModel.showMediaPickerSheet")
                 }
 
             )

@@ -18,6 +18,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -57,7 +59,7 @@ import java.util.concurrent.TimeUnit
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var navController: NavController  // Define navController at class level
-
+    private lateinit var requestNotificationPermissionLauncher: ActivityResultLauncher<String>
     private var lifecycleObserver: MyLifecycleObserver? = null
     val userViewModel: UserViewModel by viewModels()
     val locationViewModel: LocationViewModel by viewModels()
@@ -100,6 +102,19 @@ class MainActivity : ComponentActivity() {
 
          */
 
+//        requestNotificationPermissionLauncher = registerForActivityResult(
+//            ActivityResultContracts.RequestPermission()
+//        ) { isGranted: Boolean ->
+//            if (isGranted) {
+//               // Log.d("Permission", "Notification permission granted")
+//                // requestSystemAlertPermission() // If needed
+//            } else {
+//             //   Log.e("Permission", "Notification permission denied")
+//            }
+//        }
+
+        // Then call this function to request it
+        //requestNotificationPermissionIfNeeded()
 
 
         setContent {
@@ -113,6 +128,30 @@ class MainActivity : ComponentActivity() {
         }
         clearAllNotifications(this)
     }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                // Show custom rationale if needed before requesting
+                if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Notification Permission")
+                        .setMessage("We need this permission to send you important updates.")
+                        .setPositiveButton("Allow") { _, _ ->
+                            requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                } else {
+                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+    }
+
+
     @SuppressLint("InlinedApi")
     private fun checkAndRequestLocationPermissions(userId: String) {
         val requiredPermissions = mutableListOf(
