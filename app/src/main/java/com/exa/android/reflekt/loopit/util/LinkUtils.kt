@@ -21,7 +21,7 @@ object LinkUtils {
 
     // New URL detection function
      fun findUrls(text: String): List<LinkSpan> {
-        val pattern = Pattern.compile("(https?://\\S+)")
+        val pattern = URL_REGEX //Pattern.compile("(https?://\\S+)")
         val matcher = pattern.matcher(text)
         val matches = mutableListOf<LinkSpan>()
         while (matcher.find()) {

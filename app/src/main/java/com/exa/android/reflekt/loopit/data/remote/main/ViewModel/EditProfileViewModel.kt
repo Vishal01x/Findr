@@ -329,16 +329,24 @@ class EditProfileViewModel @Inject constructor(
 
     fun updateUserEducation(collegeInfo: CollegeInfo) {
         viewModelScope.launch {
-            userRepository.updateUserEducation(collegeInfo).collect {
-                responseState = it
+            if (!isNetworkAvailable(context)){ responseState =
+                Response.Error("Failed Education update. Check Internet Connection")
+        }else {
+                userRepository.updateUserEducation(collegeInfo).collect {
+                    responseState = it
+                }
             }
         }
     }
 
     fun updateUserEducation(experienceInfo: ExperienceInfo) {
         viewModelScope.launch {
-            userRepository.updateUserExperience(experienceInfo).collect {
-                responseState = it
+            if (!isNetworkAvailable(context)){ responseState =
+                Response.Error("Failed Experience update. Check Internet Connection")
+            }else {
+                userRepository.updateUserExperience(experienceInfo).collect {
+                    responseState = it
+                }
             }
         }
     }

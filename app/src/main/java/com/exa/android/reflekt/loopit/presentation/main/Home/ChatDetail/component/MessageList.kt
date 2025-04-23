@@ -238,8 +238,8 @@ fun MessageBubble(
         ) {
             val bubbleColor = if (curUserId == message.senderId)
                 Color(0xFF007AFF).copy(alpha = .6f)
-               // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
-             else Color(0xFFf6f6f6)
+            // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
+            else Color(0xFFf6f6f6)
             Column(
                 modifier = Modifier
                     .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp) // occupy 70% of screen only
@@ -357,6 +357,9 @@ fun MessageBubble(
                         fontStyle = FontStyle.Italic,
                         color = if (curUserId == message.senderId) Color.White else Color.Gray
                     )
+
+                    Spacer(Modifier.width(1.dp))
+
                     if (curUserId == message.senderId && message.message != "deleted") {
                         Spacer(modifier = Modifier.width(2.dp))
                         Log.d("Detail Chat", message.status)
@@ -379,7 +382,8 @@ fun MessageBubble(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_seen),
                                 contentDescription = "Seen",
-                                tint = MaterialTheme.colorScheme.primary,  // Blue color for seen
+                                tint = Color(0xFF59FFA0), // Soft purple with a modern feel
+
                                 modifier = Modifier.size(14.dp)
                             )
                         }

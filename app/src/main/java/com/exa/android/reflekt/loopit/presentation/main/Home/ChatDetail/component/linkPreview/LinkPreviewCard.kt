@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -45,6 +46,7 @@ import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel.LinkState
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel.MetaDataViewModel
+import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.launch
 import java.net.URL
 
@@ -229,16 +231,34 @@ private fun LinkPreviewError(message: String, onRetry: () -> Unit) {
 }
 
 fun openLink(annotatedString: AnnotatedString, context: Context, offset: Int) {
-    annotatedString.getStringAnnotations("URL", offset, annotatedString.length)
-        .firstOrNull()
-        ?.let { annotation ->
-//                    uriHandler.openUri(annotation.item)
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // Opens in the same task
+    val annotation = annotatedString.getStringAnnotations(start = offset, end = offset)
+        .firstOrNull() ?: return
+
+    try {
+        if (Patterns.EMAIL_ADDRESS.matcher(annotation.item).matches()) {
+            // It's a valid email
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:${annotation.item}")
             }
             context.startActivity(intent)
+
+        } else if (Patterns.WEB_URL.matcher(annotation.item).matches()) {
+            // It's a valid URL
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+
+        } else {
+            showToast(context, "Invalid link or email")
         }
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+        showToast(context, "Cannot open link")
+    }
 }
+
 
 private fun getLinkFromText(annotatedString: AnnotatedString, offset: Int): String? {
     return annotatedString.getStringAnnotations("URL", offset, offset)

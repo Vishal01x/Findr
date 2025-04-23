@@ -1,11 +1,13 @@
 package com.exa.android.reflekt.loopit.presentation.navigation.component
 
 import android.net.Uri
+import androidx.navigation.NavController
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.google.gson.Gson
+import java.net.URLEncoder
 
 sealed class AuthRoute(val route : String){
     object Login : AuthRoute("login")
@@ -37,38 +39,43 @@ sealed class ProfileRoute(val route: String) {
         }
     }
 
-    object EditProfileHeader: ProjectRoute("edit_profile_header/{itemJson}"){
-        fun createRoute(item: ProfileData): String {
-            val json = Uri.encode(Gson().toJson(item))
-            return "edit_profile_header/$json"
+    object EditProfileHeader: ProjectRoute("edit_profile_header"){
+        fun createRoute(navController: NavController,item: ProfileData) {
+
+            navController.currentBackStackEntry?.savedStateHandle?.set("header", item)
+            navController.navigate("edit_profile_header")
         }
     }
 
-    object EditExtraCurricularScreen: ProjectRoute("edit_extra_card/{itemJson}"){
-        fun createRoute(item: ExtraActivity): String {
-            val json = Uri.encode(Gson().toJson(item))
-            return "edit_extra_card/$json"
+    object EditExtraCurricularScreen: ProjectRoute("edit_extra_card"){
+        fun createRoute(navController: NavController,item: ExtraActivity) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("extra", item)
+            navController.navigate("edit_extra_card")
         }
     }
 
-    object FullExtraCard : ProjectRoute("full_extra_card/{userId}/{itemJson}"){
-        fun createRoute(userId: String?, item: ExtraActivity): String {
-            val json = Uri.encode(Gson().toJson(item))
-            return "full_extra_card/$userId/$json"
+    object FullExtraCard : ProjectRoute("full_extra_card/{userId}"){
+        fun createRoute(navController: NavController,userId: String?, item: ExtraActivity) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("extra_card_data", item)
+            navController.navigate("full_extra_card/${userId}")
         }
     }
 
-    object EditEducation: ProjectRoute("edit_education/{itemJson}"){
-        fun createRoute(item: CollegeInfo): String {
-            val json = Uri.encode(Gson().toJson(item))
-            return "edit_education/$json"
+    object EditEducation: ProjectRoute("edit_education"){
+        fun createRoute(navController: NavController,item: CollegeInfo) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("college", item)
+            navController.navigate("edit_education")
         }
     }
 
-    object EditExperience: ProjectRoute("edit_experience/{itemJson}"){
-        fun createRoute(item: ExperienceInfo): String {
-            val json = Uri.encode(Gson().toJson(item))
-            return "edit_experience/$json"
+    object EditExperience: ProjectRoute("edit_experience"){
+        fun createRoute(navController: NavController, item: ExperienceInfo) {
+//            val json = Gson().toJson(item)
+//            val encodedChatJson = URLEncoder.encode(json, "UTF-8")
+////            val json = Uri.encode(Gson().toJson(item))
+//            return "edit_experience/$encodedChatJson"
+            navController.currentBackStackEntry?.savedStateHandle?.set("experience", item)
+            navController.navigate("edit_experience")
         }
     }
 
