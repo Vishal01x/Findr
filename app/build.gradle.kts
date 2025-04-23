@@ -6,6 +6,7 @@ plugins {
     id("com.google.dagger.hilt.android")
     alias(libs.plugins.google.gms.google.services)
     id("kotlin-parcelize")
+    alias(libs.plugins.google.firebase.crashlytics)
 }
 
 android {
@@ -59,7 +60,13 @@ android {
             excludes += "mozilla/public-suffix-list.txt"
         }
     }
-
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
+    }
 
 }
 
@@ -84,6 +91,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
+    implementation(libs.firebase.crashlytics)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
