@@ -60,15 +60,10 @@ android {
         }
     }
     splits {
-        density {
-            isEnable = true
-            reset()
-            include("mdpi", "hdpi")
-        }
         abi {
             isEnable = true
             reset()
-            include("x86", "x86_64")
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
     }
 

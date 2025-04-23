@@ -420,6 +420,10 @@ fun ChatsSection(
 
         is Response.Error -> {
             ErrorState(onRetry = { viewModel.getChatList() })
+
+
+
+
         }
     }
 }
