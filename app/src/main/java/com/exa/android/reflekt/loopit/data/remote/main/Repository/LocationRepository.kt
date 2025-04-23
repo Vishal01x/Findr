@@ -81,10 +81,19 @@ class LocationRepository @Inject constructor(
                 firebaseDataSource.fetchUser(key,
                     onSuccess = { user ->
                         // Check if the fetched role matches the provided role
-                        Timber.tag("Location").d("users: $user")
+                        Timber.tag("LocationSearch").d("Match users: $user")
                         if (user != null && user.uid != currentUserId) {
-                            val userRoles = user.role.split(",").map {it}
-                            if (userRoles.any { it.equals(role, ignoreCase = true) }) {
+                            val userRoles = user.role.split(",").map { it.trim().lowercase() }
+                            val targetRoles = role.split(",").map { it.trim().lowercase() }
+                            Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
+                            // Check if any role from userRoles matches any role from targetRoles
+                            val isMatching = userRoles.any { userRole ->
+                                targetRoles.any { targetRole ->
+                                    userRole == targetRole || userRole.contains(targetRole) || targetRole.contains(userRole)
+                                }
+                            }
+
+                            if (isMatching) {
                                 val updatedUser =
                                     user.copy(lat = location.latitude, lng = location.longitude)
 
@@ -125,6 +134,53 @@ class LocationRepository @Inject constructor(
             geoQueryListener
         )
     }
+
+    fun fetchAllNearbyUsers(radius: Double, location: LatLng) {
+        Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
+
+        val geoQueryListener = object : GeoQueryEventListener {
+            override fun onKeyEntered(key: String, location: GeoLocation) {
+                firebaseDataSource.fetchUser(key,
+                    onSuccess = { user ->
+                        Timber.tag("NearbyUsers").d("Fetched user: $user")
+                        if (user != null && user.uid != currentUserId) {
+                            val updatedUser = user.copy(lat = location.latitude, lng = location.longitude)
+                            Timber.tag("NearbyUsers").d("User location added: $updatedUser")
+                            _userLocations.value = _userLocations.value + updatedUser
+                        }
+                    },
+                    onFailure = { exception ->
+                        Timber.tag("NearbyUsers").e(exception, "Error fetching user $key")
+                    }
+                )
+            }
+
+            override fun onKeyExited(key: String) {
+                _userLocations.value = _userLocations.value.filter { it.uid != key }
+            }
+
+            override fun onKeyMoved(key: String, location: GeoLocation) {
+                _userLocations.value = _userLocations.value.map {
+                    if (it.uid == key) it.copy(lat = location.latitude, lng = location.longitude) else it
+                }
+            }
+
+            override fun onGeoQueryReady() {
+                Timber.tag("NearbyUsers").d("All nearby users loaded.")
+            }
+
+            override fun onGeoQueryError(error: DatabaseError) {
+                Timber.tag("NearbyUsers").e("GeoQuery error: ${error.message}")
+            }
+        }
+
+        currentGeoQuery = firebaseDataSource.queryLocations(
+            GeoLocation(location.latitude, location.longitude),
+            radius,
+            geoQueryListener
+        )
+    }
+
 
     private val _userProfile = MutableStateFlow<profileUser>(profileUser())
     val userProfiles: StateFlow<profileUser> get() = _userProfile

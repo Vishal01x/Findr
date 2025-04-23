@@ -151,6 +151,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
 import com.exa.android.reflekt.loopit.util.model.Project
@@ -293,7 +294,10 @@ fun ProjectDetailScreen(
                         ProjectHeaderSection(
                             project = project,
                             scrollOffset = scrollOffset,
-                            headerHeightPx = headerHeightPx
+                            headerHeightPx = headerHeightPx,
+                            onAuthorClick = { autherId->
+                                navController.navigate(ProfileRoute.UserProfile.createRoute(autherId))
+                            }
                         )
                     },
                     content = {
@@ -431,7 +435,8 @@ private fun DynamicTopAppBar(
 private fun ProjectHeaderSection(
     project: Project,
     scrollOffset: Float,
-    headerHeightPx: Float
+    headerHeightPx: Float,
+    onAuthorClick: (String)->Unit
 ) {
     Box(
         modifier = Modifier
@@ -476,7 +481,12 @@ private fun ProjectHeaderSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            AuthorSection(project = project)
+            AuthorSection(
+                project = project,
+                onAuthorClick = { autherId->
+                    onAuthorClick(autherId)
+                }
+            )
         }
     }
 }
@@ -523,7 +533,10 @@ private fun ProjectContentSection(
                 members = project.enrolledPersons,
                 creatorId = project.createdBy,
                 expanded = expandedEnrolled,
-                onHeaderClick = onEnrolledClick
+                onHeaderClick = onEnrolledClick,
+                onMemberClick = { userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                }
             )
 
             JoinRequestsSection(
@@ -542,6 +555,9 @@ private fun ProjectContentSection(
                     } else {
                         Toast.makeText(context, "No requested members", Toast.LENGTH_SHORT).show()
                     }
+                },
+                onRequestProfileClick = { userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
                 }
             )
         }
@@ -584,8 +600,11 @@ private fun ProjectStatusChip(project: Project) {
 }
 
 @Composable
-private fun AuthorSection(project: Project) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun AuthorSection(project: Project, onAuthorClick: (String) -> Unit = {}) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable { onAuthorClick(project.createdBy) }
+    ) {
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -764,7 +783,8 @@ private fun TeamMembersSection(
     members: Map<String, String>,
     creatorId: String,
     expanded: Boolean,
-    onHeaderClick: () -> Unit
+    onHeaderClick: () -> Unit,
+    onMemberClick: (String) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -821,7 +841,10 @@ private fun TeamMembersSection(
                                 MemberCard(
                                     name = userName,
                                     isCreator = userId == creatorId,
-                                    role = if (userId == creatorId) "Creator" else "Member"
+                                    role = if (userId == creatorId) "Creator" else "Member",
+                                    onMemberClick = {
+                                        onMemberClick(userId)
+                                    }
                                 )
                             }
                         }
@@ -834,86 +857,14 @@ private fun TeamMembersSection(
 
 
 @Composable
-private fun JoinRequestsSectio(
-    requests: Map<String, String>,
-    expanded: Boolean,
-    onHeaderClick: () -> Unit,
-    onAccept: (String, String) -> Unit,
-    onReject: (String) -> Unit,
-    onViewMap: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onHeaderClick() }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.QuestionAnswer,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    "Join Requests • ${requests.size}",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = onViewMap) {
-                    Icon(
-                        Icons.Default.Map,
-                        contentDescription = "View on map",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand"
-                )
-            }
-
-            AnimatedVisibility(visible = expanded) {
-                Column {
-                    requests.entries.forEach { (userId, userName) ->
-                        RequestCard(
-                            name = userName,
-                            onAccept = { onAccept(userId, userName) },
-                            onReject = { onReject(userId) },
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            if (requests.isEmpty() && expanded) {
-                EmptyState(
-                    icon = Icons.Default.PersonAddDisabled,
-                    message = "No pending requests",
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun JoinRequestsSection(
     requests: Map<String, String>,
     expanded: Boolean,
     onHeaderClick: () -> Unit,
     onAccept: (String, String) -> Unit,
     onReject: (String) -> Unit,
-    onViewMap: () -> Unit
+    onViewMap: () -> Unit,
+    onRequestProfileClick: (String) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -958,7 +909,8 @@ private fun JoinRequestsSection(
                             name = userName,
                             onAccept = { onAccept(userId, userName) },
                             onReject = { onReject(userId) },
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            onProfileClick = { onRequestProfileClick(userId) }
                         )
                     }
 
@@ -1007,10 +959,15 @@ private fun JoinRequestsSection(
 private fun MemberCard(
     name: String,
     isCreator: Boolean,
-    role: String
+    role: String,
+    onMemberClick: () -> Unit = {}
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                onMemberClick()
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -1028,7 +985,7 @@ private fun MemberCard(
                     Text(
                         name.take(1).uppercase(),
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -1137,7 +1094,8 @@ private fun RequestCard(
     name: String,
     onAccept: () -> Unit,
     onReject: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onProfileClick: () -> Unit
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -1154,7 +1112,11 @@ private fun RequestCard(
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.secondaryContainer,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier
+                    .size(48.dp)
+                    .clickable {
+                        onProfileClick()
+                    }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
@@ -1170,7 +1132,9 @@ private fun RequestCard(
             Text(
                 text = name,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onProfileClick() },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

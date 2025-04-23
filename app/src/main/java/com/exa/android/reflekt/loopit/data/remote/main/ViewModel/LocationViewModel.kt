@@ -38,6 +38,14 @@ class LocationViewModel @Inject constructor(
             locationRepository.fetchUserLocations(role, radius, location)
         }
     }
+
+    fun fetchAllNearbyUsers(radius: Double, location: LatLng) {
+        viewModelScope.launch {
+            clearUserLocations()
+            locationRepository.fetchAllNearbyUsers(radius, location)
+        }
+    }
+
     val userProfile: StateFlow<profileUser> get() = locationRepository.userProfiles
     fun getUserProfile(userId: String){
         locationRepository.getUserProfile(userId)

@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
             lifecycle.addObserver(lifecycleObserver!!)
             checkAndRequestLocationPermissions(it)
         }
+        /*
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val packageName = packageName
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -94,6 +95,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+         */
 
 
 
