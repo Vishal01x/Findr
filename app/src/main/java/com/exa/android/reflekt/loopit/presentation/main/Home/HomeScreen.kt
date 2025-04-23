@@ -2,9 +2,11 @@ package com.exa.android.reflekt.loopit.presentation.main.Home
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,12 +28,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,10 +55,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +73,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNotificationPermissionIfNeeded
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
@@ -381,42 +393,134 @@ fun ChatsSection(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("No chats Yet")
-                    Spacer(modifier = Modifier.height(16.dp))
-//                            Button(onClick = { navController.navigate(HomeRoute.SearchScreen.route) }) {
-//                                Text("New Chat")
-//                            }
+                    EmptyChatState(navController = navController)
                 }
-            }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(chatList) { chat ->
-                    ChatListItem(
-                        chat = chat,
-                        zoomImage = {/* navController.navigate("zoomImage/${chat.image}")*/ },
-                        openChat = { navController.navigate(HomeRoute.ChatDetail.createRoute(chat.userId)) }
-                    )
+            }else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(chatList) { chat ->
+                        ChatListItem(
+                            chat = chat,
+                            zoomImage = {/* navController.navigate("zoomImage/${chat.image}")*/ },
+                            openChat = {
+                                navController.navigate(
+                                    HomeRoute.ChatDetail.createRoute(
+                                        chat.userId
+                                    )
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
 
         is Response.Error -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Failed to load chats. Please try again.", color = Color.Red)
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { viewModel.getChatList() }) {
-                    Text("Retry")
-                }
+            ErrorState(onRetry = { viewModel.getChatList() })
+        }
+    }
+}
+
+@Composable
+private fun EmptyChatState(navController: NavController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Icon
+        Image(
+            imageVector = Icons.Filled.Chat,
+            contentDescription = "Empty Chats",
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)),
+            modifier = Modifier.size(96.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "No Chats Yet",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Description with clickable text
+        val annotatedString = buildAnnotatedString {
+            append("Find new contacts by visiting the ")
+
+            withStyle(style = SpanStyle(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            )) {
+                append("map screen")
             }
+
+            append(". Connect with people around you!")
+        }
+        Text(
+            text = annotatedString,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                navController.navigate(MapInfo.MapScreen.route)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Map Screen Button
+        FilledTonalButton(
+            onClick = { navController.navigate(MapInfo.MapScreen.route) },
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Map,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("View Map Screen")
+        }
+    }
+}
+
+@Composable
+private fun ErrorState(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Failed to load chats. Please try again.",
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Text("Retry")
         }
     }
 }

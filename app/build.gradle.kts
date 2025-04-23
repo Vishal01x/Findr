@@ -5,6 +5,7 @@ plugins {
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.firebase.crashlytics)
 }
 
 android {
@@ -58,7 +59,18 @@ android {
             excludes += "mozilla/public-suffix-list.txt"
         }
     }
-
+    splits {
+        density {
+            isEnable = true
+            reset()
+            include("mdpi", "hdpi")
+        }
+        abi {
+            isEnable = true
+            reset()
+            include("x86", "x86_64")
+        }
+    }
 
 }
 
@@ -83,6 +95,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
+    implementation(libs.firebase.crashlytics)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
