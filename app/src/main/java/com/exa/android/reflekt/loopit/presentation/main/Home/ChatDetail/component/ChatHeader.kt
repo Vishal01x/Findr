@@ -124,20 +124,11 @@ fun HeaderWithOptions(
         contentDescription = "Copy Selected",
         onClick = { onCopyClick() }
     )
-    val forward = IconData(
-        iconType = IconType.PainterIcon(R.drawable.ic_forward),
-        contentDescription = "Forward Selected",
-        onClick = { onForwardClick() }
-    )
+
     val delete = IconData(
         iconType = IconType.VectorIcon(Icons.Default.Delete),
         contentDescription = "Delete Selected",
         onClick = { showDialog = true }
-    )
-    val reply = IconData(
-        iconType = IconType.PainterIcon(R.drawable.ic_forward),
-        contentDescription = "Reply Selected",
-        onClick = { onReplyClick(singleMessage) }
     )
     val edit = IconData(
         iconType = IconType.VectorIcon(Icons.Default.Edit),

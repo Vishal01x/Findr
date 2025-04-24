@@ -87,9 +87,10 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     }
 
 
-    RequestNotificationPermissionIfNeeded(true)
+        RequestNotificationPermissionIfNeeded(true)
 
-        var isQueryClicker by remember { mutableStateOf(false) }
+
+    var isQueryClicker by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
 
@@ -214,23 +215,6 @@ fun QuerySection(
     }
 }
 
-@Composable
-fun StoriesSection() {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 12.dp), // No padding at the end
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Add "Add Story" item
-        item {
-            AddStoryItem()
-        }
-
-        // Add stories
-        items(storyList) { story ->
-            StoryItem(image = story.image, name = story.name)
-        }
-    }
-}
 
 @Composable
 fun AddStoryItem() {
@@ -612,58 +596,3 @@ data class Chat(
     val unreadCount: Int
 )
 
-// Sample data
-val storyList = listOf(
-    Story(R.drawable.chat_img3, "Terry"),
-    Story(R.drawable.chat_img3, "Craig"),
-    Story(R.drawable.chat_img3, "Roger"),
-    Story(R.drawable.chat_img3, "Nolan"),
-    Story(R.drawable.chat_img3, "Terry"),
-    Story(R.drawable.chat_img3, "Craig"),
-    Story(R.drawable.chat_img3, "Roger"),
-    Story(R.drawable.chat_img3, "Nolan"),
-    Story(R.drawable.chat_img3, "Terry"),
-    Story(R.drawable.chat_img3, "Craig"),
-    Story(R.drawable.chat_img3, "Roger"),
-    Story(R.drawable.chat_img3, "Nolan")
-
-)
-
-val chatList = listOf(
-    Chat(
-        R.drawable.chat_img3,
-        "Angel Curtis",
-        "Please help me find a good monitor...",
-        "02:11",
-        2
-    ),
-    Chat(R.drawable.chat_img3, "Zaire Dorwart", "Gacor pisan kang", "02:11", 2),
-    Chat(R.drawable.chat_img3, "Kelas Malam", "Bima: No one can come today?", "02:11", 2),
-    Chat(R.drawable.chat_img3, "Jocelyn Gouse", "You're now an admin", "02:11", 0),
-    Chat(R.drawable.chat_img3, "Jaylon Dias", "Buy back 10k gallons...", "02:11", 0),
-    Chat(R.drawable.chat_img3, "Chance Rhiel Madsen", "Thank you mate!", "02:11", 2),
-    Chat(
-        R.drawable.chat_img3,
-        "Angel Curtis",
-        "Please help me find a good monitor...",
-        "02:11",
-        2
-    ),
-    Chat(R.drawable.chat_img3, "Zaire Dorwart", "Gacor pisan kang", "02:11", 2),
-    Chat(R.drawable.chat_img3, "Kelas Malam", "Bima: No one can come today?", "02:11", 2),
-    Chat(R.drawable.chat_img3, "Jocelyn Gouse", "You're now an admin", "02:11", 0),
-    Chat(R.drawable.chat_img3, "Jaylon Dias", "Buy back 10k gallons...", "02:11", 0),
-    Chat(R.drawable.chat_img3, "Chance Rhiel Madsen", "Thank you mate!", "02:11", 2),
-    Chat(
-        R.drawable.chat_img3,
-        "Angel Curtis",
-        "Please help me find a good monitor...",
-        "02:11",
-        2
-    ),
-    Chat(R.drawable.chat_img3, "Zaire Dorwart", "Gacor pisan kang", "02:11", 2),
-    Chat(R.drawable.chat_img3, "Kelas Malam", "Bima: No one can come today?", "02:11", 2),
-    Chat(R.drawable.chat_img3, "Jocelyn Gouse", "You're now an admin", "02:11", 0),
-    Chat(R.drawable.chat_img3, "Jaylon Dias", "Buy back 10k gallons...", "02:11", 0),
-    Chat(R.drawable.chat_img3, "Chance Rhiel Madsen", "Thank you mate!", "02:11", 2)
-)

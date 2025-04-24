@@ -14,7 +14,7 @@ android {
     compileSdk = 35
     // Add this line to enable legacy Apache HTTP support
     //useLibrary("org.apache.http.legacy")
-    
+
     defaultConfig {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
@@ -182,7 +182,7 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
 
     // security crypto
-   implementation ("androidx.security:security-crypto:1.1.0-alpha07")
+    implementation ("androidx.security:security-crypto:1.1.0-alpha07")
 //
 //    implementation ("androidx.media3:media3-exoplayer:1.6.1")
 //    implementation ("androidx.media3:media3-ui:1.6.1")

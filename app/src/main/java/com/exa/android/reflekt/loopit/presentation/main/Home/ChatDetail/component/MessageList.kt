@@ -183,10 +183,6 @@ fun MessageBubble(
                 )
             }
     ) {
-        if (offsetX.value > 50) { // show reply icon on right swipe
-            SwipeHint(icon = R.drawable.ic_reply, alignment = Alignment.CenterStart)
-        }
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
