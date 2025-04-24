@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
 import com.exa.android.reflekt.loopit.util.model.Project
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,10 @@ data class EditProjectState(
     val availableRoles: List<String> = emptyList(),
     val availableTags: List<String> = emptyList(),
     val requestedMembers: List<RequestedMember> = emptyList(),
+    val enrolledMembers: List<RequestedMember> = emptyList(),
+    val createdBy: String = "",
+    val createdByName: String = "",
+    val createdAt: Timestamp? = null,
     val titleError: String? = null,
     val descriptionError: String? = null,
     val isLoading: Boolean = false,
@@ -65,6 +70,10 @@ class EditProjectViewModel @Inject constructor(
                             requestedMembers = project.requestedPersons.map { (id, name) ->
                                 RequestedMember(id, name)
                             },
+                            enrolledMembers = project.enrolledPersons.map { (id, name) -> RequestedMember(id, name) },
+                            createdBy = project.createdBy,
+                            createdByName = project.createdByName,
+                            createdAt = project.createdAt,
                             isInitialLoadComplete = true,
                             isLoading = false,
                             canSubmit = validateForm(project.title, project.description)
@@ -102,9 +111,10 @@ class EditProjectViewModel @Inject constructor(
                 description = currentState.description,
                 rolesNeeded = currentState.selectedRoles.toList(),
                 tags = currentState.selectedTags.toList(),
-                createdBy = currentUserId,
-                createdAt = null, // Will be preserved on server
-                createdByName = "", // Will be preserved on server
+                createdBy = currentState.createdBy,
+                createdAt = currentState.createdAt,
+                createdByName = currentState.createdByName,
+                enrolledPersons = currentState.enrolledMembers.associate { it.id to it.name },
                 requestedPersons = currentState.requestedMembers.associate { it.id to it.name }
             )
 

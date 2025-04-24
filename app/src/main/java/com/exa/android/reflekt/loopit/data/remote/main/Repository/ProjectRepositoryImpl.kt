@@ -37,16 +37,35 @@ class ProjectRepositoryImpl @Inject constructor(
             require(auth.currentUser != null) { "User must be authenticated" }
             require(project.title.isNotBlank()) { "Title cannot be empty" }
 
+            val projectMap = project.toMap()
+
+
             db.collection(PROJECTS_COLLECTION)
                 .document(project.id)
-                .set(project)
+                .set(projectMap)
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error creating project", e)
+            Log.e("Firestore", "Error creating project", e)
             Result.failure(e)
         }
     }
+    fun Project.toMap(): Map<String, Any?> {
+        return mapOf(
+            "title" to title,
+            "description" to description,
+            "rolesNeeded" to rolesNeeded,
+            "tags" to tags,
+            "createdAt" to createdAt,
+            "createdBy" to createdBy,
+            "createdByName" to createdByName,
+            "enrolledPersons" to enrolledPersons,
+            "requestedPersons" to requestedPersons,
+            "title_lower" to title.lowercase()
+        )
+    }
+
+
 
     override fun getProjectsStream(
         searchQuery: String,
@@ -54,35 +73,47 @@ class ProjectRepositoryImpl @Inject constructor(
         tagsFilter: List<String>,
         showMyProjectsOnly: Boolean,
         userId: String?
-    ): Flow<Result<List<Project>>> = flow {
+    ): Flow<Result<List<Project>>> = callbackFlow {
         try {
-            var query = db.collection(PROJECTS_COLLECTION)
+            var query: Query = db.collection(PROJECTS_COLLECTION)
                 .orderBy(Project.FIELD_CREATED_AT, Query.Direction.DESCENDING)
 
             if (searchQuery.isNotBlank()) {
+                val queryText = searchQuery.lowercase()
                 query = query
-                    .whereGreaterThanOrEqualTo(Project.FIELD_TITLE, searchQuery)
-                    .whereLessThanOrEqualTo(Project.FIELD_TITLE, "$searchQuery\uf8ff")
+                    .whereGreaterThanOrEqualTo("title_lower", queryText)
+                    .whereLessThanOrEqualTo("title_lower", "$queryText\uf8ff")
             }
 
             if (rolesFilter.isNotEmpty()) {
                 query = query.whereArrayContainsAny("rolesNeeded", rolesFilter)
-            }else if (tagsFilter.isNotEmpty()) {
+            } else if (tagsFilter.isNotEmpty()) {
                 query = query.whereArrayContainsAny("tags", tagsFilter)
             }
+
             if (showMyProjectsOnly && userId != null) {
                 query = query.whereEqualTo("createdBy", userId)
             }
 
-            val snapshot = query.get().await()
-            val projects = snapshot.documents.mapNotNull { doc ->
-                doc.toObject<Project>()?.copy(id = doc.id)
+            val listener = query.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error)).isSuccess
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val projects = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject<Project>()?.copy(id = doc.id)
+                    }
+                    trySend(Result.success(projects)).isSuccess
+                }
             }
 
-            emit(Result.success(projects))
+            awaitClose { listener.remove() }
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error getting projects", e)
-            emit(Result.failure(e))
+            Log.e("Firestore", e.message.toString())
+            trySend(Result.failure(e)).isSuccess
+            close(e)
         }
     }
 
@@ -97,7 +128,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 ?.let { Result.success(it) }
                 ?: Result.failure(Exception("Project not found"))
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error getting project by ID", e)
+            Log.e("Firestore", "Error getting project by ID", e)
             Result.failure(e)
         }
     }
@@ -112,7 +143,7 @@ class ProjectRepositoryImpl @Inject constructor(
             val roles = doc.get(ROLES_FIELD) as? List<String> ?: emptyList()
             Result.success(roles)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error getting available roles", e)
+             Log.e("Firestore", "Error getting available roles", e)
             Result.failure(e)
         }
     }
@@ -127,7 +158,7 @@ class ProjectRepositoryImpl @Inject constructor(
             val tags = doc.get(TAGS_FIELD) as? List<String> ?: emptyList()
             Result.success(tags)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error getting available tags", e)
+            Log.e("Firestore", "Error getting available tags", e)
             Result.failure(e)
         }
     }
@@ -138,13 +169,16 @@ class ProjectRepositoryImpl @Inject constructor(
                 "Only project owner can update"
             }
 
+            val projectMap = project.toMap()
+
+
             db.collection(PROJECTS_COLLECTION)
                 .document(project.id)
-                .set(project, SetOptions.merge())
+                .set(projectMap)
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error updating project", e)
+            Log.e("Firestore", "Error updating project", e)
             Result.failure(e)
         }
     }
@@ -162,7 +196,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error deleting project", e)
+            Log.e("Firestore", "Error deleting project", e)
             Result.failure(e)
         }
     }
@@ -182,7 +216,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error adding role", e)
+            Log.e("Firestore", "Error adding role", e)
             Result.failure(e)
         }
     }
@@ -202,7 +236,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error adding tag", e)
+            Log.e("Firestore", "Error adding tag", e)
             Result.failure(e)
         }
     }
@@ -225,7 +259,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error enrolling in project", e)
+            Log.e("Firestore", "Error enrolling in project", e)
             Result.failure(e)
         }
     }
@@ -250,7 +284,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error withdrawing from project", e)
+            Log.e("Firestore", "Error withdrawing from project", e)
             Result.failure(e)
         }
     }
@@ -270,7 +304,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error accepting join request", e)
+            Log.e("Firestore", "Error accepting join request", e)
             Result.failure(e)
         }
     }
@@ -285,7 +319,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error rejecting join request", e)
+            Log.e("Firestore", "Error rejecting join request", e)
             Result.failure(e)
         }
     }

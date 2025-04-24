@@ -100,6 +100,17 @@ class LocationViewModel @Inject constructor(
         locationRepository.stopLocationUpdates()
     }
 
+    private val _roleSuggestions = MutableStateFlow<List<String>>(emptyList())
+    val roleSuggestions: StateFlow<List<String>> get() = _roleSuggestions
+
+    fun fetchAllRoles() {
+        viewModelScope.launch {
+            locationRepository.fetchRolesFromFirestore()
+            _roleSuggestions.value = locationRepository.roles.value
+        }
+    }
+
+
     override fun onCleared() {
         locationRepository.clearRequestedUserLocations()
         super.onCleared()

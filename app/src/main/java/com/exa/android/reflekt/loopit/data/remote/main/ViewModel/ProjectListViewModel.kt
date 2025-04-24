@@ -8,6 +8,7 @@ import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -24,6 +25,8 @@ class ProjectListViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(ProjectListState())
     val state = _state.asStateFlow()
+
+    private var projectsJob: Job? = null
 
     init {
         loadFilters()
@@ -91,63 +94,52 @@ class ProjectListViewModel @Inject constructor(
     }
 
     fun loadProjects(forceRefresh: Boolean = false) {
-        val load="loading"
         _state.update { it.copy(isLoading = true, error = null) }
-        Timber.tag(load).d("Loading projects")
 
-        viewModelScope.launch {
-            try {
-                repository.getProjectsStream(
-                    searchQuery = _state.value.searchQuery,
-                    rolesFilter = _state.value.selectedRoles.toList(),
-                    tagsFilter = _state.value.selectedTags.toList(),
-                    showMyProjectsOnly = _state.value.showMyProjectsOnly,
-                    userId = auth.currentUser?.uid
-                ).collect { result ->
-                    Timber.tag(load).d("Projects loaded")
-                    result.fold(
-                        onSuccess = { projects ->
-                            _state.update {
-                                it.copy(
-                                    isLoading = false,
-                                    projects = projects,
-                                    isRefreshing = false,
-                                    error = null
-                                )
-                            }
-                        },
-                        onFailure = { error ->
-                            _state.update {
-                                it.copy(
-                                    isLoading = false,
-                                    isRefreshing = false,
-                                    error = error.message ?: "Failed to load projects"
-                                )
-                            }
+        projectsJob?.cancel() // Cancel previous listener if exists
+        projectsJob = viewModelScope.launch {
+            repository.getProjectsStream(
+                searchQuery = _state.value.searchQuery,
+                rolesFilter = _state.value.selectedRoles.toList(),
+                tagsFilter = _state.value.selectedTags.toList(),
+                showMyProjectsOnly = _state.value.showMyProjectsOnly,
+                userId = auth.currentUser?.uid
+            ).collect { result ->
+                result.fold(
+                    onSuccess = { projects ->
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                projects = projects,
+                                isRefreshing = false,
+                                error = null
+                            )
                         }
-                    )
-                }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isRefreshing = false,
-                        error = e.message ?: "Failed to load projects"
-                    )
-                }
+                    },
+                    onFailure = { error ->
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = error.message ?: "Failed to load projects"
+                            )
+                        }
+                    }
+                )
             }
         }
     }
 
+
     private fun loadFilters() {
         _state.update { it.copy(isLoading = true, error = null) }
         val load="loading"
-        Timber.tag(load).d("Loading filters")
+        //Timber.tag(load).d("Loading filters")
 
         viewModelScope.launch {
             val rolesResult = repository.getAvailableRoles()
             val tagsResult = repository.getAvailableTags()
-            Timber.tag(load).d("Filters loaded")
+            //Timber.tag(load).d("Filters loaded")
 
             _state.update {
                 it.copy(

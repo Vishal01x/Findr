@@ -37,6 +37,15 @@ class LocationRepository @Inject constructor(
 
     private var currentGeoQuery: GeoQuery? = null
 
+    private val _roles = MutableStateFlow<List<String>>(emptyList())
+    val roles: StateFlow<List<String>> get() = _roles
+
+    suspend fun fetchRolesFromFirestore() {
+        val roleList = firebaseDataSource.fetchAllRoles()
+        _roles.value = roleList
+    }
+
+
     fun clearUserLocations() {
         _userLocations.value = emptyList()
         currentGeoQuery?.removeAllListeners()
