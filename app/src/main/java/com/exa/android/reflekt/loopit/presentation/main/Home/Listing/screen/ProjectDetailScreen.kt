@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -196,9 +197,14 @@ fun ProjectDetailScreen(
     var expandedRequests by rememberSaveable { mutableStateOf(false) }
 
     val isOwner = project?.createdBy == currentUserId
-    val isEnrolled = currentUserId?.let { project?.enrolledPersons?.containsKey(it) } ?: false
+    val isEnrolled = currentUserId?.let {
+        project?.enrolledPersons?.containsKey(it) == true ||
+                project?.requestedPersons?.containsKey(it) == true
+    } ?: false
 
 
+
+    Log.d("projectdetail", "project: ${project?.enrolledPersons}, $currentUserId, $isEnrolled")
     val view = LocalView.current
     val window = (view.context as Activity).window
     val insetsController = WindowCompat.getInsetsController(window, view)

@@ -117,13 +117,15 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     // Location and UI states
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
     // var searchLocation by remember { mutableStateOf<LatLng?>(null) }
-    var radius by rememberSaveable { mutableStateOf(10f) }
+    var radius by rememberSaveable { mutableStateOf(5f) }
     var selectedRole by rememberSaveable { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
     var selectedUser by rememberSaveable (stateSaver = profileUser.Saver) {
         mutableStateOf<profileUser?>(null)
     }
+
+    val roles by viewModel.roleSuggestions.collectAsState()
 
     // Bottom sheet state
     val sheetState = rememberModalBottomSheetState()
@@ -191,6 +193,10 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                 location = selectedLocation ?: currentLocation!!
             )
         }
+    }
+
+    LaunchedEffect(Unit){
+        viewModel.fetchAllRoles()
     }
 
     // update
@@ -355,7 +361,6 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                         // Role Selection
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Select Role", style = MaterialTheme.typography.titleMedium)
-                        val roles = listOf("Software Engineer ", "Software Developer", "Android Developer")
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.horizontalScroll(rememberScrollState())

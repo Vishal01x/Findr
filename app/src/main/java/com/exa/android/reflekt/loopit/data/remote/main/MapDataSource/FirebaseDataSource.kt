@@ -7,6 +7,7 @@ import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
 import com.firebase.geofire.GeoQueryEventListener
+import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -17,6 +18,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
 
@@ -106,5 +109,15 @@ class FirebaseDataSource @Inject constructor() {
     fun removeLocationListener(userId: String, listener: ValueEventListener) {
         database.child(userId).removeEventListener(listener)
     }
+
+    suspend fun fetchAllRoles(): List<String> {
+        return try {
+            val snapshot = Firebase.firestore.collection("Role").get().await()
+            snapshot.documents.mapNotNull { it.getString("Name") }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
 
 }

@@ -9,6 +9,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileReposit
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
 import com.exa.android.reflekt.loopit.util.application.getOrThrow
 import com.exa.android.reflekt.loopit.util.model.Project
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -117,7 +118,8 @@ class CreateProjectViewModel @Inject constructor(
                 rolesNeeded = _state.value.selectedRoles.toList(),
                 tags = _state.value.selectedTags.toList(),
                 createdBy = currentUser.uid,
-                createdByName = fullName
+                createdByName = fullName,
+                createdAt = Timestamp.now()
             )
             // Log.d("project", "createProject: $project")
             try {
