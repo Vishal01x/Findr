@@ -30,6 +30,8 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import java.text.SimpleDateFormat
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,9 +44,6 @@ fun EditEducationScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val response = editProfileViewModel.responseState
 
-    // In EditEducationScreen
-    var dateError by remember { mutableStateOf(false) }
-
     var school by rememberSaveable { mutableStateOf(initialData.instituteName) }
     var stream by rememberSaveable { mutableStateOf(initialData.stream) }
     var grade by rememberSaveable { mutableStateOf(initialData.grade) }
@@ -55,7 +54,9 @@ fun EditEducationScreen(
     var schoolError by remember { mutableStateOf(false) }
     var streamError by remember { mutableStateOf(false) }
     var startDateError by remember { mutableStateOf(false) }
-    var endDateError by remember { mutableStateOf(false) }
+    var endDateError by remember { mutableStateOf<String?>(null) }
+
+    val formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH)
 
     LaunchedEffect(response) {
         when (val state = response) {
@@ -68,11 +69,15 @@ fun EditEducationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Edit Education",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )) },
+                title = {
+                    Text(
+                        "Edit Education",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.Close, contentDescription = "Back")
@@ -121,18 +126,30 @@ fun EditEducationScreen(
                     isError = startDateError,
                     onDateSelected = {
                         startDate = it
-                        if (startDateError) startDateError = false
+                        startDateError = false
                     }
                 )
 
                 DatePickerField(
-                    label = "End date (or expected)*",
+                    label = "End Date*",
                     dateText = endDate,
-                    isError = endDateError,
-                    onDateSelected = {
-                        endDate = it
-                        if (endDateError) endDateError = false
-                    }
+                    onDateSelected = { selectedDate ->
+                        try {
+                            val start = YearMonth.parse(startDate, formatter)
+                            val end = YearMonth.parse(selectedDate, formatter)
+
+                            if (end.isBefore(start)) {
+                                endDateError = "End date can't be before start date"
+                                endDate = ""
+                            } else {
+                                endDate = selectedDate
+                                endDateError = null
+                            }
+                        } catch (e: Exception) {
+                            endDateError = "Invalid date format"
+                        }
+                    },
+                    isError = !endDateError.isNullOrEmpty()
                 )
 
                 EducationTextField(
@@ -153,15 +170,28 @@ fun EditEducationScreen(
                         Text("Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    // Add this validation check in your save handler
                     Button(onClick = {
-                        val datesValid = validateDates(startDate, endDate)
+                        val areDatesValid = try {
+                            val start = YearMonth.parse(startDate, formatter)
+                            val end = YearMonth.parse(endDate, formatter)
+                            if (end.isBefore(start)) {
+                                endDateError = "End date can't be before start date"
+                                false
+                            } else {
+                                endDateError = null
+                                true
+                            }
+                        } catch (e: Exception) {
+                            endDateError = "Invalid date format"
+                            false
+                        }
 
                         val isValid = school.isNotBlank().also { schoolError = !it } &&
                                 stream.isNotBlank().also { streamError = !it } &&
                                 startDate.isNotBlank().also { startDateError = !it } &&
-                                endDate.isNotBlank().also { endDateError = !it }
-                                //&& datesValid.also { dateError = !it }
+                                endDate.isNotBlank().also {
+                                    if (!it) endDateError = "End date required"
+                                } && areDatesValid
 
                         if (isValid) {
                             editProfileViewModel.updateUserEducation(
@@ -212,15 +242,15 @@ fun DatePickerField(
     onDateSelected: (String) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
-    val dateFormatter = remember {
-        SimpleDateFormat("MMM yyyy", Locale.getDefault())
-    }
 
     OutlinedTextField(
         value = dateText,
         onValueChange = {},
         readOnly = true,
         isError = isError,
+        supportingText = {
+            if (isError) Text("End Date must be after Start Date")
+        },
         label = { Text(label) },
         trailingIcon = {
             IconButton(onClick = { showDatePicker = true }) {
@@ -234,6 +264,7 @@ fun DatePickerField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
+            .clickable { showDatePicker = true }
     )
 
     if (showDatePicker) {

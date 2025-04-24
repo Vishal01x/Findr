@@ -1,8 +1,10 @@
 package com.exa.android.reflekt.loopit.presentation.navigation
 
+import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.remember
@@ -34,6 +36,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
+import com.exa.android.reflekt.loopit.util.showToast
 
 
 fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController) {
@@ -175,7 +178,17 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                 onLogOutClick = {navController.navigate(AuthRoute.Login.route){
                     popUpTo(0) { inclusive = true } // Pops everything
                     launchSingleTop = true // Avoid multiple instances
-                } }
+                }
+                    showToast(context,"Logout Successfully")
+                },
+                onDeleteAccount = {
+                    navController.navigate(AuthRoute.Login.route){
+                        popUpTo(0) { inclusive = true } // Pops everything
+                        launchSingleTop = true // Avoid multiple instances
+                    }
+                    showToast(context,"Account Delete")
+                }
+
 
             )
         }
@@ -185,9 +198,9 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                 onBack = { navController.popBackStack() },
                 onContactSupport = {
                     // Handle contact support action
-                    val intent = Intent(Intent.ACTION_SEND).apply {
+                    /*val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "message/rfc822"
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf("support@yourapp.com"))
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf("ankitraj4323@gmail.com"))
                         putExtra(Intent.EXTRA_SUBJECT, "App Support Request")
                     }
                     try {
@@ -199,7 +212,8 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                             "Please install an email app to contact support",
                             Toast.LENGTH_LONG
                         ).show()
-                    }
+                    }*/
+                    showContactSupportOptions(context)
                 },
                 onFaqItemClick = { question ->
                     // Handle FAQ item click if needed
@@ -223,6 +237,52 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
     }
 }
 
+
+fun showContactSupportOptions(context: Context) {
+    val options = listOf("Email", "WhatsApp")
+
+    AlertDialog.Builder(context)
+        .setTitle("Contact Support")
+        .setItems(options.toTypedArray()) { _, which ->
+            when (options[which]) {
+                "Email" -> {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "message/rfc822"
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf("ankitraj4323@gmail.com"))
+                        putExtra(Intent.EXTRA_SUBJECT, "App Support Request")
+                    }
+                    try {
+                        context.startActivity(Intent.createChooser(intent, "Send email..."))
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(
+                            context,
+                            "Please install an email app to contact support",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                "WhatsApp" -> {
+                    val phoneNumber = "7645992680" // Replace with your full phone number (country code + number, no "+")
+                    val message = "Hi there! I need help with the app."
+                    val url = "https://wa.me/$phoneNumber?text=${Uri.encode(message)}"
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse(url)
+                    }
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(
+                            context,
+                            "Please install WhatsApp to contact support",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
+        .show()
+}
 
 //object MainRoutes {
 //    const val MainApp = "main_app"

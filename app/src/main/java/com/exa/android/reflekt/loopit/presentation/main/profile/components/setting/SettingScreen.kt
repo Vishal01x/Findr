@@ -28,8 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.theme.Purple40
+import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,9 +40,11 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     onLogOutClick : () -> Unit,
+    onDeleteAccount : () -> Unit,
     modifier: Modifier = Modifier,
     authViewModel: AuthVM = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
+    locationViewModel : LocationViewModel = hiltViewModel()
 
 ) {
     val context = LocalContext.current
@@ -62,6 +66,11 @@ fun SettingsScreen(
     // Error states
     val passwordError by settingsViewModel.passwordChangeError.collectAsState()
     val emailError by settingsViewModel.emailUpdateError.collectAsState()
+    var canDeleteAccount by remember {  mutableStateOf(true) }
+
+    LaunchedEffect(cacheSize) {
+        settingsViewModel.loadCacheSize(context)
+    }
 
     LaunchedEffect(passwordError) {
         passwordError?.let {
@@ -99,35 +108,6 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Account Settings
-            item { SectionHeader("Account") }
-
-            item {
-                SettingsItem(
-                    icon = Icons.Default.Lock,
-                    title = "Change Password",
-                    onClick = { showChangePasswordDialog = true }
-                )
-            }
-
-            item {
-                SettingsItem(
-                    icon = Icons.Default.Email,
-                    title = "Update Email Address",
-                    onClick = { showUpdateEmailDialog = true }
-                )
-            }
-
-            item {
-                SettingsItem(
-                    icon = Icons.AutoMirrored.Filled.Logout,
-                    title = "Logout",
-                    onClick = {
-                        authViewModel.logout()
-                        onLogOutClick()
-                    }
-                )
-            }
 
             val feedbackFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeprJ-ajG7DFUWgVHMVy7gglkcScwNDfx_NixnZsFZGXlPmBQ/viewform?usp=sharing"
 
@@ -163,32 +143,91 @@ fun SettingsScreen(
             item {
                 SwitchSettingsItem(
                     icon = Icons.Default.Security,
-                    title = "Privacy Mode",
+                    title = "Location Mode",
                     checked = privacyEnabled,
-                    onCheckedChange = { settingsViewModel.setPrivacyEnabled(it) }
+                    onCheckedChange = { checked ->
+                        settingsViewModel.setPrivacyEnabled(checked)
+                        if (checked) {
+                            locationViewModel.startLocationUpdates(null, context)
+                            // Optionally save to persistent storage
+                            showToast(context, "Now you cannot be visible on Map")
+                        } else {
+                            locationViewModel.stopLocationUpdates()
+                            // Optionally save to persistent storage
+                            showToast(context, "Explore & Connect")
+                        }
+                    }
                 )
+
             }
 
-            // Appearance
-            item { SectionHeader("Appearance") }
+            // Account Settings
+            item { SectionHeader("Account") }
 
             item {
-                SwitchSettingsItem(
-                    icon = if (darkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
-                    title = "Dark Mode",
-                    checked = darkMode,
-                    onCheckedChange = { settingsViewModel.setDarkMode(it) }
+                SettingsItem(
+                    icon = Icons.Default.Lock,
+                    title = "Change Password",
+                    onClick = { showChangePasswordDialog = true }
                 )
             }
 
             item {
                 SettingsItem(
-                    icon = Icons.Default.Palette,
-                    title = "Theme Color",
-                    value = themeColor.displayName,
-                    onClick = { showThemeDialog = true }
+                    icon = Icons.Default.Email,
+                    title = "Update Email Address",
+                    onClick = { showUpdateEmailDialog = true }
                 )
             }
+
+            item {
+                SettingsItem(
+                    icon = Icons.AutoMirrored.Filled.Logout,
+                    title = "Logout",
+                    onClick = {
+                        authViewModel.logout()
+                        onLogOutClick()
+                    }
+                )
+            }
+
+//            item {
+//                SettingsItem(
+//                    icon = Icons.AutoMirrored.Filled.Logout,
+//                    title = "Delete Account",
+//                    onClick = {
+//                        if(canDeleteAccount){
+//                            settingsViewModel.deleteUserAccount()
+//                            onDeleteAccount()
+//                        }else {
+//                            showToast(context, "This will permanently delete your account")
+//                            canDeleteAccount = false
+//                        }
+//                    }
+//                )
+//            }
+
+
+            // Appearance
+//            item { SectionHeader("Appearance") }
+//
+//            item {
+//                SwitchSettingsItem(
+//                    icon = if (darkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+//                    title = "Dark Mode",
+//                    checked = darkMode,
+//                    onCheckedChange = { settingsViewModel.setDarkMode(it) }
+//                )
+//            }
+//
+//            item {
+//                SettingsItem(
+//                    icon = Icons.Default.Palette,
+//                    title = "Theme Color",
+//                    value = themeColor.displayName,
+//                    onClick = { showThemeDialog = true }
+//                )
+//            }
 
             // Data & Storage
             item { SectionHeader("Data & Storage") }
@@ -199,7 +238,7 @@ fun SettingsScreen(
                     title = "Clear Cache",
                     value = cacheSize,
                     onClick = {
-                        settingsViewModel.clearCache()
+                        settingsViewModel.clearCache(context)
                         scope.launch {
                             snackbarHostState.showSnackbar("Cache cleared successfully")
                         }
@@ -475,7 +514,7 @@ fun SettingsItem(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(24.dp),
-            tint = if(title != "Logout" )MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            tint = if(title != "Logout" && title != "Delete Account" )MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -487,7 +526,7 @@ fun SettingsItem(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = if(title == "Delete Account")MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
         }

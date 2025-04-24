@@ -343,7 +343,7 @@ fun RatingChip(
 
 @Composable
 fun Profile() {
-    Column(
+    /*Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
@@ -500,5 +500,5 @@ fun Profile() {
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
             )
         }
-    }
+    }*/
 }

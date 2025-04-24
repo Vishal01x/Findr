@@ -122,14 +122,14 @@ fun SearchScreen(navController: NavController, viewModel: ChatViewModel) {
                                       navController.navigate(HomeRoute.ChatDetail.createRoute(user.userId))
                                 }
                         ) {
-                            Image(
-                                painter = painterResource(R.drawable.chat_img3),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                            )
+//                            Image(
+//                                painter = painterResource(R.drawable.chat_img3),
+//                                contentDescription = null,
+//                                contentScale = ContentScale.Crop,
+//                                modifier = Modifier
+//                                    .size(48.dp)
+//                                    .clip(CircleShape)
+//                            )
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(
                                 modifier = Modifier.weight(1f),

@@ -166,7 +166,7 @@ fun ProfileContent(
                 Spacer(Modifier.height(12.dp))
 
                 val skill = profileData.skill
-                SkillsCard(skill.split(",").map { it.trim() })
+                SkillsCard(userId.isNullOrEmpty(),skill.split(",").map { it.trim() })
 
                 Spacer(Modifier.height(12.dp))
 

@@ -51,11 +51,31 @@ fun HelpScreen(
     onFaqItemClick: (String) -> Unit
 ) {
     val faqItems = listOf(
-        FAQ("How do I reset my password?", "You can reset your password by going to Settings > Account > Forgot Password and following the instructions sent to your email."),
-        FAQ("Where can I find my order history?", "All your orders are available under the 'My Orders' section in your profile."),
-        FAQ("How do I update my payment method?", "Navigate to Settings > Payment Methods to add or update your payment information."),
+        FAQ(
+            "How do I enable or disable location access?",
+            "To manage location access, go to Settings > App Permissions > Location. Enable GPS for more accurate location tracking and skill-based matching nearby."
+        ),
+        FAQ(
+            "How do I turn on push notifications?",
+            "You can enable push notifications in Settings > Notifications. Make sure your device’s system settings also allow notifications for this app."
+        ),
+        FAQ(
+            "How do I share or request a project?",
+            "Head to the Projects section to create a project with specific skill tags. You can invite others or accept/deny incoming requests to collaborate."
+        ),
+        FAQ(
+            "Can I join a project someone else posted?",
+            "Yes! You can browse available projects based on your skills and interests. Tap on a project to view details and choose to enroll if it's open for collaboration."
+        ),
+        FAQ(
+            "How do I find users with specific skills near me?",
+            "Use the Map screen to search for users by skill within a geofence radius around you. Tap on profiles to learn more or send them a message directly."
+        ),
         FAQ("What devices are supported?", "Our app supports Android 8.0+ and iOS 12+ devices."),
-        FAQ("How do I delete my account?", "Account deletion can be done in Settings > Account > Delete Account. Note this action is irreversible.")
+        FAQ(
+            "How do I delete my account?",
+            "Account deletion can be done in Settings > Account > Delete Account. Note this action is irreversible."
+        )
     )
 
     Scaffold(
@@ -269,9 +289,7 @@ fun TermsPrivacyScreen(
             )
 
             Text(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.\n\n" +
-                        "Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec euismod, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.\n\n" +
-                        "1. You must be at least 13 years old to use this app\n" +
+                text = "1. You must be at least 13 years old to use this app\n" +
                         "2. You are responsible for maintaining the confidentiality of your account\n" +
                         "3. You agree not to use the service for illegal activities\n" +
                         "4. We reserve the right to terminate accounts for violations of these terms",

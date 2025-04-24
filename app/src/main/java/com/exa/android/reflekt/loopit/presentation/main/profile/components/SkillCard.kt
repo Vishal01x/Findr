@@ -38,7 +38,7 @@ import com.exa.android.reflekt.loopit.util.Response
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SkillsCard(skills: List<String>, editProfileViewModel: EditProfileViewModel = hiltViewModel()) {
+fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: EditProfileViewModel = hiltViewModel()) {
     val skillInput by editProfileViewModel.skillInput
     val isEditing by editProfileViewModel.isEditing
     val updatedSkills by editProfileViewModel.updatedSkills
@@ -84,7 +84,7 @@ fun SkillsCard(skills: List<String>, editProfileViewModel: EditProfileViewModel 
                 }
 
 
-                if (!isEditing) {
+                if (!isEditing && isCurUser) {
                     AddSkillButton { editProfileViewModel.setEditing(true) }
                 }
             }
@@ -220,8 +220,38 @@ fun SkillsCard(skills: List<String>, editProfileViewModel: EditProfileViewModel 
 
 @Composable
 private fun EditableChip(skill: String, isEditing: Boolean, onRemove: () -> Unit) {
-    val formattedSkill = skill.lowercase().split(" ").first()
-    val iconUrl = "https://skillicons.dev/icons?i=${formattedSkill}"
+    var formattedSkill = skill.lowercase().split(" ").first()
+    if (formattedSkill == "c++") formattedSkill = "cpp"
+
+    // Set of all supported skillicons
+    val supportedSkills = setOf(
+        "ableton","activitypub","actix","adonis","ae","aiscript","alpinejs","anaconda","androidstudio",
+        "angular","ansible","apollo","apple","appwrite","arch","arduino","astro","atom","au","autocad",
+        "aws","azul","azure","babel","bash","bevy","bitbucket","blender","bootstrap","bsd","bun","c","cs",
+        "cpp","crystal","cassandra","clion","clojure","cloudflare","cmake","codepen","coffeescript","css",
+        "cypress","d3","dart","debian","deno","devto","discord","bots","discordjs","django","docker",
+        "dotnet","dynamodb","eclipse","elasticsearch","electron","elixir","elysia","emacs","ember",
+        "emotion","express","fastapi","fediverse","figma","firebase","flask","flutter","forth","fortran",
+        "gamemakerstudio","gatsby","gcp","git","github","githubactions","gitlab","gmail","gherkin","go",
+        "gradle","godot","grafana","graphql","gtk","gulp","haskell","haxe","haxeflixel","heroku",
+        "hibernate","html","htmx","idea","ai","instagram","ipfs","java","js","jenkins","jest","jquery",
+        "kafka","kali","kotlin","ktor","kubernetes","laravel","latex","less","linkedin","linux","lit",
+        "lua","md","mastodon","materialui","matlab","maven","mint","misskey","mongodb","mysql","neovim",
+        "nestjs","netlify","nextjs","nginx","nim","nix","nodejs","notion","npm","nuxtjs","obsidian",
+        "ocaml","octave","opencv","openshift","openstack","p5js","perl","ps","php","phpstorm","pinia",
+        "pkl","plan9","planetscale","pnpm","postgres","postman","powershell","pr","prisma","processing",
+        "prometheus","pug","pycharm","py","pytorch","qt","r","rabbitmq","rails","raspberrypi","react",
+        "reactivex","redhat","redis","redux","regex","remix","replit","rider","robloxstudio","rocket",
+        "rollupjs","ros","ruby","rust","sass","spring","sqlite","stackoverflow","styledcomponents",
+        "sublime","supabase","scala","sklearn","selenium","sentry","sequelize","sketchup","solidity",
+        "solidjs","svelte","svg","swift","symfony","tailwind","tauri","tensorflow","terraform",
+        "threejs","twitter","ts","ubuntu","unity","unreal","v","vala","vercel","vim","visualstudio",
+        "vite","vitest","vscode","vscodium","vue","vuetify","wasm","webflow","webpack","webstorm",
+        "windicss","windows","wordpress","workers","xd","yarn","yew","zig"
+    )
+
+    val finalSkill = if (supportedSkills.contains(formattedSkill)) formattedSkill else "htmx"
+    val iconUrl = "https://skillicons.dev/icons?i=$finalSkill"
 
     Box(
         modifier = Modifier

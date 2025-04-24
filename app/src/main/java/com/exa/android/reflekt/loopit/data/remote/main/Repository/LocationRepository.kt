@@ -43,7 +43,7 @@ class LocationRepository @Inject constructor(
         currentGeoQuery = null
     }
 
-    fun startLocationUpdates(userId: String, context: Context) {
+    fun startLocationUpdates(userId: String?, context: Context) {
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
             .setMinUpdateIntervalMillis(5000)
             .build()
@@ -51,7 +51,7 @@ class LocationRepository @Inject constructor(
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
-                    firebaseDataSource.saveUserLocation(userId, GeoLocation(location.latitude, location.longitude)) { key, error ->
+                    firebaseDataSource.saveUserLocation(userId?:currentUserId!!, GeoLocation(location.latitude, location.longitude)) { key, error ->
                         if (error != null) {
                             //Timber.tag("GeoFire").e("Error saving location: ${error.message}")
                         } else {

@@ -139,4 +139,15 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun blockUser(chatId: String, userId: String){
+        viewModelScope.launch {
+            repo.blockUser(chatId,userId)
+        }
+    }
+
+    fun unblockUser(chatId: String,userId: String){
+        viewModelScope.launch {
+            repo.unblockUser(chatId,userId)
+        }
+    }
 }

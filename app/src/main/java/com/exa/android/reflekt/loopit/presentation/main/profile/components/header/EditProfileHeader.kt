@@ -6,6 +6,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -305,6 +306,8 @@ private fun ProfileInputGroup(
     onHeadlineChange: (String) -> Unit,
     onRoleChange: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
     Column(modifier = modifier) {
         OutlinedTextField(
             value = name,
@@ -318,13 +321,43 @@ private fun ProfileInputGroup(
             singleLine = true
         )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = headline,
-            onValueChange = onHeadlineChange,
-            label = { Text("Headline") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+//        OutlinedTextField(
+//            value = headline,
+//            onValueChange = onHeadlineChange,
+//            label = { Text("Headline") },
+//            modifier = Modifier.fillMaxWidth(),
+//            singleLine = true
+//        )
+
+        val maxChars = 100
+
+        Column {
+            OutlinedTextField(
+                value = headline,
+                onValueChange = {
+                    if (it.length <= maxChars) {
+                        onHeadlineChange(it)
+                    } else {
+                        Toast.makeText(context, "Headline cannot exceed $maxChars characters", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                label = { Text("Headline") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Text(
+                text = "${headline.length} / $maxChars",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(end = 8.dp, top = 2.dp),
+                color = if (headline.length == maxChars) Color.Red else Color.Gray
+            )
+        }
+
+
+
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = role,

@@ -551,6 +551,32 @@ class FirestoreService @Inject constructor(
         }
     }*/
 
+
+    suspend fun blockUser(chatId: String, userId: String) {
+        val chatDoc = chatCollection.document(chatId)
+        val snapshot = chatDoc.get().await()
+
+        if (snapshot.exists()) {
+            chatDoc.update("blockUsers.$userId", userId).await()
+        } else {
+            chatDoc.set(
+                mapOf("blockUsers" to mapOf(userId to userId))
+            ).await()
+        }
+    }
+
+
+    suspend fun unblockUser(chatId: String, userId: String) {
+        val chatDoc = chatCollection.document(chatId)
+        val snapshot = chatDoc.get().await()
+
+        if (snapshot.exists() && snapshot.contains("blockUsers.$userId")) {
+            chatDoc.update("blockUsers.$userId", FieldValue.delete()).await()
+        }
+    }
+
+
+
     suspend fun getChatList(userId: String): Flow<Response<List<ChatList>>> = callbackFlow {
         trySend(Response.Loading)
 
@@ -615,6 +641,7 @@ class FirestoreService @Inject constructor(
                     val lastMessage = snapshot.getString("lastMessage") ?: ""
                     val timestamp = snapshot.getTimestamp("lastMessageTimestamp") ?: Timestamp.now()
                     val unread = snapshot.getLong("unreadMessages.$userId") ?: 0
+                    val block = snapshot.getString("blockUsers.$userId") ?: ""
 
                     // Parallel user data fetch
                     val userData = async { fetchUserData(otherUserId) }
@@ -628,7 +655,8 @@ class FirestoreService @Inject constructor(
                             lastMessage = lastMessage,
                             lastMessageTimestamp = timestamp,
                             unreadMessages = unread,
-                            fcmToken = profileData.fcmToken
+                            fcmToken = profileData.fcmToken,
+                            isBlock = block.isNotEmpty()
                         )
 
                         chatCache[otherUserId] = chat

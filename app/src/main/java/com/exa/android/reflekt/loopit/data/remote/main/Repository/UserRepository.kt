@@ -332,6 +332,7 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun updateUserNameAndImage(name: String, imageUrl: String): Response<Unit> {
+        Log.d("FireStore Service", "Signup done2 - ${name}")
         return try {
             val updates = mapOf(
                 "name" to name,
@@ -340,11 +341,12 @@ class UserRepository @Inject constructor(
 
             userCollection
                 .document(currentUser!!)
-                .update(updates)
+                .set(updates, SetOptions.merge())
                 .await()
 
             Response.Success(Unit)
         } catch (e: Exception) {
+            Log.e("UserRepository", "Failed to update user", e)
             // You can log the error to Crashlytics or a logging system
             // Log.e("Firestore Service", "Failed to update user profile", e)
             Response.Error(e.localizedMessage ?: "Unknown error occurred")

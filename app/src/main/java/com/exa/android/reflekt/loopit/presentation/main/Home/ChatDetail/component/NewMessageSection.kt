@@ -59,6 +59,7 @@ import kotlinx.coroutines.launch
 fun NewMessageSection(
     curUser: String,
     typingTo: String,
+    isBlock : Boolean,
     viewModel: UserViewModel,
     editMessage: Message?,
     focusRequester: FocusRequester,
@@ -113,6 +114,7 @@ fun NewMessageSection(
         // Text Input UI
         SendTFMessage(
             editMessage,
+            isBlock,
             focusRequester,
             onSendClick = { message -> onTextMessageSend(message) },
             onAddClick = onAddClick,
@@ -147,6 +149,7 @@ fun NewMessageSection(
 @Composable
 fun SendTFMessage(
     editMessage: Message?,
+    isBlock: Boolean,
     focusRequester: FocusRequester,
     onSendClick: (String) -> Unit,
     onAddClick: () -> Unit,
@@ -174,91 +177,100 @@ fun SendTFMessage(
         }
     }
 
-    Card(
-        elevation = CardDefaults.cardElevation(8.dp),
-        colors = CardDefaults.cardColors(Color.White),
-        shape = RectangleShape,
-        //modifier = Modifier.padding(bottom = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+    if(isBlock){
+        Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.onErrorContainer)
+        , contentAlignment = Alignment.Center){
+            Text("You are Blocked", color = MaterialTheme.colorScheme.onTertiary)
+        }
+
+    }else {
+
+        Card(
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(Color.White),
+            shape = RectangleShape,
+            //modifier = Modifier.padding(bottom = 8.dp)
         ) {
-            // Add Button
-            IconButton(onClick = onAddClick) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Text Field
-            Box(
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFEFEFEF)) // Light grey background
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                contentAlignment = Alignment.CenterStart
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (textFieldValue.text.isEmpty()) {
-                    Text(
-                        text = "Type a Message",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodyMedium
+                // Add Button
+                IconButton(onClick = onAddClick) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                BasicTextField(
-                    value = textFieldValue,
-                    onValueChange = {
-                        textFieldValue =
-                            it.copy(selection = TextRange(it.text.length)) // Keep cursor at end
-                        onTyping(it.text)
-                    },
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Text Field
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.Black),
-                    maxLines = 4,
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            val text = textFieldValue.text.trim()
-                            if (text.isNotEmpty())
-                                onSendClick(text)
-                            textFieldValue = TextFieldValue("") // Clear text after sending
-                            onTyping("")
-                        }
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Microphone or Send Button
-            IconButton(
-                onClick = {
-                    if (textFieldValue.text.isNotEmpty()) {
-                        onSendClick(textFieldValue.text)
-                        textFieldValue = TextFieldValue("")
-                        onTyping("")
-                    } else {
-                        onMicClick()
+                        .weight(1f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color(0xFFEFEFEF)) // Light grey background
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (textFieldValue.text.isEmpty()) {
+                        Text(
+                            text = "Type a Message",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
+                    BasicTextField(
+                        value = textFieldValue,
+                        onValueChange = {
+                            textFieldValue =
+                                it   //.copy(selection = TextRange(it.text.length)) // Keep cursor at end
+                            onTyping(it.text)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.Black),
+                        maxLines = 4,
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                val text = textFieldValue.text.trim()
+                                if (text.isNotEmpty())
+                                    onSendClick(text)
+                                textFieldValue = TextFieldValue("") // Clear text after sending
+                                onTyping("")
+                            }
+                        )
+                    )
                 }
-            ) {
-                Icon(
-                    //painter = painterResource(if (textFieldValue.text.isEmpty()) R.drawable.microphone else R.drawable.send),
-                    painter = painterResource(R.drawable.send),
-                    contentDescription = "Send or Mic",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Microphone or Send Button
+                IconButton(
+                    onClick = {
+                        if (textFieldValue.text.isNotEmpty()) {
+                            onSendClick(textFieldValue.text)
+                            textFieldValue = TextFieldValue("")
+                            onTyping("")
+                        } else {
+                            onMicClick()
+                        }
+                    }
+                ) {
+                    Icon(
+                        //painter = painterResource(if (textFieldValue.text.isEmpty()) R.drawable.microphone else R.drawable.send),
+                        painter = painterResource(R.drawable.send),
+                        contentDescription = "Send or Mic",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

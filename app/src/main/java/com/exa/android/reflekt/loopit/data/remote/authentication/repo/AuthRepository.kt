@@ -127,7 +127,14 @@ class AuthRepositoryImpl @Inject constructor(
                     val newUser = mapOf(
                         "profileData" to profile
                     )
+                    val updates = mapOf(
+                        "name" to name,
+                        "profilePicture" to ""
+                    )
                     transaction.set(userDocRef, newUser, SetOptions.merge())
+
+                    //update name and image in additional field you can also call fcm register here
+                    transaction.set(userDocRef, updates, SetOptions.merge())
                 } else {
                     // Document exists, just update the profileHeader
                     transaction.update(userDocRef, "profileData.profileHeader", profileHeader)

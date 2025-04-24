@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -82,17 +83,20 @@ import com.google.gson.Gson
 @Composable
 fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     val context = LocalContext.current
+    var isQueryClicker by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
+
     BackHandler(enabled = true) {
-        (context as Activity).finish()
+        if(isQueryClicker)isQueryClicker = false
+        else (context as Activity).finish()
     }
 
 
         RequestNotificationPermissionIfNeeded(true)
 
 
-    var isQueryClicker by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
-    var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
+
 
     val filteredList by remember(searchQuery, originalChatList) {
         derivedStateOf {
@@ -109,6 +113,7 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .padding(top = 2.dp)
     ) {
         if (!isQueryClicker) {

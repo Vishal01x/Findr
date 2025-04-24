@@ -27,6 +27,8 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoade
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
 import java.text.SimpleDateFormat
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +49,6 @@ fun EditExperienceScreen(
     var endDate by rememberSaveable { mutableStateOf(initialData.endDate ?: "") }
     var currentlyWorking by rememberSaveable { mutableStateOf(initialData.currentlyWorking ?: false) }
     var description by rememberSaveable { mutableStateOf(initialData.description ?: "") }
-
 
     var titleError by remember { mutableStateOf<String?>(null) }
     var companyError by remember { mutableStateOf<String?>(null) }
@@ -144,11 +145,13 @@ fun EditExperienceScreen(
                         .padding(top = 8.dp)
                 )
 
-                DatePickerFieldd(
+                val formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH)
+
+                DatePickerField(
                     label = "Start Date*",
                     dateText = startDate,
-                    onDateSelected = {
-                        startDate = it
+                    onDateSelected = { selectedDate ->
+                        startDate = selectedDate
                         startDateError = null
                     },
                     isError = !startDateError.isNullOrEmpty()
@@ -158,9 +161,19 @@ fun EditExperienceScreen(
                     DatePickerField(
                         label = "End Date*",
                         dateText = endDate,
-                        onDateSelected = {
-                            endDate = it
-                            endDateError = null
+                        onDateSelected = { selectedDate ->
+                            try {
+                                val start = YearMonth.parse(startDate, formatter)
+                                val end = YearMonth.parse(selectedDate, formatter)
+                                if (end.isBefore(start)) {
+                                    endDateError = "End date can't be before start date"
+                                } else {
+                                    endDate = selectedDate
+                                    endDateError = null
+                                }
+                            } catch (e: Exception) {
+                                endDateError = "Invalid date format"
+                            }
                         },
                         isError = !endDateError.isNullOrEmpty()
                     )
@@ -204,7 +217,21 @@ fun EditExperienceScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            var valid = true
+                            val areDatesValid = try {
+                                val start = YearMonth.parse(startDate, formatter)
+                                val end = YearMonth.parse(endDate, formatter)
+                                if (end.isBefore(start)) {
+                                    endDateError = "End date can't be before start date"
+                                    false
+                                } else {
+                                    endDateError = null
+                                    true
+                                }
+                            } catch (e: Exception) {
+                                endDateError = "Invalid date format"
+                                false
+                            }
+                            var valid = areDatesValid
                             if (title.isBlank()) {
                                 titleError = "Job title is required"
                                 valid = false
@@ -227,16 +254,16 @@ fun EditExperienceScreen(
                             }
 
                             if (valid) {
-                                viewModel.updateUserEducation(
+                                viewModel.updateUserExperience(
                                     ExperienceInfo(
-                                    title,
-                                    employmentType,
-                                    company,
-                                    location,
-                                    startDate,
-                                    if (currentlyWorking) "" else endDate,
-                                    currentlyWorking,
-                                    description
+                                        title = title,
+                                        employmentType = employmentType,
+                                        companyName = company,
+                                        location = location,
+                                        startDate = startDate,
+                                        endDate = if (currentlyWorking) "" else endDate,
+                                        currentlyWorking = currentlyWorking,
+                                        description = description
                                     )
                                 )
                             }
@@ -253,18 +280,15 @@ fun EditExperienceScreen(
         }
     }
 }
-
+/*
 @Composable
-fun DatePickerFieldd(
+fun DatePickerField(
     label: String,
     dateText: String,
     onDateSelected: (String) -> Unit,
     isError: Boolean = false
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
-    val dateFormatter = remember {
-        SimpleDateFormat("MMM yyyy", Locale.getDefault())
-    }
 
     OutlinedTextField(
         value = dateText,
@@ -297,3 +321,4 @@ fun DatePickerFieldd(
         )
     }
 }
+*/

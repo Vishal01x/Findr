@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.compone
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.exa.android.reflekt.loopit.util.model.MediaType
 import java.io.File
 
@@ -41,7 +42,7 @@ fun getMediaTypeFromUrl(url: String): MediaType {
 }
 
 fun getMediaTypeFromUri(context: Context, uri: Uri?): MediaType {
-
+    Log.d("Media type", uri.toString())
     if(uri == null)return MediaType.DOCUMENT
 
     val mimeType = context.contentResolver.getType(uri)
@@ -54,6 +55,7 @@ fun getMediaTypeFromUri(context: Context, uri: Uri?): MediaType {
         mimeType == "application/pdf" -> MediaType.DOCUMENT
         mimeType?.contains("msword") == true ||
                 mimeType?.contains("excel") == true ||
+                mimeType?.contains("pdf") == true ||
                 mimeType?.contains("powerpoint") == true -> MediaType.DOCUMENT
 
         mimeType?.contains("vcard") == true || uri.authority?.contains("contacts") == true -> MediaType.CONTACT

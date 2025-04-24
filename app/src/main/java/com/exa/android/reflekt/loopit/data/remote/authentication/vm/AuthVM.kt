@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.authentication.vm
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -15,11 +16,13 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -70,19 +73,31 @@ class AuthVM @Inject constructor(
     // UI Events
     fun onLoginEvent(event: LoginEvent) {
         when (event) {
-            is LoginEvent.EmailChanged -> loginState.value = loginState.value.copy(email = event.email)
-            is LoginEvent.PasswordChanged -> loginState.value = loginState.value.copy(password = event.password)
+            is LoginEvent.EmailChanged -> loginState.value =
+                loginState.value.copy(email = event.email)
+
+            is LoginEvent.PasswordChanged -> loginState.value =
+                loginState.value.copy(password = event.password)
+
             is LoginEvent.TogglePasswordVisibility ->
-                loginState.value = loginState.value.copy(passwordVisible = !loginState.value.passwordVisible)
+                loginState.value =
+                    loginState.value.copy(passwordVisible = !loginState.value.passwordVisible)
+
             is LoginEvent.Submit -> login()
         }
     }
 
     fun onSignUpEvent(event: SignUpEvent) {
         when (event) {
-            is SignUpEvent.EmailChanged -> signUpState.value = signUpState.value.copy(email = event.email)
-            is SignUpEvent.PasswordChanged -> signUpState.value = signUpState.value.copy(password = event.password)
-            is SignUpEvent.FullNameChanged -> signUpState.value = signUpState.value.copy(fullName = event.fullName)
+            is SignUpEvent.EmailChanged -> signUpState.value =
+                signUpState.value.copy(email = event.email)
+
+            is SignUpEvent.PasswordChanged -> signUpState.value =
+                signUpState.value.copy(password = event.password)
+
+            is SignUpEvent.FullNameChanged -> signUpState.value =
+                signUpState.value.copy(fullName = event.fullName)
+
             is SignUpEvent.RoleChanged -> {
                 signUpState.value = signUpState.value.copy(roleQuery = event.query)
                 if (event.query.isNotEmpty()) {
@@ -91,21 +106,30 @@ class AuthVM @Inject constructor(
                     roleSuggestions.clear()
                 }
             }
+
             is SignUpEvent.ToggleStudentStatus ->
                 signUpState.value = signUpState.value.copy(isStudent = !signUpState.value.isStudent)
+
             is SignUpEvent.CollegeNameChanged ->
                 signUpState.value = signUpState.value.copy(collegeName = event.collegeName)
-            is SignUpEvent.YearChanged -> signUpState.value = signUpState.value.copy(year = event.year)
+
+            is SignUpEvent.YearChanged -> signUpState.value =
+                signUpState.value.copy(year = event.year)
+
             is SignUpEvent.LocationChanged ->
                 signUpState.value = signUpState.value.copy(location = event.location)
+
             is SignUpEvent.CompanyNameChanged ->
                 signUpState.value = signUpState.value.copy(companyName = event.companyName)
+
             is SignUpEvent.CtcChanged -> signUpState.value = signUpState.value.copy(ctc = event.ctc)
             is SignUpEvent.ExperienceChanged ->
                 signUpState.value = signUpState.value.copy(experience = event.experience)
+
             is SignUpEvent.Continue -> {
                 signUpState.value = signUpState.value.copy(showNext = true)
             }
+
             is SignUpEvent.Submit -> signUp()
             is SignUpEvent.SelectRole -> {
                 val current = signUpState.value.selectedRoles.toMutableList()
@@ -120,10 +144,12 @@ class AuthVM @Inject constructor(
                 )
                 roleSuggestions.clear()
             }
+
             is SignUpEvent.TogglePasswordVisibility ->  // Added new event
                 signUpState.value = signUpState.value.copy(
                     passwordVisible = !signUpState.value.passwordVisible
                 )
+
             is SignUpEvent.AccountTypeSelected -> {
                 if (event.type == "Personal") {
                     // Save professional data before switching
@@ -169,6 +195,7 @@ class AuthVM @Inject constructor(
         }
         validateForm()
     }
+
     private fun validateForm() {
         val current = signUpState.value
         val isValid = when (current.selectedAccountType) {
@@ -200,6 +227,7 @@ class AuthVM @Inject constructor(
                         errorMessage = null
                     )
                 }
+
                 result.isFailure -> {
                     loginState.value = loginState.value.copy(
                         errorMessage = result.exceptionOrNull()?.message
@@ -233,13 +261,17 @@ class AuthVM @Inject constructor(
 //            userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
             when {
                 result.isSuccess -> {
-                    userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
-                    firestoreService.registerFCMToken()
+//                    Log.d("FireStore Service", "Signup done - ${signUpState.value.fullName}")
+//                    withContext(Dispatchers.IO) {
+//                        userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
+//                        firestoreService.registerFCMToken()
+//                    }
                     signUpState.value = signUpState.value.copy(
                         signUpSuccess = true,
                         errorMessage = null
                     )
                 }
+
                 result.isFailure -> {
                     signUpState.value = signUpState.value.copy(
                         errorMessage = result.exceptionOrNull()?.message
@@ -263,6 +295,7 @@ class AuthVM @Inject constructor(
             }
         }
     }
+
     fun addRole(roleName: String) {
         viewModelScope.launch {
             try {
@@ -306,13 +339,16 @@ class AuthVM @Inject constructor(
             }
         }
     }
+
     fun onForgotPasswordEvent(event: ForgotPasswordEvent) {
         when (event) {
             is ForgotPasswordEvent.EmailChanged ->
                 forgotPasswordState.value = forgotPasswordState.value.copy(email = event.email)
+
             is ForgotPasswordEvent.Submit -> sendPasswordResetEmail()
         }
     }
+
     private fun sendPasswordResetEmail() {
         viewModelScope.launch {
             forgotPasswordState.value = forgotPasswordState.value.copy(isLoading = true)
@@ -326,6 +362,7 @@ class AuthVM @Inject constructor(
                         errorMessage = null
                     )
                 }
+
                 result.isFailure -> {
                     forgotPasswordState.value = forgotPasswordState.value.copy(
                         errorMessage = result.exceptionOrNull()?.message

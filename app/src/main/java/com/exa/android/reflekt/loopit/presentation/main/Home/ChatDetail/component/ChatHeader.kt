@@ -1,9 +1,11 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -61,6 +64,7 @@ fun ChatHeader(
     curUser: String, // cur User Id
     //members: List<User>, // all the members of chat
     selectedMessages: Set<Message>, // messages Selected to show its count
+    isBlock : Boolean,
     onProfileClick: () -> Unit, // when otherUserProfile Click show its details
     onBackClick: () -> Unit, // navigate to ChatListDetail
     onVoiceCallClick: () -> Unit,
@@ -69,7 +73,8 @@ fun ChatHeader(
     onCopyClick: () -> Unit,
     onEditClick: (Message?) -> Unit,
     onForwardClick: () -> Unit,
-    onDeleteClick: (Int) -> Unit
+    onDeleteClick: (Int) -> Unit,
+    onBlockClick: () -> Unit
 ) {
     Card(
         elevation = CardDefaults.cardElevation(8.dp),
@@ -95,10 +100,12 @@ fun ChatHeader(
             otherUser = user,
             status = status,
             curUser = curUser,
+            isBlock,
             onBackClick = { onBackClick() },
             onProfileClick = { onProfileClick() },
             onVoiceCallClick = { onVoiceCallClick() },
-            onVideoCallClick = { onVideoCallClick() }
+            onVideoCallClick = { onVideoCallClick() },
+            onBlockClick = { onBlockClick() }
         )
     }
 }
@@ -265,8 +272,10 @@ fun HeaderWithProfile(
     otherUser: User?,
     status: Status? = Status(),
     curUser: String,
+    isBlock: Boolean,
     onBackClick: () -> Unit,
     onProfileClick: () -> Unit,
+    onBlockClick : () -> Unit,
     onVoiceCallClick: () -> Unit,
     onVideoCallClick: () -> Unit
 ) {
@@ -284,7 +293,9 @@ fun HeaderWithProfile(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = "Back",
                 tint = Color.Black,
-                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp).size(32.dp)
+                modifier = Modifier
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .size(32.dp)
             )
         }
 
@@ -306,9 +317,12 @@ fun HeaderWithProfile(
 
         // User Name and Status
         Column(
-            modifier = Modifier.weight(1f).clickable {
-                onProfileClick()
-            }.padding(vertical = 4.dp, horizontal = 8.dp),
+            modifier = Modifier
+                .weight(1f)
+                .clickable {
+                    onProfileClick()
+                }
+                .padding(vertical = 4.dp, horizontal = 8.dp),
         ) {
             // Chat Name
             Text(
@@ -344,6 +358,30 @@ fun HeaderWithProfile(
                 modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping
             )
         }
+
+//        Box(
+//            modifier = Modifier
+//                .padding(end = 12.dp)
+//                .clip(CircleShape)
+//                .background(MaterialTheme.colorScheme.errorContainer)
+//                .clickable { onBlockClick() }
+//                .padding(horizontal = 4.dp, vertical = 4.dp)
+//        ) {
+//            Row(verticalAlignment = Alignment.CenterVertically) {
+//                Icon(
+//                    imageVector = Icons.Filled.Block,
+//                    contentDescription = "Block",
+//                    tint = MaterialTheme.colorScheme.error
+//                )
+//                Spacer(modifier = Modifier.width(4.dp))
+//                Text(
+//                    text = if(!isBlock)"Block" else "UnBlock",
+//                    color = MaterialTheme.colorScheme.error,
+//                    style = MaterialTheme.typography.labelMedium
+//                )
+//            }
+//        }
+
 
 //        //Video Call Icon
 //        IconButton(onClick = onVideoCallClick) {

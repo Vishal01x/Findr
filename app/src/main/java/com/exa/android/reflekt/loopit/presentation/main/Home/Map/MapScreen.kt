@@ -705,7 +705,7 @@ fun CustomMapMarker(
                     .offset(y = 2.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.White, CircleShape)
-                    .background(Color.Gray),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 if (!imageUrl.isNullOrEmpty()) {

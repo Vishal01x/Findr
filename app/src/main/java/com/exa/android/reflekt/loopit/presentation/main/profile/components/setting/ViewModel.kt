@@ -1,5 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.setting
 
+import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -8,15 +10,20 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.exa.android.reflekt.loopit.util.Response
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 
@@ -51,6 +58,12 @@ class SettingsViewModel @Inject constructor(
 
     private val _passwordChangeError = MutableStateFlow<String?>(null)
     val passwordChangeError: StateFlow<String?> = _passwordChangeError.asStateFlow()
+
+    private val _accoutDeleteError = MutableStateFlow<String?>(null)
+    val accountDeleteError: StateFlow<String?> = _accoutDeleteError.asStateFlow()
+
+    private val _accoutDeleteSuccess =  MutableStateFlow(false)
+    val accountDeleteSucsess: StateFlow<Boolean> = _accoutDeleteSuccess.asStateFlow()
 
     private val _emailUpdateSuccess = MutableStateFlow(false)
     val emailUpdateSuccess: StateFlow<Boolean> = _emailUpdateSuccess.asStateFlow()
@@ -148,12 +161,94 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun clearCache() {
-        viewModelScope.launch {
-            // Implement actual cache clearing logic
-            _cacheSize.value = "0 MB"
+    fun clearCache(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val cacheDir = context.cacheDir
+                deleteDir(cacheDir)
+
+                withContext(Dispatchers.Main) {
+                    _cacheSize.value = "0 MB"
+                    // Optionally show a toast/snackbar here if needed
+                }
+            } catch (e: Exception) {
+                Log.e("ClearCache", "Error clearing cache", e)
+            }
         }
     }
+
+    private fun deleteDir(dir: File?): Boolean {
+        if (dir != null && dir.isDirectory) {
+            val children = dir.list()
+            for (child in children!!) {
+                val success = deleteDir(File(dir, child))
+                if (!success) return false
+            }
+        }
+        return dir?.delete() ?: false
+    }
+
+    fun loadCacheSize(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val sizeInBytes = getFolderSize(context.cacheDir)
+            val sizeInMB = sizeInBytes.toDouble() / (1024 * 1024)
+            val formattedSize = String.format("%.2f MB", sizeInMB)
+
+            withContext(Dispatchers.Main) {
+                _cacheSize.value = formattedSize
+            }
+        }
+    }
+
+    private fun getFolderSize(dir: File): Long {
+        var size = 0L
+        dir.walkBottomUp().forEach {
+            if (it.isFile) size += it.length()
+        }
+        return size
+    }
+
+    fun deleteUserAccount(currentPassword: String){
+        viewModelScope.launch {
+            deleteAccountCompletely(currentPassword)
+        }
+    }
+
+    suspend fun deleteAccountCompletely(currentPassword: String): Response<Unit> {
+        val auth = FirebaseAuth.getInstance()
+        val user = auth.currentUser ?: return Response.Error("No user logged in")
+
+        return try {
+            // Step 1: Re-authenticate
+            val credential = EmailAuthProvider.getCredential(user.email ?: "", currentPassword)
+            user.reauthenticate(credential).await()
+
+            val userId = user.uid
+
+            // Step 2: Delete Firestore user document
+            FirebaseFirestore.getInstance().collection("users")
+                .document(userId).delete().await()
+
+//            // Step 3: Delete profile picture in Firebase Storage if used
+//            val storageRef = FirebaseStorage.getInstance().reference
+//                .child("profile_pictures/$userId.jpg")
+//            runCatching { storageRef.delete().await() }
+
+            // Step 4: Delete the user from Firebase Auth
+            user.delete().await()
+
+            _accoutDeleteSuccess.value = true
+            _accoutDeleteError.value = null
+            Response.Success(Unit)
+
+        } catch (e: Exception) {
+            _accoutDeleteError.value = e.localizedMessage
+            _accoutDeleteSuccess.value = false
+
+            Response.Error(e.localizedMessage ?: "Error deleting account")
+        }
+    }
+
 
     companion object {
         private val DARK_THEME = booleanPreferencesKey("dark_theme")

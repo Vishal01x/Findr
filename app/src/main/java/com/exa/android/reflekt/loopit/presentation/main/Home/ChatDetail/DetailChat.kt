@@ -221,7 +221,7 @@ fun DetailChat(
                 launchMediaUpload(
                     context = context,
                     uri = uri,
-                    mediaType = MediaType.IMAGE,
+                    mediaType = getMediaTypeFromUri(context,uri),
                     otherUserId = otherUserId,
                     fcmToken = otherUserDetail.value?.fcmToken,
                     chatViewModel = chatViewModel,
@@ -237,6 +237,7 @@ fun DetailChat(
         topBar = {
             ChatHeader(
                 otherUserDetail.value, userStatus, curUserId, selectedMessages,
+                otherUserDetail.value?.isCurBlock == true,
                 onProfileClick = {
                     navController.navigate(ProfileRoute.UserProfile.createRoute(otherUserId))
                 },
@@ -262,12 +263,21 @@ fun DetailChat(
                         coroutineScope
                     )
                     selectedMessages = emptySet()
+                },
+                onBlockClick = {
+                    val chatId = generateChatId(curUserId,otherUserId)
+                    if(otherUserDetail.value?.isOtherBlock == true){
+                        chatViewModel.unblockUser(chatId,otherUserId)
+                    }else{
+                        chatViewModel.blockUser(chatId,otherUserId)
+                    }
                 }
             )
         },
         bottomBar = {
             NewMessageSection(
                 curUserId, otherUserId,
+                otherUserDetail.value?.isOtherBlock == true,
                 userViewModel, editMessage,
                 focusRequester,
                 onTextMessageSend = { text ->

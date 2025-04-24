@@ -24,7 +24,7 @@ class LocationViewModel @Inject constructor(
 
     val userLocations: StateFlow<List<profileUser>> get() = locationRepository.userLocations
 
-    fun startLocationUpdates(userId: String, context: Context) {
+    fun startLocationUpdates(userId: String?, context: Context) {
         locationRepository.startLocationUpdates(userId, context)
     }
 

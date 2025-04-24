@@ -339,7 +339,7 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateUserEducation(experienceInfo: ExperienceInfo) {
+    fun updateUserExperience(experienceInfo: ExperienceInfo) {
         viewModelScope.launch {
             if (!isNetworkAvailable(context)){ responseState =
                 Response.Error("Failed Experience update. Check Internet Connection")

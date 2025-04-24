@@ -10,7 +10,9 @@ data class User(
     val name : String = "",
     val phone : String = "",
     val profilePicture : String? = "",
-    val fcmToken : String? = ""
+    val fcmToken : String? = "",
+    val isCurBlock: Boolean = false,
+    val isOtherBlock : Boolean = false
 )
 
 data class Message(
@@ -74,7 +76,8 @@ data class ChatList(
     val lastMessageTimestamp: Timestamp = Timestamp.now(),
     val profilePicture: String? = "",
     val unreadMessages : Long = 0,
-    val fcmToken : String? = ""
+    val fcmToken : String? = "",
+    val isBlock : Boolean = false
 )
 
 data class Status(
