@@ -161,7 +161,7 @@ class ProjectListViewModel @Inject constructor(
                 try {
                     val profile = profileRepository.getUserProfile(userId)
                     val userName = profile.name
-                    repository.enrollInProject(project, userId, userName)
+                    repository.enrollInProject(project, userId, userName, profile.imageUrl)
                     loadProjects() // Refresh the list
                 } catch (e: Exception) {
                     _state.update { it.copy(isLoading = false, error = e.message) }

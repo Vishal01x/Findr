@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import android.content.Context
 import android.util.Log
 import com.exa.android.reflekt.loopit.util.model.Project
 import com.google.firebase.auth.FirebaseAuth
@@ -9,6 +10,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ktx.toObject
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -20,7 +22,8 @@ import javax.inject.Singleton
 @Singleton
 class ProjectRepositoryImpl @Inject constructor(
     private val db: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    @ApplicationContext private val context: Context
 ) : ProjectRepository {
 
     private companion object {
@@ -240,7 +243,7 @@ class ProjectRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
-    override suspend fun enrollInProject(project: Project, userId: String, userName: String): Result<Unit> {
+    override suspend fun enrollInProject(project: Project, userId: String, userName: String, imageUrl : String?): Result<Unit> {
         return try {
             require(auth.currentUser?.uid == userId) { "User must be authenticated" }
 
@@ -256,6 +259,13 @@ class ProjectRepositoryImpl @Inject constructor(
                     mapOf("requestedPersons.$userId" to userName)
                 )
                 .await()
+            sendPushNotification(
+                context,
+                project.createdBy,
+                "$userName is requested to enroll in your project : ${project.title}",
+                project.title,
+                imageUrl
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
