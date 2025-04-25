@@ -624,7 +624,10 @@ fun RoleSelectionDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Existing roles list
-                LazyColumn {
+                LazyColumn (
+                    modifier = Modifier
+                        .height(400.dp)
+                ){
                     items(availableRoles.size) {
                         val role =availableRoles[it]
                         Row(
@@ -700,7 +703,10 @@ fun TagSelectionDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Existing tags list
-                LazyColumn {
+                LazyColumn (
+                    modifier = Modifier
+                        .height(400.dp)
+                ){
                     items(availableTags.size) {
                         val tag =availableTags[it]
                         Row(

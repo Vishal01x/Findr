@@ -266,7 +266,7 @@ fun ProjectDetailScreen(
                             if (isEnrolled) {
                                 viewModel.withdrawFromProject(project.id)
                             } else {
-                                viewModel.enrollInProject(project.id)
+                                viewModel.enrollInProject(project)
                             }
                         },
                         icon = {

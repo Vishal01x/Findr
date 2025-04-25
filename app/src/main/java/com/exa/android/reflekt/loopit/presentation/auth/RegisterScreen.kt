@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -177,7 +178,26 @@ fun SignUpScreen(
                         FilterChip(
                             selected = state.selectedAccountType == type,
                             onClick = {
+                                if (type == "Professional") {
+                                    // Check if all personal data is filled
+                                    val isPersonalDataComplete = state.fullName.isNotBlank() &&
+                                            state.email.isNotBlank() &&
+                                            state.password.length >= 8 &&
+                                            state.selectedRoles.isNotEmpty()
 
+                                    if (isPersonalDataComplete) {
+                                        viewModel.onSignUpEvent(SignUpEvent.AccountTypeSelected(type))
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Complete your personal details (Name, Email, Password & Role) to unlock Professional setup",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                } else {
+                                    // For Personal, switch immediately
+                                    viewModel.onSignUpEvent(SignUpEvent.AccountTypeSelected(type))
+                                }
                             },
                             label = {
                                 Text(
@@ -289,7 +309,7 @@ fun SignUpScreen(
                             ),
                             keyboardOptions = KeyboardOptions(
                                 imeAction = ImeAction.Next,  // This enables the Next button
-                                capitalization = KeyboardCapitalization.Words,
+                                capitalization = KeyboardCapitalization.None,
                                 keyboardType = KeyboardType.Email,
                                 autoCorrect = true
                             ),
@@ -302,6 +322,7 @@ fun SignUpScreen(
                         )
 
                         // Password
+
                         OutlinedTextField(
                             value = state.password,
                             onValueChange = {
@@ -317,6 +338,22 @@ fun SignUpScreen(
                                 Icon(
                                     Icons.Outlined.Lock,
                                     contentDescription = "Password"
+                                )
+                            },
+                            supportingText = {
+                                val charCount = state.password.length
+                                val meetsLength = charCount >= 8
+
+                                Text(
+                                    text = when {
+                                        charCount == 0 -> "Minimum 8 characters"
+                                        charCount in 1..7 -> "${8 - charCount} more characters needed"
+                                        else -> "Good length!"
+                                    },
+                                    color = when {
+                                        meetsLength -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.error
+                                    }
                                 )
                             },
                             trailingIcon = {
@@ -494,6 +531,7 @@ fun SignUpScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // Continue Button
+                        /*
                         Button(
                             onClick = {
                                 viewModel.onSignUpEvent(SignUpEvent.Continue)
@@ -524,6 +562,67 @@ fun SignUpScreen(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+
+                         */
+
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)) {
+
+                            // Main button (enabled/disabled based on condition)
+                            Button(
+                                onClick = {
+                                    viewModel.onSignUpEvent(SignUpEvent.Continue)
+                                    focusManager.clearFocus()
+                                    viewModel.onSignUpEvent(SignUpEvent.AccountTypeSelected("Professional"))
+                                },
+                                modifier = Modifier
+                                    .matchParentSize(),
+                                enabled = state.email.isNotBlank() &&
+                                        state.fullName.isNotBlank() &&
+                                        state.selectedRoles.isNotEmpty() &&
+                                        state.password.length >= 8,
+                                shape = MaterialTheme.shapes.large,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 4.dp,
+                                    pressedElevation = 2.dp
+                                )
+                            ) {
+                                Text(
+                                    "Continue",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            // Overlay to catch taps when button is disabled
+                            if (
+                                state.email.isBlank() ||
+                                state.fullName.isBlank() ||
+                                state.selectedRoles.isEmpty() ||
+                                state.password.length < 8
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ) {
+                                            Toast.makeText(
+                                                context,
+                                                "Complete your personal details (Name, Email, Password & Role) to unlock Professional setup",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                )
+                            }
+                        }
+
                     }
                 }
                 else {
@@ -760,36 +859,6 @@ fun SignUpScreen(
                                         }
                                     )
                                 )
-
-                                OutlinedTextField(
-                                    value = state.ctc,
-                                    onValueChange = {
-                                        viewModel.onSignUpEvent(
-                                            SignUpEvent.CtcChanged(
-                                                it
-                                            )
-                                        )
-                                    },
-                                    label = { Text("CTC (LPA)") },
-                                    modifier = Modifier.weight(1f),
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.AttachMoney,
-                                            contentDescription = "CTC"
-                                        )
-                                    },
-                                    shape = MaterialTheme.shapes.medium,
-
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = colorScheme.primary,
-                                        unfocusedBorderColor = colorScheme.onSurface.copy(alpha = 0.4f),
-                                        focusedLabelColor = colorScheme.primary,
-                                        cursorColor = colorScheme.primary
-                                    ),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Number
-                                    )
-                                )
                             }
                         }
 
@@ -834,6 +903,8 @@ fun SignUpScreen(
         }
     }
 }
+
+
 private fun isFormComplete(state: SignUpState): Boolean {
     return if (state.selectedAccountType == "Personal") {
         state.email.isNotBlank() &&

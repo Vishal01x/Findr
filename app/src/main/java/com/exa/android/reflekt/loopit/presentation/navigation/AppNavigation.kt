@@ -48,20 +48,20 @@ fun AppNavigation(
                 } // Ensure HomeScreen is in the back stack
                 */launchSingleTop = true  // Avoid creating duplicate instances
             }
-//            // Clear the intent to avoid re-navigation on recomposition
+//            // Clewar the intent to avoid re-navigation on recomposition
 //            activity?.intent = Intent(activity, MainActivity::class.java)
         }
     }
 
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
     Scaffold(
-    /*
-        modifier = Modifier
-            .fillMaxSize()
-            .consumeWindowInsets(PaddingValues()) // Optional to manually control insets
-            .padding(WindowInsets.systemBars.asPaddingValues()),
 
-     */
+        //modifier = Modifier
+            //.fillMaxSize(),
+            //.consumeWindowInsets(PaddingValues()), // Optional to manually control insets
+            //.padding(WindowInsets.systemBars.asPaddingValues()),
+
+
         bottomBar = {
             if (currentDestination == HomeRoute.ChatList.route ||
                 currentDestination == ProfileRoute.UserProfile.route ||

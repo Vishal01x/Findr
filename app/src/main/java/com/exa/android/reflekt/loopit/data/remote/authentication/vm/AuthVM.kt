@@ -300,7 +300,7 @@ class AuthVM @Inject constructor(
         viewModelScope.launch {
             try {
                 val roleData = hashMapOf("Name" to roleName)
-                Firebase.firestore.collection("Role").add(roleData).await()
+                Firebase.firestore.collection("RoleRequest").add(roleData).await()
                 // Optionally show a success message or update UI
             } catch (e: Exception) {
                 // Handle error (e.g., log or show a toast)
@@ -415,7 +415,7 @@ data class SignUpState(
     val email: String = "",
     val password: String = "",
     val fullName: String = "",
-    val isStudent: Boolean = false,
+    val isStudent: Boolean = true,
     val collegeName: String = "",
     val year: String = "",
     val location: String = "",
@@ -471,7 +471,7 @@ data class PersonalAccountData(
 )
 
 data class ProfessionalAccountData(
-    val isStudent: Boolean = false,
+    val isStudent: Boolean = true,
     val collegeName: String = "",
     val year: String = "",
     val location: String = "",

@@ -84,10 +84,16 @@ import android.content.Intent
 import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.BorderStroke
 //import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ChipDefaults
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -95,6 +101,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -118,7 +126,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
     // var searchLocation by remember { mutableStateOf<LatLng?>(null) }
     var radius by rememberSaveable { mutableStateOf(5f) }
-    var selectedRole by rememberSaveable { mutableStateOf("") }
+    var selectedRoles by rememberSaveable { mutableStateOf(setOf<String>()) }
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
     var selectedUser by rememberSaveable (stateSaver = profileUser.Saver) {
@@ -161,6 +169,10 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     var isGpsEnabled by remember { mutableStateOf(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) }
     var showGpsDialog by remember { mutableStateOf(false) }
 
+    var roleSearchQuery by remember { mutableStateOf("") }
+    val filteredRoles = roles.filter {
+        it.contains(roleSearchQuery, ignoreCase = true)
+    }
     // Fetch current user's role
     LaunchedEffect(userId) {
         viewModel.getUserProfile(userId)
@@ -168,15 +180,15 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     // Update selectedRole when currUserProfile is available
     LaunchedEffect(currUserProfile) {
         currUserProfile.role.let { role ->
-            if (selectedRole.isEmpty()) { // Only set it if it's not already selected
-                selectedRole = role
+            if (selectedRoles.isEmpty()) { // Only set it if it's not already selected
+
             }
         }
     }
 
     // Log.d("GeoFire", "MapScreen Composable, ${locationPermissionState.status}, ${currentLocation}, $selectedRole $radius $selectedLocation $currUserProfile $userLocations}")
     // Initial data loading
-    LaunchedEffect(locationPermissionState.status, currentLocation, selectedRole) {
+    LaunchedEffect(locationPermissionState.status, currentLocation, selectedRoles) {
         if (locationPermissionState.status.isGranted && currentLocation != null) {
 
             // Timber.tag("GeoFire").d("Fetching user locations for role: $selectedRole $radius $selectedLocation $currentLocation")
@@ -358,9 +370,55 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Role Selection
+                        if (selectedRoles.isNotEmpty()) {
+                            Text(
+                                text = "Selected Roles:",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp)
+                            ) {
+                                items(selectedRoles.size) {
+                                    val role = selectedRoles.elementAt(it)
+                                    SuggestionChip(
+                                        onClick = {
+                                            selectedRoles = selectedRoles - role
+                                        },
+                                        label = {
+                                            Text(
+                                                text = role,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        border = BorderStroke(  
+                                            1.dp,
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        ),
+                                        colors = SuggestionChipDefaults.suggestionChipColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            labelColor = MaterialTheme.colorScheme.onPrimary
+                                        ),
+                                        icon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Remove",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Select Role", style = MaterialTheme.typography.titleMedium)
+
+                        /*
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.horizontalScroll(rememberScrollState())
@@ -370,6 +428,50 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                                     selected = role == selectedRole,
                                     onClick = { selectedRole = role },
                                     label = { Text(role) }
+                                )
+                            }
+                        }
+
+                         */
+                        OutlinedTextField(
+                            value = roleSearchQuery,
+                            onValueChange = { roleSearchQuery = it },
+                            placeholder = { Text("Search roles...") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 128.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.height(100.dp)
+                        ) {
+                            items(filteredRoles.size) {
+                                val role = filteredRoles[it]
+                                FilterChip(
+                                    selected = selectedRoles.contains(role),
+                                    onClick = {
+                                        selectedRoles = if (selectedRoles.contains(role)) {
+                                            selectedRoles - role
+                                        } else {
+                                            selectedRoles + role
+                                        }
+                                    },
+                                    label = {
+                                        Text(
+                                            text = role,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -397,11 +499,12 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                                                 durationMs = 500
                                             )
 
+                                            val rolesAsString = selectedRoles.joinToString(",")
                                             // Fetch new data with current filters
                                             viewModel.fetchUserLocations(
                                                 location = location,
                                                 radius = radius.toDouble(),
-                                                role = selectedRole
+                                                role = rolesAsString
                                             )
                                         }
                                     }catch (e: Exception) {

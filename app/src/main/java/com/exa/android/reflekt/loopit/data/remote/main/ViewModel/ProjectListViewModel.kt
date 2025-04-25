@@ -6,6 +6,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileReposit
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
+import com.exa.android.reflekt.loopit.util.model.Project
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -153,14 +154,14 @@ class ProjectListViewModel @Inject constructor(
         }
     }
 
-    fun enrollInProject(projectId: String) {
+    fun enrollInProject(project: Project) {
         auth.currentUser?.uid?.let { userId ->
             _state.update { it.copy(isLoading = true, error = null) }
             viewModelScope.launch {
                 try {
                     val profile = profileRepository.getUserProfile(userId)
                     val userName = profile.name
-                    repository.enrollInProject(projectId, userId, userName)
+                    repository.enrollInProject(project, userId, userName)
                     loadProjects() // Refresh the list
                 } catch (e: Exception) {
                     _state.update { it.copy(isLoading = false, error = e.message) }

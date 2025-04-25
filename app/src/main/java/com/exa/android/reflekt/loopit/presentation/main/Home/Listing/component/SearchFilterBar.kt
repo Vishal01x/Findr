@@ -31,11 +31,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -126,6 +129,8 @@ fun SearchFilterBar(
     var showRolesFilter by remember { mutableStateOf(false) }
     var showTagsFilter by remember { mutableStateOf(false) }
     val animationSpec = remember { tween<Float>(durationMillis = 300) }
+    var rolesSearchQuery by remember { mutableStateOf("") }
+    var tagsSearchQuery by remember { mutableStateOf("") }
 
     Column(
         modifier = modifier
@@ -185,7 +190,10 @@ fun SearchFilterBar(
             // Roles Filter Chip
             FilterChip(
                 selected = showRolesFilter || selectedRoles.isNotEmpty(),
-                onClick = { showRolesFilter = !showRolesFilter },
+                onClick = {
+                    showRolesFilter = !showRolesFilter
+                    if (showRolesFilter) showTagsFilter = false
+                },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -233,7 +241,10 @@ fun SearchFilterBar(
             // Tags Filter Chip
             FilterChip(
                 selected = showTagsFilter || selectedTags.isNotEmpty(),
-                onClick = { showTagsFilter = !showTagsFilter },
+                onClick = {
+                    showTagsFilter = !showTagsFilter
+                    if (showTagsFilter) showRolesFilter = false
+                },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -285,6 +296,7 @@ fun SearchFilterBar(
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
+            /*
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -359,6 +371,18 @@ fun SearchFilterBar(
                     }
                 }
             }
+
+             */
+            FilterSectionCard(
+                title = "Select Roles",
+                searchQuery = rolesSearchQuery,
+                onSearchChange = { rolesSearchQuery = it },
+                items = availableRoles.filter { it.contains(rolesSearchQuery, true) },
+                selectedItems = selectedRoles,
+                onItemSelected = onRoleSelected,
+                onItemDeselected = onRoleDeselected,
+                clearAll = { selectedRoles.forEach(onRoleDeselected) }
+            )
         }
 
         AnimatedVisibility(
@@ -366,6 +390,7 @@ fun SearchFilterBar(
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
+            /*
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -437,6 +462,142 @@ fun SearchFilterBar(
                             )
                         }
                     }
+                }
+            }
+
+             */
+
+            FilterSectionCard(
+                title = "Select Tags",
+                searchQuery = tagsSearchQuery,
+                onSearchChange = { tagsSearchQuery = it },
+                items = availableTags.filter { it.contains(tagsSearchQuery, true) },
+                selectedItems = selectedTags,
+                onItemSelected = onTagSelected,
+                onItemDeselected = onTagDeselected,
+                clearAll = { selectedTags.forEach(onTagDeselected) }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FilterSectionCard(
+    title: String,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    items: List<String>,
+    selectedItems: Set<String>,
+    onItemSelected: (String) -> Unit,
+    onItemDeselected: (String) -> Unit,
+    clearAll: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .heightIn(max = 300.dp),
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                if (selectedItems.isNotEmpty()) {
+                    TextButton(onClick = clearAll) {
+                        Text("Clear All", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Search within filter section
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search $title...") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Search",
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                ),
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items.forEach { item ->
+                    SuggestionChip(
+                        onClick = {
+                            if (selectedItems.contains(item)) onItemDeselected(item)
+                            else onItemSelected(item)
+                        },
+                        label = { Text(item) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = if (selectedItems.contains(item)) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            labelColor = if (selectedItems.contains(item)) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            disabledBorderColor = Color.Transparent,
+                            selected = selectedItems.isNotEmpty(),
+                            enabled = true
+                        ),
+                        icon = {
+                            Icon(
+                                imageVector =  when {
+                                    selectedItems.contains(item) -> Icons.Filled.Check
+                                    title == "Select Tags" -> Icons.Filled.Label
+                                    else -> Icons.Outlined.WorkOutline
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (selectedItems.contains(item)) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                    )
                 }
             }
         }
