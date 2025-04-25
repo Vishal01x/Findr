@@ -173,6 +173,9 @@ fun ProjectDetailScreen(
     navController: NavHostController,
     viewModel: ProjectListViewModel = hiltViewModel()
 ) {
+
+
+
     val state by viewModel.state.collectAsState()
     val project = state.projects.find { it.id == projectId }
     val snackbarHostState = remember { SnackbarHostState() }

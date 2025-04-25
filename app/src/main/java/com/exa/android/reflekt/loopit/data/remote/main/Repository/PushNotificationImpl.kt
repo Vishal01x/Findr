@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import android.content.Context
 import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
 import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
 import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
@@ -11,9 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
-/*
-private fun sendPushNotification(receiverToken: String, message: Message, curUser: User?) {
+fun sendPushNotification(context : Context,receiverToken: String, message: String, title: String, imageUrl : String?) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val accessToken = getAccessToken(context)
@@ -25,11 +24,12 @@ private fun sendPushNotification(receiverToken: String, message: Message, curUse
 //                            body = message
 //                        )
                     data = NotificationData(
-                        title = curUser?.name ?: "",
-                        senderId = message.senderId,
-                        chatId = message.chatId,
-                        body = if(message.media != null)message.media.mediaType.name else message.message,
-                        imageUrl = curUser?.profilePicture ?: ""
+                        title = title,
+                        senderId = "",
+                        chatId = "",
+                        body = message,
+                        imageUrl = imageUrl?: "",
+                        isChat = "No"
                     )
                 )
             )
@@ -58,4 +58,4 @@ private fun sendPushNotification(receiverToken: String, message: Message, curUse
             // Log.e("FireStore Operation", "FCM Request Failed", e)
         }
     }
-}*/
+}

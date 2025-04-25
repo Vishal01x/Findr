@@ -10,7 +10,8 @@ data class NotificationData(
     val senderId : String,
     val title: String, //senderName
     val body: String, // message Text
-    val imageUrl : String
+    val imageUrl : String,
+    val isChat : String
 )
 
 data class FCMResponse(

@@ -288,7 +288,8 @@ class FirestoreService @Inject constructor(
                             senderId = message.senderId,
                             chatId = message.chatId,
                             body = if(message.media != null)message.media.mediaType.name else message.message,
-                            imageUrl = curUser?.profilePicture ?: ""
+                            imageUrl = curUser?.profilePicture ?: "",
+                            isChat = "Yes"
                         )
                     )
                 )
