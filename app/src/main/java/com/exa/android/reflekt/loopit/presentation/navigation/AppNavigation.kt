@@ -43,10 +43,10 @@ fun AppNavigation(
     LaunchedEffect(otherUserId) {
         otherUserId?.let {
             navController.navigate(HomeRoute.ChatDetail.createRoute(otherUserId)) {
-                /*popUpTo(HomeRoute.ChatList.route) {
+                popUpTo(HomeRoute.ChatList.route) {
                     inclusive = false
                 } // Ensure HomeScreen is in the back stack
-                */launchSingleTop = true  // Avoid creating duplicate instances
+                launchSingleTop = true  // Avoid creating duplicate instances
             }
 //            // Clear the intent to avoid re-navigation on recomposition
 //            activity?.intent = Intent(activity, MainActivity::class.java)

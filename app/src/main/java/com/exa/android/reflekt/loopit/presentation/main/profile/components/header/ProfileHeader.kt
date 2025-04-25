@@ -58,7 +58,7 @@ fun ProfileHeader(
 
 
 @Composable
-fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit) {
+fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit, openImage :(String) -> Unit) {
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxWidth()) {
         // Banner Image
@@ -69,10 +69,11 @@ fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEdit
                 .height(150.dp)
                 .fillMaxWidth()
                 .clickable(userProfileHeader.bannerImageUrl.isNotEmpty()) {
-                    openImageIntent(
-                        context,
-                        userProfileHeader.bannerImageUrl
-                    )
+                    openImage(userProfileHeader.bannerImageUrl)
+//                    openImageIntent(
+//                        context,
+//                        userProfileHeader.bannerImageUrl
+//                    )
                 }
         )
 
@@ -88,10 +89,11 @@ fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEdit
                 .clip(CircleShape)
                 .border(2.dp, Color.White, CircleShape)
                 .clickable(userProfileHeader.profileImageUrl.isNotEmpty()) {
-                    openImageIntent(
-                        context,
-                        userProfileHeader.profileImageUrl
-                    )
+//                    openImageIntent(
+//                        context,
+//                        userProfileHeader.profileImageUrl
+//                    )
+                    openImage(userProfileHeader.profileImageUrl)
                 }
         )
         if (isCurUser) {

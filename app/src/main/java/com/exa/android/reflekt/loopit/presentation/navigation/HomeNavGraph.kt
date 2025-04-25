@@ -91,7 +91,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
         }
 
         chatInfoNavGraph(navController)
-        mapNavGraph(navController)
+//        mapNavGraph(navController)
         projectNavGraph(navController)
     }
 }

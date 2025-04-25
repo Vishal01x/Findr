@@ -63,6 +63,7 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.componen
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.isFileTooLarge
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNotificationPermissionIfNeeded
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.clearChatNotifications
 import com.exa.android.reflekt.loopit.util.model.MediaType
@@ -330,7 +331,11 @@ fun DetailChat(
                         mediaSharingViewModel
                     )
                     //showToast(context, "Retry File Upload")
+                },
+                openImage = {
+                    navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(it))
                 }
+
 
             )
         }

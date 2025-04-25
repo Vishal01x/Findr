@@ -27,6 +27,7 @@ sealed class MainRoute(val route : String){
     object Setting : MainRoute("setting")
     object Map : MainRoute("map_graph")
     object Project : MainRoute("project_graph")
+    object Photo : MainRoute("photo")
     companion object{
         const val ROOT="main_app"
     }
@@ -104,6 +105,17 @@ sealed class HomeRoute(val route: String) {
 sealed class MapInfo(val route: String) {
     object MapScreen : MapInfo("map_screen")
 }
+
+
+sealed class PhotoRoute(val route: String){
+    object ViewPhotoUsingUrl : PhotoRoute("photo/view_photo?imageUrl={imageUrl}") {
+        fun createRoute(imageUrl: String?): String {
+            return "photo/view_photo?imageUrl=${Uri.encode(imageUrl)}"
+        }
+    }
+
+}
+
 
 sealed class ProjectRoute(val route: String) {
     object ProjectList : ProjectRoute("project_list")

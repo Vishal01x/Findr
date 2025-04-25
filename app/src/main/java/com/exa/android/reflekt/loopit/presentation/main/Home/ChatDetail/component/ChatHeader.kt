@@ -100,6 +100,7 @@ fun ChatHeader(
             otherUser = user,
             status = status,
             curUser = curUser,
+            isSelected = selectedMessages.isNotEmpty(),
             isBlock,
             onBackClick = { onBackClick() },
             onProfileClick = { onProfileClick() },
@@ -272,6 +273,7 @@ fun HeaderWithProfile(
     otherUser: User?,
     status: Status? = Status(),
     curUser: String,
+    isSelected : Boolean,
     isBlock: Boolean,
     onBackClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -319,7 +321,7 @@ fun HeaderWithProfile(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .clickable {
+                .clickable(!isSelected) {
                     onProfileClick()
                 }
                 .padding(vertical = 4.dp, horizontal = 8.dp),

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
@@ -40,6 +41,7 @@ fun ProfileScreen(
     onEditHeaderClick: (ProfileData) -> Unit,
     onAddExtraCard: (String?, ExtraActivity?) -> Unit,
     openChat: (String?) -> Unit,
+    openImage: (String?) -> Unit,
     onEditEducation: (CollegeInfo?) -> Unit,
     onEditExperience: (ExperienceInfo) -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
@@ -89,6 +91,7 @@ fun ProfileScreen(
                     onEditHeaderClick = onEditHeaderClick,
                     onAddExtraCard = onAddExtraCard,
                     openChat = openChat,
+                    openImage = openImage,
                     onEditEducation = onEditEducation,
                     onEditExperience = onEditExperience,
                     padding = padding
@@ -107,6 +110,7 @@ fun ProfileScreen(
                     onEditHeaderClick = onEditHeaderClick,
                     onAddExtraCard = onAddExtraCard,
                     openChat = openChat,
+                    openImage = openImage,
                     onEditEducation = onEditEducation,
                     onEditExperience = onEditExperience,
                     padding = padding
@@ -123,6 +127,7 @@ fun ProfileContent(
     onEditHeaderClick: (ProfileData) -> Unit,
     onAddExtraCard: (String?, ExtraActivity?) -> Unit,
     openChat: (String?) -> Unit,
+    openImage : (String?) -> Unit,
     onEditEducation: (CollegeInfo?) -> Unit,
     onEditExperience: (ExperienceInfo) -> Unit,
     padding: PaddingValues
@@ -142,7 +147,8 @@ fun ProfileContent(
                 onEditClick = {
                     Log.d("ProfileScreen", "onEditclickatIcon")
                     onEditHeaderClick(profileData)
-                }
+                },
+                openImage = openImage
             )
         }
 

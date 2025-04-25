@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.collection.intLongMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.*
@@ -16,6 +17,7 @@ import java.net.URLDecoder
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.PhotoViewerScreen
 import com.exa.android.reflekt.loopit.presentation.main.StatusScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.ProfileScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.EditEducationScreen
@@ -30,6 +32,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.setti
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
@@ -41,15 +44,16 @@ import com.exa.android.reflekt.loopit.util.showToast
 
 fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController) {
 
-    navigation(startDestination = "home", route = "main_app") {
+    navigation(startDestination = "map_graph", route = "main_app") {
         homeNavGraph(navController)
 
 
         composable(MainRoute.Setting.route) {
             StatusScreen(navController)
         }
-
+        mapNavGraph(navController)
         profileNavGraph(context,navController)
+        photoViewScreen(navController)
     }
 
 
@@ -89,6 +93,9 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                             restoreState = true
                         }
                     }
+                },
+                openImage = {imageUrl ->
+                    navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(imageUrl = imageUrl))
                 },
                 onEditEducation = {
                     ProfileRoute.EditEducation.createRoute(navController,it ?: CollegeInfo())
@@ -268,6 +275,7 @@ fun showContactSupportOptions(context: Context) {
                     val url = "https://wa.me/$phoneNumber?text=${Uri.encode(message)}"
                     val intent = Intent(Intent.ACTION_VIEW).apply {
                         data = Uri.parse(url)
+                        setPackage("com.whatsapp") // This restricts the intent to WhatsApp only
                     }
                     try {
                         context.startActivity(intent)
@@ -283,6 +291,28 @@ fun showContactSupportOptions(context: Context) {
         }
         .show()
 }
+
+
+fun NavGraphBuilder.photoViewScreen(navController: NavHostController) {
+    navigation(startDestination = PhotoRoute.ViewPhotoUsingUrl.route, route = "photo") {
+        composable(
+            route = PhotoRoute.ViewPhotoUsingUrl.route,
+            arguments = listOf(navArgument("imageUrl") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) {
+            val encodedUrl = it.arguments?.getString("imageUrl")
+            val decodedUrl = encodedUrl?.let { Uri.decode(it) }
+
+            PhotoViewerScreen(imageUrl = decodedUrl ?:"") {
+                navController.popBackStack()
+            }
+        }
+    }
+}
+
 
 //object MainRoutes {
 //    const val MainApp = "main_app"

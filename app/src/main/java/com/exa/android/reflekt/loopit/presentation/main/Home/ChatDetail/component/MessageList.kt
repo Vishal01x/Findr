@@ -75,7 +75,8 @@ fun MessageList(
 
     updateMessages: (Set<Message>) -> Unit,
     onReply: (message: Message) -> Unit,
-    onRetry: (Message) -> Unit
+    onRetry: (Message) -> Unit,
+    openImage: (String) -> Unit
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -133,7 +134,9 @@ fun MessageList(
                         },
                         onRetry = {
                             onRetry(message)
-                        }
+                        },
+                        openImage = openImage
+
 
                     )
                 }
@@ -158,7 +161,8 @@ fun MessageBubble(
     onTapOrLongPress: () -> Unit, //select and unselect messages
     onReply: (Message) -> Unit, // pass the message which is to be reply
     onReplyClick: (String) -> Unit, // pass the click reply index to messageList to scroll and update the ui of replied message
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    openImage :(String) -> Unit
 ) {
     val offsetX = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
@@ -307,7 +311,8 @@ fun MessageBubble(
                                             //openImageIntent(context,message.media.mediaUrl)
                                         },
                                         onImageClick = {
-                                            openImageIntent(context, message.media.mediaUrl)
+                                            openImage(message.media.mediaUrl)
+                                            //openImageIntent(context, message.media.mediaUrl)
                                         }
                                     )
                                 }

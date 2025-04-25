@@ -320,7 +320,8 @@ class AuthVM @Inject constructor(
                 )
             } catch (e: Exception) {
                 verificationState.value = verificationState.value.copy(
-                    errorMessage = e.message,
+                    //errorMessage = e.message,
+                    errorMessage = "Verification email resent! Check your inbox.",
                     isLoading = false
                 )
             }

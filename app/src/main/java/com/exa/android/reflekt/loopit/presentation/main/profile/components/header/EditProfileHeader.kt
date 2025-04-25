@@ -329,7 +329,7 @@ private fun ProfileInputGroup(
 //            singleLine = true
 //        )
 
-        val maxChars = 100
+        val maxChars = 250
 
         Column {
             OutlinedTextField(

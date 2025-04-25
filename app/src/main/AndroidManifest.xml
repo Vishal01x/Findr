@@ -68,7 +68,7 @@
                 <data
                     android:host="chat"
                     android:pathPrefix="/"
-                    android:scheme="reflekt" />
+                    android:scheme="findr" />
             </intent-filter>
         </activity>
 

@@ -18,7 +18,10 @@ fun openImageIntent(context: Context, imageUrl: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(Uri.parse(imageUrl), "image/*")
+            //addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            // Optional: restrict to a known app (may not exist on all devices)
+//            setPackage("com.google.android.apps.photos") // Example: Google Photos
         }
 
         if (intent.resolveActivity(context.packageManager) != null) {

@@ -96,13 +96,13 @@ class FirebaseService : FirebaseMessagingService() {
         // Saved messages
         val sharedPreferences = getSharedPreferences("chat_notifications", Context.MODE_PRIVATE)
         val messagesSet = sharedPreferences.getStringSet(chatId, mutableSetOf())!!.toMutableSet()
-        messagesSet.add("$senderName: $message")
+        messagesSet.add("$message")
         sharedPreferences.edit().putStringSet(chatId, messagesSet).apply()
 
         // Messaging Style
         val messagingStyle =
             NotificationCompat.MessagingStyle(Person.Builder().setName("Chat").build())
-                .setConversationTitle("Findr")
+                .setConversationTitle(senderName)
         for (msg in messagesSet) {
             messagingStyle.addMessage(msg, System.currentTimeMillis(), senderName)
         }
@@ -170,127 +170,127 @@ class FirebaseService : FirebaseMessagingService() {
     }
 }
 
-//    private fun showNotification(
-//        senderName: String,
-//        message: String,
-//        imageUrl: String?,
-//        senderId: String,
-//        chatId : String
-//    ) {
-//        val channelId = "messages"
-//        val notificationId = chatId.hashCode() // different for each chat
+  /*  private fun showNotification(
+        senderName: String,
+        message: String,
+        imageUrl: String?,
+        senderId: String,
+        chatId : String
+    ) {
+        val channelId = "messages"
+        val notificationId = chatId.hashCode() // different for each chat
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.e("Post Notification", "Notification permission not granted!")
+                return
+            }
+        }
+
+        // ✅ Create Notification Channel (For Android 8+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Chat Messages",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for chat messages"
+            }
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(channel)
+        }
+
+        // Retrieve stored messages
+        val sharedPreferences = getSharedPreferences("chat_notifications", Context.MODE_PRIVATE)
+        val messagesSet = sharedPreferences.getStringSet(chatId, mutableSetOf())!!.toMutableSet()
+        // fetching all unread message of that chat Id of all time
+        // Add the new message
+        messagesSet.add("$senderName: $message")
+
+        // Save updated messages
+        sharedPreferences.edit().putStringSet(chatId, messagesSet).apply()
+
+        // Create MessagingStyle notification
+        val messagingStyle = NotificationCompat.MessagingStyle(Person.Builder().setName("Chat").build())
+            .setConversationTitle(senderName) // Group title
+
+        for (msg in messagesSet) {
+            messagingStyle.addMessage(msg, System.currentTimeMillis(), senderName)
+        }
+
+
+        // Create deep link URI
+        val deepLinkUri = Uri.parse("reflekt://chat/$senderId")
+
+        // Intent to open the deep link
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // ✅ Create PendingIntent
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            notificationId, // unique identifier for the pending intent
+            deepLinkIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+//        // ✅ Define "Person" for the sender
+//        val personBuild = Person.Builder().setName(senderName)
 //
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-//                != PackageManager.PERMISSION_GRANTED
-//            ) {
-//                Log.e("Post Notification", "Notification permission not granted!")
-//                return
-//            }
-//        }
-//
-//        // ✅ Create Notification Channel (For Android 8+)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                channelId,
-//                "Chat Messages",
-//                NotificationManager.IMPORTANCE_HIGH
-//            ).apply {
-//                description = "Notifications for chat messages"
-//            }
-//            val notificationManager = getSystemService(NotificationManager::class.java)
-//            notificationManager?.createNotificationChannel(channel)
-//        }
-//
-//        // Retrieve stored messages
-//        val sharedPreferences = getSharedPreferences("chat_notifications", Context.MODE_PRIVATE)
-//        val messagesSet = sharedPreferences.getStringSet(chatId, mutableSetOf())!!.toMutableSet()
-//        // fetching all unread message of that chat Id of all time
-//        // Add the new message
-//        messagesSet.add("$senderName: $message")
-//
-//        // Save updated messages
-//        sharedPreferences.edit().putStringSet(chatId, messagesSet).apply()
-//
-//        // Create MessagingStyle notification
-//        val messagingStyle = NotificationCompat.MessagingStyle(Person.Builder().setName("Chat").build())
-//            .setConversationTitle(senderName) // Group title
-//
-//        for (msg in messagesSet) {
-//            messagingStyle.addMessage(msg, System.currentTimeMillis(), senderName)
-//        }
-//
-//
-//        // Create deep link URI
-//        val deepLinkUri = Uri.parse("reflekt://chat/$senderId")
-//
-//        // Intent to open the deep link
-//        val deepLinkIntent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
-//            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-//        }
-//
-//        // ✅ Create PendingIntent
-//        val pendingIntent = PendingIntent.getActivity(
-//            this,
-//            notificationId, // unique identifier for the pending intent
-//            deepLinkIntent,
-//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//        // Optional: Use a default user icon
+//        if (imageUrl.isNullOrEmpty()) personBuild.setIcon(
+//            IconCompat.createWithResource(
+//                this,
+//                R.drawable.chat_img3
+//            )
 //        )
 //
-////        // ✅ Define "Person" for the sender
-////        val personBuild = Person.Builder().setName(senderName)
-////
-////        // Optional: Use a default user icon
-////        if (imageUrl.isNullOrEmpty()) personBuild.setIcon(
-////            IconCompat.createWithResource(
-////                this,
-////                R.drawable.chat_img3
-////            )
-////        )
-////
-////        val person = personBuild.build()
-////
-////        // ✅ Use MessagingStyle for better message categorization
-////        val messagingStyle = NotificationCompat.MessagingStyle(person)
-////            .setConversationTitle(senderName)
-////            .addMessage(message, System.currentTimeMillis(), person)
+//        val person = personBuild.build()
 //
-//        // ✅ Build Notification with the "Conversation" style
-//        val builder = NotificationCompat.Builder(this, channelId)
-//            .setSmallIcon(R.drawable.findr_logo)
-//            .setStyle(messagingStyle) //Makes it a conversation notification
-//            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-//            .setShortcutId(senderName) //Groups messages from the same sender
-//            .setPriority(NotificationCompat.PRIORITY_HIGH)
-//            .setAutoCancel(true)
-//            .setContentIntent(pendingIntent)
-//
-//        // ✅ Load Profile Image (Optional)
-//        if (!imageUrl.isNullOrEmpty()) {
-//            Glide.with(this)
-//                .asBitmap()
-//                .load(imageUrl)
-//                .transform(CircleCrop())
-//                .placeholder(R.drawable.placeholder)
-//                .error(R.drawable.placeholder)
-//                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
-//                    override fun onResourceReady(
-//                        resource: Bitmap,
-//                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
-//                    ) {
-//                        builder.setLargeIcon(resource) // Set circular image as large icon
-//                        NotificationManagerCompat.from(this@FirebaseService)
-//                            .notify(notificationId, builder.build())
-//                    }
-//
-//                    override fun onLoadCleared(placeholder: Drawable?) {}
-//                })
-//        } else {
-//            NotificationManagerCompat.from(this)
-//                .notify(notificationId, builder.build())
-//        }
-//    }
-//}
+//        // ✅ Use MessagingStyle for better message categorization
+//        val messagingStyle = NotificationCompat.MessagingStyle(person)
+//            .setConversationTitle(senderName)
+//            .addMessage(message, System.currentTimeMillis(), person)
+
+        // ✅ Build Notification with the "Conversation" style
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.findr_logo)
+            .setStyle(messagingStyle) //Makes it a conversation notification
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setShortcutId(senderName) //Groups messages from the same sender
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+
+        // ✅ Load Profile Image (Optional)
+        if (!imageUrl.isNullOrEmpty()) {
+            Glide.with(this)
+                .asBitmap()
+                .load(imageUrl)
+                .transform(CircleCrop())
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
+                    ) {
+                        builder.setLargeIcon(resource) // Set circular image as large icon
+                        NotificationManagerCompat.from(this@FirebaseService)
+                            .notify(notificationId, builder.build())
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {}
+                })
+        } else {
+            NotificationManagerCompat.from(this)
+                .notify(notificationId, builder.build())
+        }
+    }
+}*/
 
 /*
     private fun sendNotification(title: String?, message: String?) {

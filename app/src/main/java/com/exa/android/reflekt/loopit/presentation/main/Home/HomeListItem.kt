@@ -41,7 +41,7 @@ import com.exa.android.reflekt.loopit.util.model.User
 
 
 @Composable
-fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (user : User) -> Unit) {
+fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user : User) -> Unit) {
 
     Card(modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp),
@@ -69,7 +69,10 @@ fun ChatListItem(chat: ChatList, zoomImage: (Int) -> Unit, openChat: (user : Use
             ImageUsingCoil(context,chat.profilePicture,R.drawable.placeholder,Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .clickable(!chat.profilePicture.isNullOrEmpty()) { openImageIntent(context,chat.profilePicture!!) })
+                .clickable(!chat.profilePicture.isNullOrEmpty()) {
+                    openImage(chat.profilePicture)
+                /*openImageIntent(context,chat.profilePicture!!)*/
+                })
 
             Spacer(modifier = Modifier.width(16.dp))
             Column(

@@ -75,6 +75,7 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNo
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
@@ -393,7 +394,7 @@ fun ChatsSection(
                     items(chatList) { chat ->
                         ChatListItem(
                             chat = chat,
-                            zoomImage = {/* navController.navigate("zoomImage/${chat.image}")*/ },
+                            openImage = {navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(it))/* navController.navigate("zoomImage/${chat.image}")*/ },
                             openChat = {
                                 navController.navigate(
                                     HomeRoute.ChatDetail.createRoute(
