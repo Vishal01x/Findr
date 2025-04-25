@@ -240,18 +240,18 @@ class ProjectRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
-    override suspend fun enrollInProject(projectId: String, userId: String, userName: String): Result<Unit> {
+    override suspend fun enrollInProject(project: Project, userId: String, userName: String): Result<Unit> {
         return try {
             require(auth.currentUser?.uid == userId) { "User must be authenticated" }
 
             db.collection(PROJECTS_COLLECTION)
-                .document(projectId)
+                .document(project.id)
                 .get()
                 .await() // Verify project exists
 
             // Second operation - the actual enrollment
             db.collection(PROJECTS_COLLECTION)
-                .document(projectId)
+                .document(project.id)
                 .update(
                     mapOf("requestedPersons.$userId" to userName)
                 )

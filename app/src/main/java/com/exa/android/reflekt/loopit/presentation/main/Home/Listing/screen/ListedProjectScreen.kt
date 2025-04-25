@@ -108,7 +108,6 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectR
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import kotlinx.coroutines.delay
 
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterialApi::class
 )
@@ -408,7 +407,7 @@ fun ListedProjectsScreen(
                                 isEditable = state.showMyProjectsOnly,
                                 onDelete = { viewModel.onEvent(ProjectListEvent.DeleteProject(project.id)) },
                                 onEdit = { navController.navigate("edit_project/${project.id}") },
-                                onEnroll = { viewModel.enrollInProject(project.id) },
+                                onEnroll = { viewModel.enrollInProject(project) },
                                 withdraw = { viewModel.withdrawFromProject(project.id) },
                                 onAccept = { userId, userName ->
                                     viewModel.acceptJoinRequest(project.id, userId, userName)

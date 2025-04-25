@@ -222,6 +222,11 @@ fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: 
 private fun EditableChip(skill: String, isEditing: Boolean, onRemove: () -> Unit) {
     var formattedSkill = skill.lowercase().split(" ").first()
     if (formattedSkill == "c++") formattedSkill = "cpp"
+    if(formattedSkill == "python") formattedSkill = "py"
+    if(formattedSkill == "javascript") formattedSkill = "js"
+    if(formattedSkill == "node.js") formattedSkill = "nodejs"
+    if(formattedSkill=="sql") formattedSkill = "mysql"
+
 
     // Set of all supported skillicons
     val supportedSkills = setOf(

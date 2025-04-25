@@ -19,7 +19,7 @@ interface ProjectRepository {
     suspend fun deleteProject(projectId: String): Result<Unit>
     suspend fun addNewRole(role: String): Result<Unit>
     suspend fun addNewTag(tag: String): Result<Unit>
-    suspend fun enrollInProject(projectId: String, userId: String, userName: String): Result<Unit>
+    suspend fun enrollInProject(project: Project, userId: String, userName: String): Result<Unit>
     suspend fun withdrawFromProject(projectId: String, userId: String): Result<Unit>
     suspend fun acceptJoinRequest(projectId: String, userId: String, userName: String): Result<Unit>
     suspend fun rejectJoinRequest(projectId: String, userId: String): Result<Unit>
