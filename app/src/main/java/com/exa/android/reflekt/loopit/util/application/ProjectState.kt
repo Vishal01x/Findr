@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.util.application
 
+import com.exa.android.reflekt.loopit.util.model.PostType
 import com.exa.android.reflekt.loopit.util.model.Project
 
 
@@ -13,7 +14,9 @@ data class ProjectListState(
     val selectedTags: Set<String> = emptySet(),
     val availableTags: List<String> = emptyList(),
     val showMyProjectsOnly: Boolean = false,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val selectedPostType: PostType? = null,
+    val likedProjects: Set<String> = emptySet()
 )
 
 sealed class ProjectListEvent {
@@ -27,4 +30,9 @@ sealed class ProjectListEvent {
     object ToggleMyProjects : ProjectListEvent()
     object ClearFilters : ProjectListEvent()
     object ClearError : ProjectListEvent()
+    data class SelectPostType(val type: PostType?) : ProjectListEvent()
+    data class ToggleLike(val projectId: String) : ProjectListEvent()
+    data class AddComment(val projectId: String, val text: String) : ProjectListEvent()
+    data class UpdateComment(val projectId: String, val commentId: String, val newText: String) : ProjectListEvent()
+    data class DeleteComment(val projectId: String, val commentId: String) : ProjectListEvent()
 }

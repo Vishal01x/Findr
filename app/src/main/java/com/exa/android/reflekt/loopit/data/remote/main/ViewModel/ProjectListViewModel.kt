@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
+import com.exa.android.reflekt.loopit.util.application.ProjectListEvent.SelectPostType
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
+import com.exa.android.reflekt.loopit.util.model.Comment
 import com.exa.android.reflekt.loopit.util.model.Project
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -14,7 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -70,6 +73,36 @@ class ProjectListViewModel @Inject constructor(
                     loadProjects() // Refresh the list after deletion
                 }
             }
+            is SelectPostType -> {
+                _state.update { it.copy(selectedPostType = event.type) }
+                loadProjects()
+            }
+            is ProjectListEvent.AddComment -> {
+                val comment = Comment(
+                    id = UUID.randomUUID().toString(),
+                    text = event.text,
+                    senderId = auth.currentUser?.uid ?: return,
+                    timestamp = Timestamp.now()
+                )
+                viewModelScope.launch {
+                    repository.addComment(event.projectId, comment)
+                }
+            }
+            is ProjectListEvent.UpdateComment -> {
+                viewModelScope.launch {
+                    repository.updateComment(
+                        event.projectId,
+                        event.commentId,
+                        event.newText
+                    )
+                }
+            }
+            is ProjectListEvent.DeleteComment -> {
+                viewModelScope.launch {
+                    repository.deleteComment(event.projectId, event.commentId)
+                }
+            }
+            is ProjectListEvent.ToggleLike -> toggleLike(event.projectId)
             ProjectListEvent.ToggleMyProjects -> {
                 _state.update { it.copy(showMyProjectsOnly = !it.showMyProjectsOnly) }
                 loadProjects()
@@ -93,6 +126,13 @@ class ProjectListViewModel @Inject constructor(
             }
         }
     }
+    fun toggleLike(projectId: String) {
+        auth.currentUser?.uid?.let { userId ->
+            viewModelScope.launch {
+                repository.toggleLike(projectId, userId)
+            }
+        }
+    }
 
     fun loadProjects(forceRefresh: Boolean = false) {
         _state.update { it.copy(isLoading = true, error = null) }
@@ -104,7 +144,8 @@ class ProjectListViewModel @Inject constructor(
                 rolesFilter = _state.value.selectedRoles.toList(),
                 tagsFilter = _state.value.selectedTags.toList(),
                 showMyProjectsOnly = _state.value.showMyProjectsOnly,
-                userId = auth.currentUser?.uid
+                userId = auth.currentUser?.uid,
+                postType = _state.value.selectedPostType?.displayName
             ).collect { result ->
                 result.fold(
                     onSuccess = { projects ->
@@ -208,6 +249,22 @@ class ProjectListViewModel @Inject constructor(
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
             }
+        }
+    }
+    fun addComment(projectId: String, text: String) {
+        viewModelScope.launch {
+            repository.addComment(projectId, Comment(
+                id = UUID.randomUUID().toString(),
+                text = text,
+                senderId = auth.currentUser?.uid ?: return@launch,
+                timestamp = Timestamp.now()
+            ))
+        }
+    }
+
+    fun deleteComment(projectId: String, commentId: String) {
+        viewModelScope.launch {
+            repository.deleteComment(projectId, commentId)
         }
     }
 }

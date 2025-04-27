@@ -106,6 +106,8 @@ dependencies {
 
     // system ui
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation ("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
     // Stream Video SDK
     implementation(libs.stream.video.ui.compose)

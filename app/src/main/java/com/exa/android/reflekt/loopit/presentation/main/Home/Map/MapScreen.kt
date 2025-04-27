@@ -84,6 +84,7 @@ import android.content.Intent
 import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 //import android.util.Log
 import androidx.compose.foundation.Image
@@ -111,6 +112,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.google.accompanist.permissions.shouldShowRationale
+import timber.log.Timber
 
 
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
@@ -125,8 +127,9 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     // Location and UI states
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
     // var searchLocation by remember { mutableStateOf<LatLng?>(null) }
-    var radius by rememberSaveable { mutableStateOf(5f) }
-    var selectedRoles by rememberSaveable { mutableStateOf(setOf<String>()) }
+    val radius by viewModel.radius
+    val selectedRoles by viewModel.selectedRoles
+    val minRating by viewModel.minRating
     var showBottomSheet by remember { mutableStateOf(false) }
     val currUserProfile by viewModel.userProfile.collectAsState()
     var selectedUser by rememberSaveable (stateSaver = profileUser.Saver) {
@@ -186,8 +189,42 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
         }
     }
 
+    LaunchedEffect(
+        locationPermissionState.status,
+        currentLocation,
+        selectedRoles,
+        radius,
+        selectedLocation,
+        minRating
+    ) {
+        if (locationPermissionState.status.isGranted && currentLocation != null) {
+            val rolesAsString = selectedRoles.joinToString(",")
+            val location = selectedLocation ?: currentLocation!!
+            val zoomLevel = getZoomLevel(radius)
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngZoom(location, zoomLevel),
+                durationMs = 500
+            )
+            Timber.tag("GeoFire").d("Fetching user locations for role: $rolesAsString $radius $location")
+            if(rolesAsString.isNotEmpty()) {
+                viewModel.fetchUserLocations(
+                    role = rolesAsString,
+                    radius = radius.toDouble(),
+                    location = location,
+                    minRating = minRating
+                )
+            }else{
+                viewModel.fetchAllNearbyUsers(
+                    radius = radius.toDouble(),
+                    location = selectedLocation ?: currentLocation!!
+                )
+            }
+        }
+    }
+
     // Log.d("GeoFire", "MapScreen Composable, ${locationPermissionState.status}, ${currentLocation}, $selectedRole $radius $selectedLocation $currUserProfile $userLocations}")
     // Initial data loading
+    /*
     LaunchedEffect(locationPermissionState.status, currentLocation, selectedRoles) {
         if (locationPermissionState.status.isGranted && currentLocation != null) {
 
@@ -206,6 +243,8 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
             )
         }
     }
+
+     */
 
     LaunchedEffect(Unit){
         viewModel.fetchAllRoles()
@@ -243,7 +282,14 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     Scaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showBottomSheet = true },
+                onClick = {
+                    if (locationPermissionState.status.isGranted) {
+                        navController.navigate("searchScreen")
+                    } else {
+                        // Show permission rationale
+                        locationPermissionState.launchPermissionRequest()
+                    }
+                },
                 icon = { Icon(Icons.Default.Search, "Search") },
                 text = { Text("Search", style = MaterialTheme.typography.titleMedium) }
             )
@@ -260,15 +306,21 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(isMyLocationEnabled = locationPermissionState.status.isGranted) // Enable only if granted
             ) {
-                userLocations.forEach { user ->
-                    if (user.uid != userId) {  // Skip the current user
-                        CustomMapMarker(
-                            //imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
-                            imageUrl = user.imageUrl, //.ifBlank { R.drawable.placeholder },
-                            fullName = user.name, location = LatLng(user.lat, user.lng), onClick = {
-                                selectedUser = user
-                                true
-                            })
+                if (userLocations.isEmpty()) {
+                    //
+                } else{
+                    userLocations.forEach { user ->
+                        if (user.uid != userId) {  // Skip the current user
+                            CustomMapMarker(
+                                //imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
+                                imageUrl = user.imageUrl, //.ifBlank { R.drawable.placeholder },
+                                fullName = user.name,
+                                location = LatLng(user.lat, user.lng),
+                                onClick = {
+                                    selectedUser = user
+                                    true
+                                })
+                        }
                     }
                 }
 
@@ -313,6 +365,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                 )
             }
 
+            /*
             if (showBottomSheet) {
                 ModalBottomSheet(
                     onDismissRequest = {
@@ -364,7 +417,9 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                         Text("Search Radius: ${radius.toInt()} km")
                         Slider(
                             value = radius,
-                            onValueChange = { radius = it },
+                            onValueChange = {
+                                // radius = it
+                            },
                             valueRange = 1f..50f,
                             steps = 9,
                             modifier = Modifier.fillMaxWidth()
@@ -386,7 +441,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                                     val role = selectedRoles.elementAt(it)
                                     SuggestionChip(
                                         onClick = {
-                                            selectedRoles = selectedRoles - role
+                                            //selectedRoles = selectedRoles - role
                                         },
                                         label = {
                                             Text(
@@ -457,11 +512,14 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                                 FilterChip(
                                     selected = selectedRoles.contains(role),
                                     onClick = {
+                                        /*
                                         selectedRoles = if (selectedRoles.contains(role)) {
                                             selectedRoles - role
                                         } else {
                                             selectedRoles + role
                                         }
+
+                                         */
                                     },
                                     label = {
                                         Text(
@@ -519,6 +577,8 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                     }
                 }
             }
+
+             */
         }
     }
 
@@ -564,6 +624,20 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
         )
     }
 
+}
+
+private fun getZoomLevel(radiusInKm: Float): Float {
+    return when {
+        radiusInKm <= 1 -> 15.5f
+        radiusInKm <= 5 -> 13.5f
+        radiusInKm <= 10 -> 12.5f
+        radiusInKm <= 15 -> 12f
+        radiusInKm <= 20 -> 11.5f
+        radiusInKm <= 30 -> 11f
+        radiusInKm <= 40 -> 10.5f
+        radiusInKm <= 50 -> 10f
+        else -> 9.5f
+    }
 }
 
 @Composable
@@ -624,7 +698,7 @@ fun SearchBar(
         },
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(6.dp)
     )
 }
 

@@ -18,8 +18,7 @@ import java.net.URLDecoder
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.PhotoViewerScreen
 import com.exa.android.reflekt.loopit.presentation.main.StatusScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.ProfileScreen
@@ -55,7 +54,7 @@ fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostContr
         composable(MainRoute.Setting.route) {
             StatusScreen(navController)
         }
-        mapNavGraph(navController)
+        mapNavGraph(navController, locationViewModel)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
     }
@@ -76,12 +75,6 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
             })
         ) {
             val userId = it.arguments?.getString("userId")
-
-//            val parentEntry = remember(it) {
-//                navController.getBackStackEntry("profile")
-//            }
-//            val editProfileViewModel = hiltViewModel<EditProfileViewModel>(parentEntry)
-//            val userViewModel = hiltViewModel<UserViewModel>(parentEntry)
 
             ProfileScreen(
                 userId,

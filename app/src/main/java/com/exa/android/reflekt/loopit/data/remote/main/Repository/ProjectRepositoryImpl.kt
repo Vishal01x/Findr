@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.content.Context
 import android.util.Log
+import com.exa.android.reflekt.loopit.util.model.Comment
 import com.exa.android.reflekt.loopit.util.model.Project
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -28,7 +29,7 @@ class ProjectRepositoryImpl @Inject constructor(
 ) : ProjectRepository {
 
     private companion object {
-        const val PROJECTS_COLLECTION = "projects"
+        const val PROJECTS_COLLECTION = "projectss"
         const val METADATA_DOCUMENT = "metadata"
         const val FILTERS_DOCUMENT = "projectFilters"
         const val ROLES_FIELD = "availableRoles"
@@ -37,7 +38,7 @@ class ProjectRepositoryImpl @Inject constructor(
 
     override suspend fun createProject(project: Project): Result<Unit> {
         return try {
-            //Log.d("Firestore", "Creating project: $project")
+            Log.d("Firestore", "Creating project: $project")
             require(auth.currentUser != null) { "User must be authenticated" }
             require(project.title.isNotBlank()) { "Title cannot be empty" }
 
@@ -65,9 +66,13 @@ class ProjectRepositoryImpl @Inject constructor(
             "createdByName" to createdByName,
             "enrolledPersons" to enrolledPersons,
             "requestedPersons" to requestedPersons,
+            "type" to type,
+            "imageUrls" to imageUrls,
+            "links" to links,
             "title_lower" to title.lowercase()
         )
     }
+
 
 
 
@@ -76,7 +81,8 @@ class ProjectRepositoryImpl @Inject constructor(
         rolesFilter: List<String>,
         tagsFilter: List<String>,
         showMyProjectsOnly: Boolean,
-        userId: String?
+        userId: String?,
+        typeFilter: String?
     ): Flow<Result<List<Project>>> = callbackFlow {
         try {
             var query: Query = db.collection(PROJECTS_COLLECTION)
@@ -87,6 +93,9 @@ class ProjectRepositoryImpl @Inject constructor(
                 query = query
                     .whereGreaterThanOrEqualTo("title_lower", queryText)
                     .whereLessThanOrEqualTo("title_lower", "$queryText\uf8ff")
+            }
+            if (!typeFilter.isNullOrEmpty()) {
+                query = query.whereEqualTo("type", typeFilter)
             }
 
             if (rolesFilter.isNotEmpty()) {
@@ -352,5 +361,71 @@ class ProjectRepositoryImpl @Inject constructor(
 
         awaitClose { listener.remove() }
     }
+    override suspend fun addComment(projectId: String, comment: Comment): Result<Unit> {
+        return try {
+            db.collection(PROJECTS_COLLECTION)
+                .document(projectId)
+                .collection("comments")
+                .document(comment.id)
+                .set(comment)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    override suspend fun toggleLike(projectId: String, userId: String): Result<Unit> {
+        return try {
+            val projectRef = db.collection(PROJECTS_COLLECTION).document(projectId)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(projectRef)
+                val currentLikes = snapshot.get("likes") as? List<String> ?: emptyList()
+                val newLikes = if (currentLikes.contains(userId)) {
+                    currentLikes - userId
+                } else {
+                    currentLikes + userId
+                }
+                transaction.update(projectRef, "likes", newLikes)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateComment(projectId: String, commentId: String, newText: String): Result<Unit> {
+        return try {
+            val projectRef = db.collection(PROJECTS_COLLECTION).document(projectId)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(projectRef)
+                val project = snapshot.toObject(Project::class.java)
+                    ?: throw Exception("Project not found")
+                val updatedComments = project.comments.map { comment ->
+                    if (comment.id == commentId) comment.copy(text = newText) else comment
+                }
+                transaction.update(projectRef, "comments", updatedComments)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteComment(projectId: String, commentId: String): Result<Unit> {
+        return try {
+            val projectRef = db.collection(PROJECTS_COLLECTION).document(projectId)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(projectRef)
+                val project = snapshot.toObject(Project::class.java)
+                    ?: throw Exception("Project not found")
+                val updatedComments = project.comments.filter { it.id != commentId }
+                transaction.update(projectRef, "comments", updatedComments)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 
 }

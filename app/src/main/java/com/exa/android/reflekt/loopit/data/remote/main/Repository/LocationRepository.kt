@@ -82,8 +82,8 @@ class LocationRepository @Inject constructor(
         LocationForegroundService.stopService(context)
     }
 
-    fun fetchUserLocations(role: String, radius: Double, location: LatLng) {
-        // Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
+    fun fetchUserLocations(role: String, radius: Double, location: LatLng, minRating: Float) {
+        Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
         // clearUserLocations()
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {
@@ -92,22 +92,27 @@ class LocationRepository @Inject constructor(
                         // Check if the fetched role matches the provided role
                         // Timber.tag("LocationSearch").d("Match users: $user")
                         if (user != null && user.uid != currentUserId) {
-                            val userRoles = user.role.split(",").map { it.trim().lowercase() }
-                            val targetRoles = role.split(",").map { it.trim().lowercase() }
-                            // Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
+                            val userRoles = user.role.split(",").map { it.trim().lowercase() } .filter { it.isNotEmpty() }
+                            val targetRoles = role.split(",").map { it.trim().lowercase() } .filter { it.isNotEmpty() }
+                            Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
                             // Check if any role from userRoles matches any role from targetRoles
-                            val isMatching = userRoles.any { userRole ->
-                                targetRoles.any { targetRole ->
-                                    userRole == targetRole || userRole.contains(targetRole) || targetRole.contains(userRole)
+                            if (userRoles.isNotEmpty() && targetRoles.isNotEmpty()) {
+                                val isMatching = userRoles.any { userRole ->
+                                    targetRoles.any { targetRole ->
+                                        userRole == targetRole || userRole.contains(targetRole) || targetRole.contains(userRole)
+                                    }
                                 }
-                            }
+                                val meetsRating = user.rating >= minRating
 
-                            if (isMatching) {
-                                val updatedUser =
-                                    user.copy(lat = location.latitude, lng = location.longitude)
+                                if (isMatching && meetsRating) {
+                                    val updatedUser =
+                                        user.copy(lat = location.latitude, lng = location.longitude)
 
-                                // Timber.tag("GeoFire").d("User location fetched: $updatedUser")
-                                _userLocations.value = _userLocations.value + updatedUser
+                                    // Timber.tag("GeoFire").d("User location fetched: $updatedUser")
+                                    _userLocations.value = _userLocations.value + updatedUser
+                                }
+                            } else {
+                                Timber.tag("LocationSearch").d("Skipping user with no roles.")
                             }
                         }
                     },
@@ -145,7 +150,7 @@ class LocationRepository @Inject constructor(
     }
 
     fun fetchAllNearbyUsers(radius: Double, location: LatLng) {
-        // Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
+        Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
 
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {

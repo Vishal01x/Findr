@@ -1,5 +1,7 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import com.exa.android.reflekt.loopit.util.model.Comment
+import com.exa.android.reflekt.loopit.util.model.PostType
 import com.exa.android.reflekt.loopit.util.model.Project
 import kotlinx.coroutines.flow.Flow
 
@@ -10,7 +12,8 @@ interface ProjectRepository {
         rolesFilter: List<String> = emptyList(),
         tagsFilter: List<String> = emptyList(),
         showMyProjectsOnly: Boolean = false,
-        userId: String? = null
+        userId: String? = null,
+        postType: String?
     ): Flow<Result<List<Project>>>
     suspend fun getProjectById(projectId: String): Result<Project>
     suspend fun getAvailableRoles(): Result<List<String>>
@@ -24,4 +27,8 @@ interface ProjectRepository {
     suspend fun acceptJoinRequest(projectId: String, userId: String, userName: String): Result<Unit>
     suspend fun rejectJoinRequest(projectId: String, userId: String): Result<Unit>
     fun getProjectUpdates(projectId: String): Flow<Result<Project>>
+    suspend fun addComment(projectId: String, comment: Comment): Result<Unit>
+    suspend fun updateComment(projectId: String, commentId: String, newText: String): Result<Unit>
+    suspend fun deleteComment(projectId: String, commentId: String): Result<Unit>
+    suspend fun toggleLike(projectId: String, userId: String): Result<Unit>
 }
