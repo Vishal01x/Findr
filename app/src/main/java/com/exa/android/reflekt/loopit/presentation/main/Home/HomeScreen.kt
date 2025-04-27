@@ -388,7 +388,7 @@ fun ChatsSection(
             }else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(chatList) { chat ->

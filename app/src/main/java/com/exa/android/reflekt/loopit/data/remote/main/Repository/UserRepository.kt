@@ -1,7 +1,6 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.exa.android.reflekt.loopit.util.Response
@@ -24,23 +23,34 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
     private val rdb: FirebaseDatabase, // Realtime Database
-    @ApplicationContext private val context : Context
+    @ApplicationContext private val context: Context
 ) {
 
     val currentUser = auth.currentUser?.uid
@@ -299,6 +309,16 @@ class UserRepository @Inject constructor(
         }
     }
 
+    suspend fun getUserFcm(userId: String): String? {
+        return try {
+            val snapshot = userCollection.document(userId).get().await()
+            snapshot.getString("fcmToken")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
     suspend fun updateUnreadMessages(curUser: String, otherUser: String) {
         val chatID = generateChatId(curUser, otherUser)
         val chatDocRef = chatCollection.document(chatID)
@@ -308,6 +328,19 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             // Log.e("Firebase Operation", "Failed to reset unread messages", e)
         }
+    }
+
+    suspend fun updateProfileView(viewedUserId: String) {
+        val viewerDoc = userCollection
+            .document(viewedUserId) // The user being viewed
+            .collection("viewers")  // The subcollection "viewers"
+            .document(currentUser!!) // The viewer's document inside "viewers"
+
+        val viewData = mapOf(
+            "viewedAt" to FieldValue.serverTimestamp() // Record the time of viewing
+        )
+
+        viewerDoc.set(viewData, SetOptions.merge()).await()
     }
 
 
@@ -332,7 +365,7 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun updateUserNameAndImage(name: String, imageUrl: String): Response<Unit> {
-        Log.d("FireStore Service", "Signup done2 - ${name}")
+        //Log.d("FireStore Service", "Signup done2 - ${name}")
         return try {
             val updates = mapOf(
                 "name" to name,
@@ -346,7 +379,7 @@ class UserRepository @Inject constructor(
 
             Response.Success(Unit)
         } catch (e: Exception) {
-            Log.e("UserRepository", "Failed to update user", e)
+            //Log.e("UserRepository", "Failed to update user", e)
             // You can log the error to Crashlytics or a logging system
             // Log.e("Firestore Service", "Failed to update user profile", e)
             Response.Error(e.localizedMessage ?: "Unknown error occurred")
@@ -473,7 +506,7 @@ class UserRepository @Inject constructor(
             emit(Response.Error("User not logged in"))
             return@flow
         }
-        if(!isNetworkAvailable(context)){
+        if (!isNetworkAvailable(context)) {
             emit(Response.Error("Failed Education update. Check Internet Connection"))
             return@flow
         }
@@ -510,7 +543,7 @@ class UserRepository @Inject constructor(
             emit(Response.Error("User not logged in"))
             return@flow
         }
-        if(!isNetworkAvailable(context)){
+        if (!isNetworkAvailable(context)) {
             emit(Response.Error("Failed Experience update. Check Internet Connection"))
             return@flow
         }
@@ -553,7 +586,8 @@ class UserRepository @Inject constructor(
             }
 
             val profileWrapper = snapshot?.toObject(ProfileDataWrapper::class.java)
-            val profileHeader = profileWrapper?.profileData ?: ProfileData() // Return empty ProfileData if missing
+            val profileHeader =
+                profileWrapper?.profileData ?: ProfileData() // Return empty ProfileData if missing
 
             trySend(Response.Success(profileHeader))
         }
@@ -591,4 +625,218 @@ class UserRepository @Inject constructor(
     )
 
 
+    suspend fun rateUser(
+        rating: Int,   // The rating value (e.g., 1-5)
+        targetUserId: String,   // The user who is giving the rating
+        raterUserId: String = currentUser!! // The user you are rating
+    ): Result<Unit> {
+        return try {
+            withContext(Dispatchers.IO) {
+                val ratingRef = userCollection
+                    .document(targetUserId)
+                    .collection("rating")
+                    .document(raterUserId)
+
+                // Set or update the rating
+                ratingRef.set(
+                    mapOf(
+                        "userId" to raterUserId,
+                        "rating" to rating
+                    )
+                ).await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+    //Adds verifierId to targetUserId's verification collection
+    suspend fun verifyUser(
+        targetUserId: String,
+        verifierUserId: String = currentUser!!,
+    ): Result<Unit> {
+        return try {
+            withContext(Dispatchers.IO) {
+                val verificationRef =
+                    userCollection
+                        .document(targetUserId)
+                        .collection("verification")
+                        .document(verifierUserId)
+
+                // Just set an empty map or timestamp or anything, we only care about ID existing
+                verificationRef.set(
+                    mapOf(
+                        "verifierId" to verifierUserId,
+                        "timestamp" to Timestamp.now() // optional
+                    )
+                ).await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun getProfileView(userId: String?, onResult: (Int) -> Unit) {
+        // Attach the listener for real-time updates
+        userCollection
+            .document(userId ?: currentUser!!)
+            .collection("viewers")
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    // Handle any errors
+                    e.printStackTrace()
+                    onResult(0)  // Return 0 if there's an error
+                    return@addSnapshotListener
+                }
+
+                // Return the count of documents in the collection (each document is a view)
+                onResult(snapshot?.size() ?: 0)
+            }
+    }
+
+
+
+    suspend fun getRatingByCurUser(userId: String, curUser: String? = currentUser): Result<Float> {
+        return try {
+            // Fetch the rating data for the user
+            val ratingSnapshot = userCollection
+                .document(userId)
+                .collection("rating")
+                .document(curUser!!) // Document ID will be the curUser's ID
+                .get()
+                .await()
+
+            // If the document exists, retrieve the rating
+            val rating = ratingSnapshot.getDouble("rating")?.toFloat()
+
+            // If no rating is found or document doesn't exist, return 0 (or handle as per your requirement)
+            if (rating != null) {
+                Result.success(rating)
+            } else {
+                Result.success(0f)  // No rating found, returning 0 as default
+            }
+        } catch (e: Exception) {
+            // Handle any errors, such as network issues or Firestore errors
+            Result.failure(e)
+        }
+    }
+
+
+    suspend fun getAverageRating(targetUserId: String?): Response<Pair<Int, Float>> {
+        return try {
+            // Fetch ratings snapshot from Firestore
+            val ratingsSnapshot = withContext(Dispatchers.IO) {
+                userCollection
+                    .document(targetUserId ?: currentUser!!)
+                    .collection("rating")
+                    .get()
+                    .await()
+            }
+
+            // Extract ratings from the snapshot
+            val ratings = ratingsSnapshot.documents.mapNotNull { doc ->
+                doc.getLong("rating")?.toInt()
+            }
+
+            if (ratings.isEmpty()) {
+                // If there are no ratings, return a Success response with empty list and 0 average rating
+                Response.Success(Pair(0, 0f))
+            } else {
+                // Calculate the total and average rating
+                val totalRating = ratings.sum()
+                val averageRating = totalRating.toFloat() / ratings.size
+                Response.Success(Pair(ratings.size, averageRating))
+            }
+        } catch (e: Exception) {
+            // Handle errors and return them in a Response.Error
+            Response.Error(e.localizedMessage)
+        }
+    }
+
+
+    suspend fun getAllVerifiersDetail(
+        targetUserId: String?
+    ): Flow<Response<List<ProfileHeaderData>>> = callbackFlow {
+        val userId = targetUserId ?: currentUser
+
+        if (userId == null) {
+            trySend(Response.Error("No valid user ID provided"))
+            close() // Important: close() the flow if invalid
+            return@callbackFlow
+        }
+
+        val listenerRegistration = userCollection
+            .document(userId)
+            .collection("verification")
+            .addSnapshotListener { snapshot, firestoreError ->
+                if (firestoreError != null) {
+                    trySend(Response.Error("Firestore error: ${firestoreError.message}"))
+                    return@addSnapshotListener
+                }
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val verifierDocs = snapshot?.documents ?: emptyList()
+
+                        if (verifierDocs.isEmpty()) {
+                            trySend(Response.Success(emptyList()))
+                            return@launch
+                        }
+
+                        val verifierMap = verifierDocs.associate { doc ->
+                            doc.id to (doc.getTimestamp("timestamp") ?: Timestamp.now())
+                        }
+
+                        val batches = verifierMap.keys.chunked(10)
+                        val results = batches.map { batch ->
+                            async {
+                                try {
+                                    userCollection
+                                        .whereIn(FieldPath.documentId(), batch)
+                                        .get()
+                                        .await()
+                                        .documents
+                                        .mapNotNull { userDoc ->
+                                            try {
+                                                val profileHeader =
+                                                    userDoc.get("profileData.profileHeader") as? Map<*, *>
+                                                ProfileHeaderData(
+                                                    uid = userDoc.id,
+                                                    name = profileHeader?.get("name") as? String
+                                                        ?: "",
+                                                    profileImageUrl = profileHeader?.get("profileImageUrl") as? String
+                                                        ?: "",
+                                                    headline = profileHeader?.get("headline") as? String
+                                                        ?: "",
+                                                    createdAt = verifierMap[userDoc.id]
+                                                )
+                                            } catch (e: Exception) {
+                                                null
+                                            }
+                                        }
+                                } catch (e: Exception) {
+                                    emptyList<ProfileHeaderData>()
+                                }
+                            }
+                        }
+
+                        val allProfiles = results.awaitAll()
+                            .flatten()
+                            .sortedByDescending { it.createdAt?.seconds ?: 0 }
+
+                        trySend(Response.Success(allProfiles))
+                    } catch (e: Exception) {
+                        trySend(Response.Error("Processing error: ${e.message}"))
+                    }
+                }
+            }
+
+        // IMPORTANT: Always in callbackFlow you MUST have awaitClose {}
+        awaitClose {
+            listenerRegistration.remove()
+        }
+    }
 }

@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.collection.intLongMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.composable
 import com.google.gson.Gson
@@ -17,6 +18,8 @@ import java.net.URLDecoder
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.PhotoViewerScreen
 import com.exa.android.reflekt.loopit.presentation.main.StatusScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.ProfileScreen
@@ -29,6 +32,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.heade
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.HelpScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.SettingsScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsPrivacyScreen
+import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.VerifierScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
@@ -73,6 +77,12 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
         ) {
             val userId = it.arguments?.getString("userId")
 
+//            val parentEntry = remember(it) {
+//                navController.getBackStackEntry("profile")
+//            }
+//            val editProfileViewModel = hiltViewModel<EditProfileViewModel>(parentEntry)
+//            val userViewModel = hiltViewModel<UserViewModel>(parentEntry)
+
             ProfileScreen(
                 userId,
                 navController,
@@ -103,8 +113,11 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
 
                 onEditExperience = {
                     ProfileRoute.EditExperience.createRoute(navController,it ?: ExperienceInfo())
-                }
+                },
 
+                onViewVerifier = {userId->
+                    navController.navigate(ProfileRoute.VerifierScreen.createRoute(userId))
+                }
             )
         }
 
@@ -199,6 +212,27 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
 
             )
         }
+
+        composable(
+            route = ProfileRoute.VerifierScreen.route,
+            arguments = listOf(navArgument("userId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ){backStackEntry->
+            val userId = backStackEntry.arguments?.getString("userId")
+            VerifierScreen(
+                userId,
+                onProfileClick = {userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
 
         composable(ProfileRoute.ProfileHelp.route) {
             HelpScreen(

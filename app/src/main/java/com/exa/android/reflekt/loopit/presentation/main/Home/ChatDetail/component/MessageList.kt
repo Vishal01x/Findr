@@ -1,10 +1,16 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component
 
+import android.graphics.drawable.Icon
+import android.os.Build
+import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +32,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +48,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -62,7 +73,9 @@ import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.getVibrator
 import com.exa.android.reflekt.loopit.util.model.MediaType
 import com.exa.android.reflekt.loopit.util.model.Message
+import com.exa.android.reflekt.loopit.util.model.ReplyType
 import com.exa.android.reflekt.loopit.util.model.UploadStatus
+import com.exa.android.reflekt.loopit.util.model.User
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -70,9 +83,9 @@ import kotlinx.coroutines.launch
 fun MessageList(
     messages: List<Message>,
     curUser: String,
+    members: List<User?>,
     unreadMessages: Int,
     selectedMessages: Set<Message>,
-
     updateMessages: (Set<Message>) -> Unit,
     onReply: (message: Message) -> Unit,
     onRetry: (Message) -> Unit,
@@ -106,6 +119,7 @@ fun MessageList(
                     MessageBubble(
                         message = message,
                         curUserId = curUser,
+                        members = members,
                         isSelected = selectedMessages.contains(message),
                         selectedMessagesSize = selectedMessages.size,
                         isHighlighted = highlightedIndex == index,
@@ -127,7 +141,7 @@ fun MessageList(
                                 scrollToMessage(id, renderedIndex, listState)
                                 renderedIndex[id]?.let { index ->
                                     highlightedIndex = index
-                                    delay(500)
+                                    delay(1000)
                                     highlightedIndex = null
                                 }
                             }
@@ -150,10 +164,13 @@ fun MessageList(
 
 }
 
+
+
 @Composable
 fun MessageBubble(
     message: Message,
     curUserId: String,
+    members : List<User?>,
     isSelected: Boolean, // it is used to extract that particular messages is selected or not
     selectedMessagesSize: Int, // it is passed to use a key for pointerInput so it changes whenever
     // selection changes and causes the detectGesture to call
@@ -175,7 +192,7 @@ fun MessageBubble(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isSelected) Color(
+                if (isSelected || isHighlighted) Color(
                     0xFF007AFF
                 ).copy(alpha = .2f) else Color.Transparent
                 //if(isSelected)MaterialTheme.colorScheme.primary.copy(.2f) else Color.Transparent
@@ -187,12 +204,21 @@ fun MessageBubble(
                 )
             }
     ) {
+        if (offsetX.value > 50) { // show reply icon on right swipe
+            SwipeHint(icon = Icons.Default.Reply, alignment = Alignment.CenterStart)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .pointerInput(selectedMessagesSize) { // selectedMessagesSize is used for Key as it change it enables to call
+                    detectTapGestures(
+                        onTap = { if (selectedMessagesSize > 0) onTapOrLongPress() },
+                        onLongPress = { onTapOrLongPress() }
+                    )
+                }
                 //.background(if (isSelected) Color.Yellow else Color.Transparent)
                 .pointerInput(selectedMessagesSize <= 0) { // active whenever message is unselected
-                    /*if (message.message != "deleted") {
+                    if (message.message != "deleted") {
                         detectHorizontalDragGestures(// used for applying rightSwipe gesture for replyMessage functionality
                             onDragEnd = {
                                 coroutineScope.launch {
@@ -203,30 +229,32 @@ fun MessageBubble(
                                 }
                             },
                             onHorizontalDrag = { change, dragAmount ->
-                                coroutineScope.launch {
-                                    offsetX.snapTo(offsetX.value + dragAmount)
-                                }
-                                if (offsetX.value > 100) {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        vibrator?.vibrate(
-                                            VibrationEffect.createOneShot(
-                                                50,
-                                                VibrationEffect.DEFAULT_AMPLITUDE
-                                            )
-                                        )
-                                        onReply(message) // send reply message to messageList using Lambda
-                                        coroutineScope.launch {
-                                            offsetX.animateTo(
-                                                0f,
-                                                animationSpec = tween(durationMillis = 600)
-                                            )
-                                        }
+                                if (dragAmount > 0) {
+                                    coroutineScope.launch {
+                                        offsetX.snapTo(offsetX.value + dragAmount)
                                     }
-                                    change.consume()
+                                    if (offsetX.value > 100) {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            vibrator?.vibrate(
+                                                VibrationEffect.createOneShot(
+                                                    50,
+                                                    VibrationEffect.DEFAULT_AMPLITUDE
+                                                )
+                                            )
+                                            onReply(message) // send reply message to messageList using Lambda
+                                            coroutineScope.launch {
+                                                offsetX.animateTo(
+                                                    0f,
+                                                    animationSpec = tween(durationMillis = 600)
+                                                )
+                                            }
+                                        }
+                                        change.consume()
+                                    }
                                 }
                             }
                         )
-                    }*/
+                    }
                 }
                 .offset { IntOffset(offsetX.value.toInt(), 0) } // applying animation
                 .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -240,11 +268,17 @@ fun MessageBubble(
                 Color(0xFF007AFF).copy(alpha = .6f)
             // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
             else Color(0xFFf6f6f6)
+
+            val reverseBubbleColor = if (curUserId != message.senderId)
+                Color(0xFF007AFF).copy(alpha = .2f)
+            // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
+            else Color(0xFF007AFF).copy(alpha = .4f)
+
             Column(
                 modifier = Modifier
                     .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp) // occupy 70% of screen only
                     .background(
-                        color = if (isHighlighted) bubbleColor.copy(alpha = 0.6f) else bubbleColor,
+                        color = /*if (isHighlighted) reverseBubbleColor else */ bubbleColor,
                         shape = RoundedCornerShape(12.dp)
                     )
                     .padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
@@ -259,12 +293,13 @@ fun MessageBubble(
                         }
                     }) {
                     message.replyTo?.let {
-//                        if (message.message != "deleted")
-//                            ReplyUi(
-//                                curUser = curUserId,
-//                                replyTo = it,
-//                                members = members
-//                            ) // show replied message inside box
+                        if (message.message != "deleted")
+                            ReplyUi(
+                                curUser = curUserId,
+                                replyTo = it,
+                                members = members,
+                                replyType = if (curUserId == message.senderId)ReplyType.YOU else ReplyType.OTHER
+                            ) // show replied message inside box
                     }
                 }
 
@@ -337,8 +372,8 @@ fun MessageBubble(
 
                                 }
 
-                                MediaType.LOCATION -> TODO()
-                                MediaType.CONTACT -> TODO()
+                                MediaType.LOCATION -> {}
+                                MediaType.CONTACT -> {}
                                 else -> {
                                     Text("Nothing")
                                 }
@@ -365,18 +400,18 @@ fun MessageBubble(
                         Spacer(modifier = Modifier.width(2.dp))
                         Log.d("Detail Chat", message.status)
 
-                        if (message.status == "delivered") {
+                        if (message.status == "sent") {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Sent",
-                                tint = Color.White,  // Gray color for sent
+                                tint = MaterialTheme.colorScheme.tertiary.copy(.9f),  // Gray color for sent
                                 modifier = Modifier.size(14.dp)
                             )
-                        } else if (message.status == "sent") {
+                        } else if (message.status == "delivered") {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_seen),
                                 contentDescription = "Delivered",
-                                tint = Color.White,  // Gray color for delivered
+                                tint = MaterialTheme.colorScheme.tertiary.copy(.9f),  // Gray color for delivered
                                 modifier = Modifier.size(14.dp)
                             )
                         } else {
@@ -396,7 +431,7 @@ fun MessageBubble(
 }
 
 @Composable
-fun SwipeHint(icon: Int, alignment: Alignment) {
+fun SwipeHint(icon: ImageVector, alignment: Alignment) {
     Box(
         modifier = Modifier
             .size(32.dp)
@@ -407,7 +442,7 @@ fun SwipeHint(icon: Int, alignment: Alignment) {
         contentAlignment = alignment
     ) {
         Icon(
-            painter = painterResource(id = icon),
+            imageVector = icon,
             contentDescription = "Reply Icon",
             tint = Color.White,
             modifier = Modifier.size(24.dp)

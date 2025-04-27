@@ -27,9 +27,12 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -41,24 +44,43 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
+import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 
 @Composable
 fun ProfileHeader(
     userId: String?,
+    curUser: String?,
     profileHeaderData: ProfileHeaderData,
-    openChat: () -> Unit
+    openChat: () -> Unit,
+    editProfileViewModel: EditProfileViewModel
 ) {
-    ProfileContent(userId == null, profileHeaderData) {
+    val rating by editProfileViewModel.rating.collectAsState()
+
+    val profileViews by editProfileViewModel.profileViews.observeAsState(0)
+
+    // Call the ViewModel to fetch the profile views
+    LaunchedEffect(userId) {
+        editProfileViewModel.getProfileView(userId)
+    }
+
+    ProfileContent(userId == null || userId == curUser,
+        profileHeaderData, profileViews, rating) {
         openChat()
     }
 }
 
 
 @Composable
-fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEditClick: () -> Unit, openImage :(String) -> Unit) {
+fun ImageHeader(
+    isCurUser: Boolean,
+    userProfileHeader: ProfileHeaderData,
+    onEditClick: () -> Unit,
+    openImage: (String) -> Unit
+) {
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxWidth()) {
         // Banner Image
@@ -117,9 +139,20 @@ fun ImageHeader(isCurUser: Boolean, userProfileHeader: ProfileHeaderData, onEdit
 private fun ProfileContent(
     isCurUser: Boolean,
     userProfileHeader: ProfileHeaderData,
+    profileViews: Int,
+    rating: Response<Pair<Int, Float>>,
     openChat: () -> Unit
 ) {
     val context = LocalContext.current
+
+    // Handle different rating states
+    val ratingValue = when (rating) {
+        is Response.Success -> rating.data // Get the rating value
+        is Response.Error -> Pair(0, 0f) // Default to 0 if there's an error
+        else -> Pair(0, 0f) // Default to 0 if it's loading
+    }
+
+
     Column() {
         // Name and Handle
         Row(
@@ -134,14 +167,17 @@ private fun ProfileContent(
                 ),
                 modifier = Modifier.padding(top = 55.dp)
             )
-
-            RatingChip(3.5, Modifier.padding(top = 65.dp))
+            if (rating is Response.Success) {
+                RatingChip(ratingValue, Modifier.padding(top = 65.dp))
+            }
 
         }
         // Bio
         Text(
-            text = userProfileHeader.headline.ifBlank { if (isCurUser) "Write a catchy headline about your role/goal " +
-                    "e.g. Software Developer @ xyz | CP rating | Proficient in xyz technology" else "" }
+            text = userProfileHeader.headline.ifBlank {
+                if (isCurUser) "Write a catchy headline about your role/goal " +
+                        "e.g. Software Developer @ xyz | CP rating | Proficient in xyz technology" else ""
+            }
                 ?: "Co-founder, Apna College | Ex-Microsoft | Google SPS'20",
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = Color.Black,
@@ -156,7 +192,8 @@ private fun ProfileContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             //if (!userProfileHeader.socialLinks.youtube.isNullOrEmpty()) {
             CircularIconCardPainter(iconPainter = R.drawable.github, onClick = {
@@ -200,6 +237,28 @@ private fun ProfileContent(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Chat")
+                }
+            } else if(profileViews > 0) {
+                Spacer(Modifier.weight(1f))
+                Row(
+                    modifier = Modifier
+                        .padding(end = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically // ensures vertical alignment of the icon and text
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RemoveRedEye,
+                        contentDescription = "seen",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(Modifier.width(4.dp)) // space between icon and number
+
+                    Text(
+                        text = profileViews.toString(),
+                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -293,17 +352,21 @@ fun CircularIconCard(
 
 @Composable
 fun RatingChip(
-    rating: Double,
+    rating: Pair<Int, Float>,  // rating = Pair(ratings list, average rating)
     modifier: Modifier = Modifier
 ) {
-    val fullStars = rating.toInt()
-    val hasHalfStar = (rating - fullStars) >= 0.0
+    val fullStars = rating.second.toInt()
+    val hasHalfStar = (rating.second - fullStars) > 0.0
     val emptyStars = 5 - fullStars - if (hasHalfStar) 1 else 0
+    val numUsersRated = rating.first  // The number of users who rated
+
+    Log.d("ProfileScreen", "$fullStars $hasHalfStar, $rating")
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
+        // Display full stars
         repeat(fullStars) {
             Icon(
                 imageVector = Icons.Filled.Star,
@@ -313,6 +376,7 @@ fun RatingChip(
             )
         }
 
+        // Display half star if applicable
         if (hasHalfStar) {
             Icon(
                 imageVector = Icons.Filled.StarHalf,
@@ -322,25 +386,18 @@ fun RatingChip(
             )
         }
 
-//        repeat(emptyStars) {
-//            Icon(
-//                imageVector = Icons.Outlined.Star,
-//                contentDescription = null,
-//                tint = Color(0xFFFFD700),
-//                modifier = Modifier.size(20.dp)
-//            )
-//        }
-//
-//        Spacer(modifier = Modifier.width(4.dp))
-//
-//        Text(
-//            text = "%.1f".format(rating),
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = MaterialTheme.colorScheme.onBackground
-//        )
+        if (numUsersRated > 0) {
+            Text(
+                text = "($numUsersRated)",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
     }
 }
-
 
 
 @Composable

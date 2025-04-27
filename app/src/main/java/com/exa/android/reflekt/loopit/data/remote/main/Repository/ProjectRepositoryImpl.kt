@@ -23,6 +23,7 @@ import javax.inject.Singleton
 class ProjectRepositoryImpl @Inject constructor(
     private val db: FirebaseFirestore,
     private val auth: FirebaseAuth,
+    private val userRepository: UserRepository,
     @ApplicationContext private val context: Context
 ) : ProjectRepository {
 
@@ -243,6 +244,8 @@ class ProjectRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+
     override suspend fun enrollInProject(project: Project, userId: String, userName: String, imageUrl : String?): Result<Unit> {
         return try {
             require(auth.currentUser?.uid == userId) { "User must be authenticated" }
@@ -261,7 +264,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 .await()
             sendPushNotification(
                 context,
-                project.createdBy,
+                userRepository.getUserFcm(project.createdBy),
                 "$userName is requested to enroll in your project : ${project.title}",
                 project.title,
                 imageUrl

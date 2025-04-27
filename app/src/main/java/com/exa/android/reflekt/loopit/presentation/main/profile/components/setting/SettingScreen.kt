@@ -39,12 +39,12 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
-    onLogOutClick : () -> Unit,
-    onDeleteAccount : () -> Unit,
+    onLogOutClick: () -> Unit,
+    onDeleteAccount: () -> Unit,
     modifier: Modifier = Modifier,
     authViewModel: AuthVM = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    locationViewModel : LocationViewModel = hiltViewModel()
+    locationViewModel: LocationViewModel = hiltViewModel()
 
 ) {
     val context = LocalContext.current
@@ -66,7 +66,7 @@ fun SettingsScreen(
     // Error states
     val passwordError by settingsViewModel.passwordChangeError.collectAsState()
     val emailError by settingsViewModel.emailUpdateError.collectAsState()
-    var canDeleteAccount by remember {  mutableStateOf(true) }
+    var canDeleteAccount by remember { mutableStateOf(true) }
 
     LaunchedEffect(cacheSize) {
         settingsViewModel.loadCacheSize(context)
@@ -109,7 +109,8 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            val feedbackFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeprJ-ajG7DFUWgVHMVy7gglkcScwNDfx_NixnZsFZGXlPmBQ/viewform?usp=sharing"
+            val feedbackFormUrl =
+                "https://docs.google.com/forms/d/e/1FAIpQLSeprJ-ajG7DFUWgVHMVy7gglkcScwNDfx_NixnZsFZGXlPmBQ/viewform?usp=sharing"
 
             item {
                 SectionHeader(title = "Feedback")
@@ -134,7 +135,12 @@ fun SettingsScreen(
             }
 
             item {
-                Text(" -> Fill out form", modifier = Modifier.clickable { openUrl(context, feedbackFormUrl) })
+                Text(
+                    " -> Fill out form",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.clickable { openUrl(context, feedbackFormUrl) })
             }
 
             // Privacy
@@ -150,11 +156,12 @@ fun SettingsScreen(
                         if (checked) {
                             locationViewModel.startLocationUpdates(null, context)
                             // Optionally save to persistent storage
-                            showToast(context, "Now you cannot be visible on Map")
+                            showToast(context, "Explore & Connect")
                         } else {
                             locationViewModel.stopLocationUpdates()
                             // Optionally save to persistent storage
-                            showToast(context, "Explore & Connect")
+                            showToast(context, "Now you cannot be visible on Map")
+
                         }
                     }
                 )
@@ -276,7 +283,8 @@ fun SettingsScreen(
                     onClick = {}
                 )
             }
-            val updateLink = "https://drive.google.com/drive/u/1/folders/12zo8h7J_Utjk7OPgXldpaRBLsJoXKaLr"
+            val updateLink =
+                "https://drive.google.com/drive/u/1/folders/12zo8h7J_Utjk7OPgXldpaRBLsJoXKaLr"
             item {
                 SettingsItem(
                     icon = Icons.Default.Update,
@@ -514,7 +522,7 @@ fun SettingsItem(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(24.dp),
-            tint = if(title != "Logout" && title != "Delete Account" )MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            tint = if (title != "Logout" && title != "Delete Account") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -526,11 +534,13 @@ fun SettingsItem(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if(title == "Delete Account")MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = if (title == "Delete Account") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.6f
+                    )
                 )
             }
         }
-        if(title != "Logout") {
+        if (title != "Logout") {
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,

@@ -75,11 +75,11 @@ class LocationRepository @Inject constructor(
     }
     fun startLocationUpdates(userId: String) {
         // Timber.tag("GeoFire").d("Starting foreground service for user $userId")
-        LocationForegroundService.Companion.startService(context, userId)
+        LocationForegroundService.startService(context, userId)
     }
 
     fun stopLocationUpdates() {
-        LocationForegroundService.Companion.stopService(context)
+        LocationForegroundService.stopService(context)
     }
 
     fun fetchUserLocations(role: String, radius: Double, location: LatLng) {

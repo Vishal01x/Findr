@@ -4,12 +4,15 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
@@ -24,6 +27,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -49,6 +54,28 @@ class EditProfileViewModel @Inject constructor(
     var bannerUri by mutableStateOf<Uri?>(null)
     var profileImageUri by mutableStateOf<Uri?>(null)
     var capturedImageUri by mutableStateOf<Uri?>(null)
+
+    private val _skillInput = mutableStateOf("")
+    val skillInput: State<String> = _skillInput
+
+    private val _isEditing = mutableStateOf(false)
+    val isEditing: State<Boolean> = _isEditing
+
+    private val _updatedSkills = mutableStateOf(mutableListOf<String>())
+    val updatedSkills: State<List<String>> = _updatedSkills
+
+    private val _stagedSkills = mutableStateOf(mutableListOf<String>())
+    val stagedSkills: State<List<String>> = _stagedSkills
+
+
+    var responseState by mutableStateOf<Response<Unit>?>(null)
+        private set
+
+    var curUser: String? = null
+
+    init {
+        curUser = userRepository.currentUser
+    }
 
     fun updateName(value: String) {
         name = value
@@ -89,18 +116,6 @@ class EditProfileViewModel @Inject constructor(
     fun updateAbout(desc: String) {
         about = desc
     }
-
-    private val _skillInput = mutableStateOf("")
-    val skillInput: State<String> = _skillInput
-
-    private val _isEditing = mutableStateOf(false)
-    val isEditing: State<Boolean> = _isEditing
-
-    private val _updatedSkills = mutableStateOf(mutableListOf<String>())
-    val updatedSkills: State<List<String>> = _updatedSkills
-
-    private val _stagedSkills = mutableStateOf(mutableListOf<String>())
-    val stagedSkills: State<List<String>> = _stagedSkills
 
     fun initialiseSkill(skill: MutableList<String>) {
         if (_updatedSkills.value.isEmpty()) {
@@ -227,9 +242,6 @@ class EditProfileViewModel @Inject constructor(
     }
 
 
-    var responseState by mutableStateOf<Response<Unit>?>(null)
-        private set
-
     fun saveProfile(
         profileHeaderData: ProfileHeaderData,
         mediaSharingViewModel: MediaSharingViewModel
@@ -329,9 +341,10 @@ class EditProfileViewModel @Inject constructor(
 
     fun updateUserEducation(collegeInfo: CollegeInfo) {
         viewModelScope.launch {
-            if (!isNetworkAvailable(context)){ responseState =
-                Response.Error("Failed Education update. Check Internet Connection")
-        }else {
+            if (!isNetworkAvailable(context)) {
+                responseState =
+                    Response.Error("Failed Education update. Check Internet Connection")
+            } else {
                 userRepository.updateUserEducation(collegeInfo).collect {
                     responseState = it
                 }
@@ -341,13 +354,104 @@ class EditProfileViewModel @Inject constructor(
 
     fun updateUserExperience(experienceInfo: ExperienceInfo) {
         viewModelScope.launch {
-            if (!isNetworkAvailable(context)){ responseState =
-                Response.Error("Failed Experience update. Check Internet Connection")
-            }else {
+            if (!isNetworkAvailable(context)) {
+                responseState =
+                    Response.Error("Failed Experience update. Check Internet Connection")
+            } else {
                 userRepository.updateUserExperience(experienceInfo).collect {
                     responseState = it
                 }
             }
         }
     }
+
+    private val _rating = MutableStateFlow<Response<Pair<Int,Float>>>(Response.Success(Pair(0,0f)))
+    val rating: StateFlow<Response<Pair<Int,Float>>> = _rating
+
+    private val _verifiers =
+        MutableStateFlow<Response<List<ProfileHeaderData>>>(Response.Success(emptyList()))
+    val verifiers: StateFlow<Response<List<ProfileHeaderData>>> = _verifiers
+
+    // State to hold the rating as Int
+    private val _curUserRating = mutableStateOf(0)
+    val curUserRating: State<Int> get() = _curUserRating
+
+    fun updateProfileView(userId: String) {
+        viewModelScope.launch {
+            userRepository.updateProfileView(userId)
+        }
+    }
+
+    fun updateRating(rating: Int, userId: String) {
+        viewModelScope.launch {
+            val result = userRepository.rateUser(rating, userId)
+            if (result.isSuccess) {
+                getRatingByCurUser(userId)
+            } else {
+                // Handle error
+            }
+        }
+    }
+
+    fun verifyProfile(userId: String) {
+        viewModelScope.launch {
+            val result = userRepository.verifyUser(userId)
+            if (result.isSuccess) {
+
+            } else {
+                // Handle error
+            }
+        }
+    }
+
+    private val _profileViews = MutableLiveData<Int>()
+    val profileViews: LiveData<Int> get() = _profileViews
+
+    // Function to fetch the number of profile views
+    fun getProfileView(userId: String?) {
+        // Calling the repository function
+        userRepository.getProfileView(userId) { viewersCount ->
+            _profileViews.postValue(viewersCount)
+        }
+    }
+
+
+    // Function to load rating from curUser for a specific user
+    fun getRatingByCurUser(userId: String) {
+        viewModelScope.launch {
+            val result = userRepository.getRatingByCurUser(userId)
+            result.onSuccess {
+                // Update the rating in the state
+                _curUserRating.value = it.toInt()
+            }
+            result.onFailure {
+                // Handle failure, you can set a default value or show an error
+                _curUserRating.value = 0
+            }
+        }
+    }
+
+    fun getAverageRating(userId: String?) {
+        viewModelScope.launch {
+            val result = try {
+                userRepository.getAverageRating(userId)
+            } catch (e: Exception) {
+                Response.Error(e.localizedMessage)
+            }
+            _rating.value = result
+        }
+
+    }
+
+    fun getAllVerifiersDetail(targetUserId: String?) {
+        _verifiers.value = Response.Loading  // Show loading state
+
+        viewModelScope.launch {
+            userRepository.getAllVerifiersDetail(targetUserId).collect{
+                _verifiers.value = it
+            }
+
+        }
+    }
+
 }

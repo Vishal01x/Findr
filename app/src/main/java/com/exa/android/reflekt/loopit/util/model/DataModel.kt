@@ -6,7 +6,7 @@ import com.google.firebase.firestore.ServerTimestamp
 import java.util.UUID
 
 data class User(
-    val userId : String = "",
+    var userId : String = "",
     val name : String = "",
     val phone : String = "",
     val profilePicture : String? = "",
@@ -77,7 +77,8 @@ data class ChatList(
     val profilePicture: String? = "",
     val unreadMessages : Long = 0,
     val fcmToken : String? = "",
-    val isBlock : Boolean = false
+    val isCurUserBlock : Boolean = false,
+    val isOtherBlock: Boolean = false
 )
 
 data class Status(
@@ -104,4 +105,8 @@ data class Project(
         const val FIELD_TITLE = "title"
         const val FIELD_CREATED_AT = "createdAt"
     }
+}
+
+enum class ReplyType{
+    YOU, OTHER, NEWMESSAGE
 }

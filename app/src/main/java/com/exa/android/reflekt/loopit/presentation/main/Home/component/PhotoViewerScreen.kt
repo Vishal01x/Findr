@@ -1,7 +1,12 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.component
 
+import android.app.Activity
 import android.net.Uri
+import android.view.WindowManager
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -16,9 +21,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
+import kotlinx.coroutines.launch
 import java.net.URLDecoder
 
 
@@ -28,11 +35,22 @@ fun PhotoViewerScreen(
     onBack: () -> Unit
 ) {
     var isImmersive by remember { mutableStateOf(false) }
-    var scale by remember { mutableStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-
     val backgroundColor = if (isImmersive) Color.Black else Color.White
-    val iconColor = if (isImmersive) Color.Transparent else Color.Black
+    val iconColor = if (isImmersive) Color.White else Color.Black
+
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    DisposableEffect(Unit) {
+        activity?.window?.setFlags( // to block screenshot
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -42,54 +60,18 @@ fun PhotoViewerScreen(
                 detectTapGestures(onTap = {
                     isImmersive = !isImmersive
                 })
-            }
-
+            },
+        contentAlignment = Alignment.Center
     ) {
-       /* // Image with zoom and pan
+        // Image with fixed height and crop scaling
         SubcomposeAsyncImage(
             model = imageUrl,
             contentDescription = null,
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .pointerInput(Unit) {
-//                    detectTransformGestures { _, pan, zoom, _ ->
-//                        scale = (scale * zoom).coerceIn(1f, 5f)
-//                        offset += pan
-//                    }
-                }
-        )*/
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .pointerInput(Unit) {
-//                    detectTransformGestures { _, pan, zoom, _ ->
-//                        scale = (scale * zoom).coerceIn(1f, 5f)
-//                        offset += pan
-//                    }
-                }
-        ) {
-            SubcomposeAsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .sizeIn(maxHeight = 400.dp) // adaptive fixed size
-            )
-        }
+                .fillMaxWidth()
+                .height(400.dp)  // Fixed height
+        )
 
         // Back button (only in non-immersive mode)
         if (!isImmersive) {
@@ -108,4 +90,3 @@ fun PhotoViewerScreen(
         }
     }
 }
-

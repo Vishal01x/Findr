@@ -61,7 +61,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
 
 @Composable
 fun ExtracurricularCard(
-    userId: String?, onAddClick: (ExtraActivity?) -> Unit,
+    userId: String?, curUser : String?, onAddClick: (ExtraActivity?) -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
     editExtracurricularViewModel: ExtracurricularViewModel = hiltViewModel()
 ) {
@@ -119,7 +119,7 @@ fun ExtracurricularCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Extracurricular Activities", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiary)
-                        if(userId.isNullOrEmpty())
+                        if(userId == null || userId == curUser)
                             CircularIconCard(Icons.Default.Add, { onAddClick(null) })
                     }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

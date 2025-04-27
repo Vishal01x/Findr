@@ -1,25 +1,19 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile
 
-import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
@@ -29,9 +23,12 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.educa
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.ExtracurricularCard
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.header.ImageHeader
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.header.ProfileHeader
+import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.ProfileFeedback
+import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.ProfileViews
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.*
+import com.google.firestore.v1.Cursor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,13 +41,26 @@ fun ProfileScreen(
     openImage: (String?) -> Unit,
     onEditEducation: (CollegeInfo?) -> Unit,
     onEditExperience: (ExperienceInfo) -> Unit,
+    onViewVerifier : (String?) -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
     editProfileViewModel: EditProfileViewModel = hiltViewModel()
 ) {
     val profileData by userViewModel.userProfileData.collectAsState()
+    val curUser = editProfileViewModel.curUser
+
+    LaunchedEffect(userId) {
+        if (userId != curUser && userId != null) {
+            editProfileViewModel.updateProfileView(userId)
+        }
+    }
 
     LaunchedEffect(Unit) {
         userViewModel.getProfileData(userId)
+        editProfileViewModel.getAverageRating(userId)
+        editProfileViewModel.getAllVerifiersDetail(userId)
+        if(userId != null && userId != curUser) {
+            editProfileViewModel.getRatingByCurUser(userId)
+        }
     }
 
     Scaffold(
@@ -79,8 +89,8 @@ fun ProfileScreen(
                 }
             )
         },
-        containerColor = Color.White,
-        contentColor = Color.White
+        containerColor = MaterialTheme.colorScheme.secondary,
+        contentColor = MaterialTheme.colorScheme.secondary
     ) { padding ->
 
         when (val response = profileData) {
@@ -88,13 +98,16 @@ fun ProfileScreen(
                 ProfileContent(
                     profileData = ProfileData(),
                     userId = userId,
+                    curUser = curUser,
                     onEditHeaderClick = onEditHeaderClick,
                     onAddExtraCard = onAddExtraCard,
                     openChat = openChat,
                     openImage = openImage,
                     onEditEducation = onEditEducation,
                     onEditExperience = onEditExperience,
-                    padding = padding
+                    onViewVerifier = onViewVerifier,
+                    padding = padding,
+                    editProfileViewModel
                 )
             }
 
@@ -107,13 +120,16 @@ fun ProfileScreen(
                 ProfileContent(
                     profileData = response.data,
                     userId = userId,
+                    curUser = curUser,
                     onEditHeaderClick = onEditHeaderClick,
                     onAddExtraCard = onAddExtraCard,
                     openChat = openChat,
                     openImage = openImage,
                     onEditEducation = onEditEducation,
                     onEditExperience = onEditExperience,
-                    padding = padding
+                    onViewVerifier = onViewVerifier,
+                    padding = padding,
+                    editProfileViewModel
                 )
             }
         }
@@ -124,13 +140,16 @@ fun ProfileScreen(
 fun ProfileContent(
     profileData: ProfileData,
     userId: String?,
+    curUser : String?,
     onEditHeaderClick: (ProfileData) -> Unit,
     onAddExtraCard: (String?, ExtraActivity?) -> Unit,
     openChat: (String?) -> Unit,
-    openImage : (String?) -> Unit,
+    openImage: (String?) -> Unit,
     onEditEducation: (CollegeInfo?) -> Unit,
     onEditExperience: (ExperienceInfo) -> Unit,
-    padding: PaddingValues
+    onViewVerifier : (String?) -> Unit,
+    padding: PaddingValues,
+    editProfileViewModel: EditProfileViewModel
 ) {
     val scrollState = rememberLazyListState()
 
@@ -142,10 +161,9 @@ fun ProfileContent(
     ) {
         item {
             ImageHeader(
-                userId.isNullOrEmpty(),
+                userId == null || userId == curUser,
                 profileData.profileHeader,
                 onEditClick = {
-                    Log.d("ProfileScreen", "onEditclickatIcon")
                     onEditHeaderClick(profileData)
                 },
                 openImage = openImage
@@ -157,14 +175,16 @@ fun ProfileContent(
 
                 ProfileHeader(
                     userId,
+                    curUser,
                     profileData.profileHeader,
-                    openChat = { openChat(userId) }
+                    openChat = { openChat(userId) },
+                    editProfileViewModel
                 )
 
                 Spacer(Modifier.height(12.dp))
 
                 AboutCard(
-                    userId.isNullOrEmpty(),
+                    userId == null || userId == curUser,
                     title = "About",
                     content = profileData.about.description
                 )
@@ -172,16 +192,16 @@ fun ProfileContent(
                 Spacer(Modifier.height(12.dp))
 
                 val skill = profileData.skill
-                SkillsCard(userId.isNullOrEmpty(),skill.split(",").map { it.trim() })
+                SkillsCard(userId == null || userId == curUser, skill.split(",").map { it.trim() })
 
                 Spacer(Modifier.height(12.dp))
 
-                ExtracurricularCard(userId, onAddClick = { onAddExtraCard(userId, it) })
+                ExtracurricularCard(userId, curUser, onAddClick = { onAddExtraCard(userId, it) })
 
                 Spacer(Modifier.height(12.dp))
 
                 ExperienceCard(
-                    userId.isNullOrEmpty(),
+                    userId == null || userId == curUser,
                     experienceInfo = profileData.experienceInfo,
                     onEditExperience = { onEditExperience(profileData.experienceInfo) }
                 )
@@ -189,13 +209,24 @@ fun ProfileContent(
                 Spacer(Modifier.height(12.dp))
 
                 EducationCard(
-                    userId.isNullOrEmpty(),
+                    userId == null || userId == curUser,
                     collegeInfo = profileData.collegeInfo,
                     onEditEducation = { onEditEducation(profileData.collegeInfo) }
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                ProfileFeedback(userId, editProfileViewModel) {
+                    onViewVerifier(userId)
+                }
+
+                if (userId == null || userId == curUser) {
+                    ProfileViews(userId,editProfileViewModel)
+                }
 
                 Spacer(Modifier.height(4.dp))
             }
         }
     }
 }
+

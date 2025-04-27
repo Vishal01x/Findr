@@ -79,7 +79,12 @@ sealed class ProfileRoute(val route: String) {
             navController.navigate("edit_experience")
         }
     }
+    object VerifierScreen : ProfileRoute("verify?userId={userId}"){
+        fun createRoute(userId: String?):String{
+            return if (userId != null) "verify?userId=$userId" else "verify"
+        }
 
+    }
     object ProfileSetting : ProfileRoute("profile_setting")
     object ProfileHelp : ProfileRoute("help")
     object ProfileTerms : ProfileRoute("terms")

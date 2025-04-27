@@ -13,6 +13,7 @@ import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.ChatList
 import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.Message
+import com.exa.android.reflekt.loopit.util.model.Status
 import com.exa.android.reflekt.loopit.util.model.User
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -26,14 +27,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -99,7 +107,7 @@ class FirestoreService @Inject constructor(
                 updateToken(token) // Store in Firestore
             }
             .addOnFailureListener {
-               // Log.e("FCM", "Failed to get token", it)
+                // Log.e("FCM", "Failed to get token", it)
             }
     }
 
@@ -203,7 +211,9 @@ class FirestoreService @Inject constructor(
 
     suspend fun createChatAndSendMessage(
         userId2: String,
+        isCurUserBlocked: Boolean,
         text: String,
+        replyTo : Message?,
         media: Media?,
         receiverToken: String?,
         curUser: User? = null,
@@ -213,14 +223,18 @@ class FirestoreService @Inject constructor(
         val chatId = generateChatId(userId1, userId2)
         val finalMessageId = messageId ?: UUID.randomUUID().toString()
 
+        val members = if (isCurUserBlocked) listOf(userId1) else listOf(userId1, userId2)
+
         val message = Message(
             chatId = chatId,
             senderId = userId1,
             receiverId = userId2,
             message = text,
             media = media,
-            members = listOf(userId1, userId2),
-            messageId = finalMessageId
+            members = members,
+            messageId = finalMessageId,
+            replyTo = replyTo,
+            status = if (isCurUserBlocked) "sent" else "delivered"
         )
 
         try {
@@ -232,14 +246,17 @@ class FirestoreService @Inject constructor(
                 val chatDoc = chatCollection.document(chatId)
                 val snapshot = chatDoc.get().await()
 
-                val text = if(message.media != null)message.media.mediaType.name else message.message
+                val text =
+                    if (message.media != null) message.media.mediaType.name else message.message
 
                 if (snapshot.exists()) {
                     chatDoc.update(
                         mapOf(
                             "lastMessage" to text,
                             "lastMessageTimestamp" to message.timestamp,
-                            "unreadMessages.$userId2" to FieldValue.increment(1),
+                            "unreadMessages.$userId2" to if (!isCurUserBlocked) FieldValue.increment(
+                                1
+                            ) else FieldValue.increment(0),
                             "unreadMessages.$userId1" to 0
                         )
                     ).await()
@@ -252,7 +269,6 @@ class FirestoreService @Inject constructor(
                         )
                     ).await()
                 }
-
                 updateUserList(userId1, userId2)
                 updateUserList(userId2, userId1)
 
@@ -287,7 +303,7 @@ class FirestoreService @Inject constructor(
                             title = curUser?.name ?: "",
                             senderId = message.senderId,
                             chatId = message.chatId,
-                            body = if(message.media != null)message.media.mediaType.name else message.message,
+                            body = if (message.media != null) message.media.mediaType.name else message.message,
                             imageUrl = curUser?.profilePicture ?: "",
                             isChat = "Yes"
                         )
@@ -342,7 +358,7 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    suspend fun updateMediaMessage(messageId: String, otherUserId : String, media : Media?){
+    suspend fun updateMediaMessage(messageId: String, otherUserId: String, media: Media?) {
         val chatId = generateChatId(currentUser!!, otherUserId)
         val batch = db.batch()
         val messageRef =
@@ -377,7 +393,7 @@ class FirestoreService @Inject constructor(
                         messageRef,
                         mapOf("members" to FieldValue.arrayRemove(currentUser))
                     )
-                    val members = messageRef.get().await().get("members") as List<String>
+                    val members = messageRef.get().await().get("members") as List<*>
                     if (members.isEmpty()) batch.delete(messageRef)
                 }
             }
@@ -390,7 +406,43 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    private fun updateMessageStatusToSeen(chatId: String, messages: List<Message>) {
+
+    suspend fun deleteAllMessages(
+        chatId: String
+    ) = coroutineScope {
+        val chatRef = chatCollection.document(chatId).collection("messages")
+
+        try {
+            val snapshot = chatRef.get().await()
+            val documents = snapshot.documents
+            val chunks = documents.chunked(500)
+
+            // Launch parallel deletions
+            val jobs = chunks.map { chunk ->
+                async {
+                    val batch = db.batch()
+                    chunk.forEach { doc ->
+                        val members = doc.get("members") as? List<String> ?: emptyList()
+
+                        batch.update(
+                            doc.reference,
+                            mapOf("members" to FieldValue.arrayRemove(currentUser))
+                        )
+                        if (members.size == 1 && members.contains(currentUser)) {
+                            batch.delete(doc.reference)
+                        }
+                    }
+                    batch.commit().await()
+                }
+            }
+
+            jobs.awaitAll() // Wait for all parallel deletions to finish
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+
+    fun updateMessageStatusToSeen(chatId: String, messages: List<Message>) {
         val batch = db.batch()
         for (message in messages.reversed()) {
             if (message.senderId == currentUser || message.status == "seen") break
@@ -398,9 +450,10 @@ class FirestoreService @Inject constructor(
                 .document(chatId)
                 .collection("messages")
                 .document(message.messageId)
-
             //chatCollection.document(chatId).update("unreadMessages.$currentUser", 0)
-            batch.update(messageRef, "status", "seen")
+            if (message.members.contains(currentUser)) {
+                batch.update(messageRef, "status", "seen")
+            }
         }
 
         batch.commit().addOnCompleteListener {
@@ -553,29 +606,100 @@ class FirestoreService @Inject constructor(
     }*/
 
 
-    suspend fun blockUser(chatId: String, userId: String) {
-        val chatDoc = chatCollection.document(chatId)
-        val snapshot = chatDoc.get().await()
+    suspend fun blockUser(chatId: String, userId: String): Response<Boolean> {
+        return try {
+            val chatDoc = chatCollection.document(chatId)
+            val snapshot = chatDoc.get().await()
 
-        if (snapshot.exists()) {
-            chatDoc.update("blockUsers.$userId", userId).await()
-        } else {
-            chatDoc.set(
-                mapOf("blockUsers" to mapOf(userId to userId))
-            ).await()
+            if (snapshot.exists()) {
+                chatDoc.update("blockUsers.$userId", userId).await()
+            } else {
+                chatDoc.set(
+                    mapOf("blockUsers" to mapOf(userId to userId))
+                ).await()
+            }
+
+            Response.Success(true)
+        } catch (e: Exception) {
+            Response.Error(e.localizedMessage ?: "Failed to block user")
         }
     }
 
 
-    suspend fun unblockUser(chatId: String, userId: String) {
-        val chatDoc = chatCollection.document(chatId)
-        val snapshot = chatDoc.get().await()
+    suspend fun unblockUser(chatId: String, userId: String): Response<Boolean> {
+        return try {
+            val chatDoc = chatCollection.document(chatId)
+            val snapshot = chatDoc.get().await()
 
-        if (snapshot.exists() && snapshot.contains("blockUsers.$userId")) {
-            chatDoc.update("blockUsers.$userId", FieldValue.delete()).await()
+            if (snapshot.exists() && snapshot.contains("blockUsers.$userId")) {
+                chatDoc.update("blockUsers.$userId", FieldValue.delete()).await()
+            }
+
+            Response.Success(true)
+        } catch (e: Exception) {
+            Response.Error(e.localizedMessage ?: "Failed to unblock user")
         }
     }
 
+
+    suspend fun sendReportToAdmin(
+        curUserId: String,
+        reportedUserId: String,
+        reason: String,
+        proofText: String?,
+        proofImageUrl: String?
+    ): Response<Boolean> {
+        return try {
+            val reportData = mutableMapOf<String, Any>(
+                "reporterId" to curUserId,
+                "reportedUserId" to reportedUserId,
+                "reason" to reason.trim(),
+                "timestamp" to Timestamp.now()
+            )
+
+            proofImageUrl?.takeIf { it.isNotEmpty() }?.let {
+                reportData["proofImageUrl"] = it
+            }
+
+            proofText?.takeIf { it.isNotBlank() }?.let {
+                reportData["proofText"] = it.trim()
+            }
+
+            db.collection("admin")
+                .document("reports")
+                .collection("userReports")
+                .add(reportData)
+                .await()
+
+            Response.Success(true)
+        } catch (e: Exception) {
+            Response.Error(e.localizedMessage ?: "Unknown error occurred")
+        }
+    }
+
+
+    fun getBlockDetails(chatId: String): Flow<Response<Set<String>>> = callbackFlow {
+        trySend(Response.Loading)
+
+        val listener = chatCollection.document(chatId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Response.Error(error.message ?: "Unknown error")).isFailure
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    val blockUsersMap =
+                        snapshot.get("blockUsers") as? Map<*, *> ?: emptyMap<Any, Any>()
+                    val blockedUserIds = blockUsersMap.keys.mapNotNull { it?.toString() }.toSet()
+                    trySend(Response.Success(blockedUserIds))
+                } else {
+                    trySend(Response.Success(emptySet()))
+                }
+            }
+
+        awaitClose { listener.remove() }
+    }
 
 
     suspend fun getChatList(userId: String): Flow<Response<List<ChatList>>> = callbackFlow {
@@ -608,7 +732,112 @@ class FirestoreService @Inject constructor(
         }
     }
 
+
+    private val updateChannel = Channel<Unit>(Channel.CONFLATED)
+    private var lastSentChatList = listOf<ChatList>()
+    private val cacheMutex = Mutex() // To synchronize access to the chat cache
+
     private fun manageChatListeners(
+        userId: String,
+        userIds: List<String>,
+        activeListeners: MutableMap<String, ListenerRegistration>,
+        chatCache: MutableMap<String, ChatList>,
+        scope: CoroutineScope,
+        channel: ProducerScope<Response<List<ChatList>>>
+    ) {
+        // Debounce updates to ensure we're not sending updates too frequently
+        scope.launch {
+            updateChannel.consumeEach {
+                delay(100)  // Adjust debounce window as needed
+                cacheMutex.withLock {
+                    val sortedChats =
+                        chatCache.values.sortedByDescending { it.lastMessageTimestamp }
+                    if (sortedChats != lastSentChatList) {
+                        lastSentChatList = sortedChats
+                        channel.trySend(Response.Success(sortedChats))
+                    }
+                }
+            }
+        }
+
+        // Remove listeners for users no longer in the list
+        val removedUsers = activeListeners.keys - userIds.toSet()
+        removedUsers.forEach {
+            activeListeners.remove(it)?.remove()
+            chatCache.remove(it)
+        }
+
+        // Add listeners for new users
+        userIds.forEach { otherUserId ->
+            if (activeListeners.contains(otherUserId)) return@forEach
+
+            val chatId = generateChatId(userId, otherUserId)
+            val chatDoc = chatCollection.document(chatId)
+
+            // Add a snapshot listener for each chat that the user is involved in
+            activeListeners[otherUserId] = chatDoc.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    channel.trySend(Response.Error(error.message ?: "Chat data error"))
+                    return@addSnapshotListener
+                }
+
+                scope.launch {
+                    if (snapshot == null || !snapshot.exists()) return@launch
+
+                    val lastMessage = snapshot.getString("lastMessage") ?: ""
+                    val timestamp = snapshot.getTimestamp("lastMessageTimestamp") ?: Timestamp.now()
+                    val unread = snapshot.getLong("unreadMessages.$userId") ?: 0
+                    val blockUsersMap =
+                        snapshot.get("blockUsers") as? Map<*, *> ?: emptyMap<Any, Any>()
+                    val blockedUserIds = blockUsersMap.keys.mapNotNull { it?.toString() }.toSet()
+
+                    // Parallel user data fetch
+                    val userData = async { fetchUserData(otherUserId) }
+                    val profileData = userData.await()
+
+                    profileData?.let {
+                        val isCurUserBlocked = blockedUserIds.contains(currentUser)
+                        val isOtherUserBlocked = blockedUserIds.contains(otherUserId)
+
+                        //Log.d("FireStore Service", "$blockUsersMap  $blockedUserIds $isOtherUserBlocked $isCurUserBlocked")
+
+                        val chat = ChatList(
+                            userId = otherUserId,
+                            name = profileData.name,
+                            profilePicture = if(isCurUserBlocked) "" else profileData.profilePicture,
+                            lastMessage = if (isOtherUserBlocked) "" else lastMessage, // Important change
+                            lastMessageTimestamp = if (isOtherUserBlocked) Timestamp(
+                                0,
+                                0
+                            ) else timestamp,
+                            unreadMessages = if (isOtherUserBlocked) 0 else unread,
+                            fcmToken = profileData.fcmToken,
+                            isCurUserBlock = isCurUserBlocked,
+                            isOtherBlock = isOtherUserBlocked
+                        )
+
+                        // Only update if the chat data has changed
+                        cacheMutex.withLock {
+                            chatCache[otherUserId] = chat
+                        }
+
+                        // Send updates via the channel after debouncing
+                        updateChannel.trySend(Unit)
+                    }
+                }
+            }
+        }
+
+        // Send updated chat list if there's new data
+        if (chatCache.isNotEmpty()) {
+            scope.launch {
+                updateChannel.trySend(Unit)
+            }
+        }
+    }
+
+
+    /*private fun manageChatListeners(
         userId: String,
         userIds: List<String>,
         activeListeners: MutableMap<String, ListenerRegistration>,
@@ -671,7 +900,7 @@ class FirestoreService @Inject constructor(
         if (chatCache.isNotEmpty()) {
             channel.trySend(Response.Success(chatCache.values.sortedByDescending { it.lastMessageTimestamp }))
         }
-    }
+    }*/
 
     private suspend fun fetchUserData(userId: String): User? {
         return try {

@@ -1,6 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component
 
-import androidx.compose.foundation.Image
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,12 +17,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,19 +40,21 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.dialog.BlockUserDialog
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.dialog.DeleteMessageDialog
+import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.dialog.ReportUserDialog
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.util.formatTimestamp
 import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.Status
 import com.exa.android.reflekt.loopit.util.model.User
-
 
 
 @Composable
@@ -59,12 +62,13 @@ fun ChatHeader(
 //    profilePictureUrl: String,
 //    userName: String,
 //    userStatus: String,
-    user : User?,
+    user: User?,
     status: Status?, // status of other User
     curUser: String, // cur User Id
     //members: List<User>, // all the members of chat
     selectedMessages: Set<Message>, // messages Selected to show its count
-    isBlock : Boolean,
+    isCurUserBlock: Boolean,
+    isOtherUserBlock: Boolean,
     onProfileClick: () -> Unit, // when otherUserProfile Click show its details
     onBackClick: () -> Unit, // navigate to ChatListDetail
     onVoiceCallClick: () -> Unit,
@@ -74,42 +78,47 @@ fun ChatHeader(
     onEditClick: (Message?) -> Unit,
     onForwardClick: () -> Unit,
     onDeleteClick: (Int) -> Unit,
-    onBlockClick: () -> Unit
+    onClearChatClick: () -> Unit,
+    onBlockClick: () -> Unit,
+    onReportClick: (reason: String, proofText: String?, proofImageUri: Uri?) -> Unit
 ) {
     Card(
         elevation = CardDefaults.cardElevation(8.dp),
         colors = CardDefaults.cardColors(Color.White),
         shape = RectangleShape,
         modifier = Modifier.clickable { onProfileClick() }
-    )  {
-    if (selectedMessages.isNotEmpty()) { // if messages are selected then show Header options and hide other profile
-        HeaderWithOptions(
-            curUser = curUser,
-            selectedMessages = selectedMessages,
-            onUnselectClick = { onUnselectClick() },
-            onCopyClick = { onCopyClick() },
-            onForwardClick = { onForwardClick() },
-            onDeleteClick = { onDeleteClick(it) },
-            onReplyClick = { message -> },
-            onEditClick = { message ->
-                onEditClick(message)
-            }
-        )
-    } else {
-        HeaderWithProfile( // when selectedMessages are 0 now show profile
-            otherUser = user,
-            status = status,
-            curUser = curUser,
-            isSelected = selectedMessages.isNotEmpty(),
-            isBlock,
-            onBackClick = { onBackClick() },
-            onProfileClick = { onProfileClick() },
-            onVoiceCallClick = { onVoiceCallClick() },
-            onVideoCallClick = { onVideoCallClick() },
-            onBlockClick = { onBlockClick() }
-        )
+    ) {
+        if (selectedMessages.isNotEmpty()) { // if messages are selected then show Header options and hide other profile
+            HeaderWithOptions(
+                curUser = curUser,
+                selectedMessages = selectedMessages,
+                onUnselectClick = { onUnselectClick() },
+                onCopyClick = { onCopyClick() },
+                onForwardClick = { onForwardClick() },
+                onDeleteClick = { onDeleteClick(it) },
+                onReplyClick = { message -> },
+                onEditClick = { message ->
+                    onEditClick(message)
+                }
+            )
+        } else {
+            HeaderWithProfile( // when selectedMessages are 0 now show profile
+                otherUser = user,
+                status = status,
+                curUser = curUser,
+                isSelected = selectedMessages.isNotEmpty(),
+                isCurUserBlock,
+                isOtherUserBlock,
+                onBackClick = { onBackClick() },
+                onProfileClick = { onProfileClick() },
+                onVoiceCallClick = { onVoiceCallClick() },
+                onVideoCallClick = { onVideoCallClick() },
+                onClearChatClick = { onClearChatClick() },
+                onBlockClick = { onBlockClick() },
+                onReportClick = onReportClick
+            )
+        }
     }
-}
 }
 
 @Composable
@@ -147,7 +156,7 @@ fun HeaderWithOptions(
 
     getVisibleIcons(selectedMessages, curUser).forEach {
         when (it) {
-            IconsName.REPLY ->{}
+            IconsName.REPLY -> {}
             IconsName.COPY -> endIcons.add(copy)
             IconsName.EDIT -> endIcons.add(edit)
             IconsName.DELETE -> endIcons.add(delete)
@@ -206,6 +215,7 @@ fun PlaceIcons(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(false) { }
             .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -273,17 +283,20 @@ fun HeaderWithProfile(
     otherUser: User?,
     status: Status? = Status(),
     curUser: String,
-    isSelected : Boolean,
-    isBlock: Boolean,
+    isSelected: Boolean,
+    isCurUserBlock: Boolean,
+    isOtherUserBlock: Boolean,
     onBackClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onBlockClick : () -> Unit,
     onVoiceCallClick: () -> Unit,
-    onVideoCallClick: () -> Unit
+    onVideoCallClick: () -> Unit,
+    onClearChatClick: () -> Unit,
+    onBlockClick: () -> Unit,
+    onReportClick: (reason: String, proofText: String?, proofImageUri: Uri?) -> Unit
 ) {
     val context = LocalContext.current
 
-    Row(
+    /*Row(
         modifier = Modifier
             .fillMaxWidth(),
 //            .padding(vertical = 4.dp, horizontal = 8.dp),
@@ -305,7 +318,7 @@ fun HeaderWithProfile(
 
         // Profile Picture
         ImageUsingCoil(
-            context, otherUser?.profilePicture,
+            context, if(isCurUserBlock) "" else otherUser?.profilePicture,
             placeholder = R.drawable.placeholder,
             modifier = Modifier
                 .size(40.dp)
@@ -328,7 +341,7 @@ fun HeaderWithProfile(
         ) {
             // Chat Name
             Text(
-                text = otherUser?.name?:"---",
+                text = otherUser?.name ?: "---",
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black,
                 maxLines = 1,
@@ -339,26 +352,27 @@ fun HeaderWithProfile(
             // Chat Status
 
             val statusText = when {
-                        status?.typingTo == curUser -> "typing..."
-                        status?.isOnline == true -> "•Active"
-                        status?.lastSeen != null -> {
-                            val time =
-                                formatTimestamp(status.lastSeen * 1000L) // Convert to milliseconds
-                            "last active at $time"
-                        }
+                status?.typingTo == curUser -> "typing..."
+                status?.isOnline == true -> "•Active"
+                status?.lastSeen != null -> {
+                    val time =
+                        formatTimestamp(status.lastSeen * 1000L) // Convert to milliseconds
+                    "last active at $time"
+                }
 
-                        else -> "last active at "
-                    }
+                else -> "last active at "
+            }
 
-
-            Text(
-                text = statusText,
-                style = MaterialTheme.typography.labelSmall,
-                color = if(statusText == "•Active") Color(0xFF4CAF50) else Color.Gray,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping
-            )
+            if (!isCurUserBlock) {
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (statusText == "•Active") Color(0xFF4CAF50) else Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping
+                )
+            }
         }
 
 //        Box(
@@ -384,6 +398,167 @@ fun HeaderWithProfile(
 //            }
 //        }
 
+        //Spacer(Modifier.weight(1f))
+
+        val expanded = remember { mutableStateOf(false) }
+
+        IconButton(onClick = { expanded.value = true }) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "More options",
+                tint = Color.Black,
+                modifier = Modifier.size(24.dp)
+            )
+        }*/
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.align(Alignment.CenterStart)
+        ) {
+            // Back Button
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Back",
+                    tint = Color.Black,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // Profile Picture
+            ImageUsingCoil(
+                context = context,
+                imageUrl = if (isCurUserBlock) "" else otherUser?.profilePicture,
+                placeholder = R.drawable.placeholder,
+                errorImage = R.drawable.placeholder,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, Color.Black, CircleShape)
+                    .clickable { onProfileClick() }
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Name and Status
+            Column(
+                modifier = Modifier
+                    .clickable(!isSelected) { onProfileClick() }
+                    .padding(vertical = 4.dp)
+            ) {
+                Text(
+                    text = otherUser?.name ?: "---",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (!isCurUserBlock) {
+                    val statusText = when {
+                        status?.typingTo == curUser -> "typing..."
+                        status?.isOnline == true -> "• Active"
+                        status?.lastSeen != null -> {
+                            val time = formatTimestamp(status.lastSeen * 1000L)
+                            "last active at $time"
+                        }
+
+                        else -> "last active"
+                    }
+
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (statusText == "• Active") Color(0xFF4CAF50) else Color.Gray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+
+        val expanded = remember { mutableStateOf(false) }
+
+        // Container for MoreVert Button and Dropdown
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+        ) {
+            IconButton(
+                onClick = { expanded.value = true },
+                modifier = Modifier
+                    .align(Alignment.CenterEnd) //Pin it at the absolute end of Box
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "More options",
+                    tint = Color.Black,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            var showBlockDialog by remember { mutableStateOf(false) }
+            var showReportDialog by remember { mutableStateOf(false) }
+
+            if (showBlockDialog) {
+                BlockUserDialog(
+                    onDismiss = { showBlockDialog = false },
+                    onConfirmBlock = {
+                        showBlockDialog = false
+                        onBlockClick() // Your actual block logic
+                    }
+                )
+            }
+
+            if (showReportDialog) {
+                ReportUserDialog(
+                    onDismiss = { showBlockDialog = false },
+                    onReportSubmit = { reason, proofText, proofImageUri ->
+                        showReportDialog = false
+                        onReportClick(reason, proofText, proofImageUri) // Your actual report logic
+                    }
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded.value,
+                onDismissRequest = { expanded.value = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                //offset = DpOffset(x = (-2).dp, y = 0.dp) // Move slightly left if you want
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Clear Chat") },
+                    onClick = {
+                        expanded.value = false
+                        onClearChatClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(if (isOtherUserBlock) "Unblock" else "Block") },
+                    onClick = {
+                        expanded.value = false
+                        showBlockDialog = !isOtherUserBlock
+                        if (isOtherUserBlock) onBlockClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Report") },
+                    onClick = {
+                        expanded.value = false
+                        showReportDialog = true
+                        // onReportClick()
+                    }
+                )
+            }
+        }
+
 
 //        //Video Call Icon
 //        IconButton(onClick = onVideoCallClick) {
@@ -406,9 +581,6 @@ fun HeaderWithProfile(
 //        }
     }
 }
-
-
-
 
 
 fun getVisibleIcons(selectedMessages: Set<Message>, curUser: String): List<IconsName> {
@@ -459,7 +631,6 @@ data class IconData(
 enum class IconsName {
     COPY, DELETE, FORWARD, EDIT, REPLY
 }
-
 
 
 //        Row(

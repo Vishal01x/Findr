@@ -18,6 +18,7 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.componen
 import com.exa.android.reflekt.loopit.util.isNetworkAvailable
 import com.exa.android.reflekt.loopit.util.model.Media
 import com.exa.android.reflekt.loopit.util.model.MediaType
+import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.UploadStatus
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,6 +59,8 @@ class MediaSharingViewModel @Inject constructor(
         context: Context,
         uri: Uri?,
         otherUserId: String,
+        isCurUserBlocked : Boolean,
+        replyTo : Message?,
         fcmToken: String?,
         mediaType: MediaType = MediaType.IMAGE,
         chatViewModel: ChatViewModel,
@@ -74,10 +77,12 @@ class MediaSharingViewModel @Inject constructor(
                 onProgress?.invoke(UploadStatus.UPLOADING)
                 if (messageId == null)
                     messageId =
-                        sendInitialMediaMessage(chatViewModel, otherUserId, null, mediaPreview)
+                        sendInitialMediaMessage(chatViewModel, otherUserId, isCurUserBlocked,replyTo,null, mediaPreview)
                 else chatViewModel.createChatAndSendMessage(
                     otherUserId,
+                    isCurUserBlocked,
                     "",
+                    replyTo,
                     null,
                     mediaPreview,
                     messageId
@@ -92,6 +97,8 @@ class MediaSharingViewModel @Inject constructor(
                         uri = uri,
                         mediaType = mediaType,
                         otherUserId = otherUserId,
+                        isCurUserBlocked = isCurUserBlocked,
+                        replyTo = replyTo,
                         fcmToken = fcmToken,
                         messageId = messageId,
                         chatViewModel = chatViewModel,
@@ -107,19 +114,19 @@ class MediaSharingViewModel @Inject constructor(
 
             } catch (e: UnknownHostException) {
                 // Log.e("UploadFlow", "No internet connection", e)
-                handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType,uri, e, onError, onProgress)
+                handleUploadFailure(chatViewModel, messageId, otherUserId, isCurUserBlocked,replyTo,mediaType,uri, e, onError, onProgress)
 
             } catch (e: SocketTimeoutException) {
                 // Log.e("UploadFlow", "Upload timed out", e)
-                handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType, uri,e, onError, onProgress)
+                handleUploadFailure(chatViewModel, messageId, otherUserId, isCurUserBlocked,replyTo,mediaType, uri,e, onError, onProgress)
 
             } catch (e: IOException) {
                 // Log.e("UploadFlow", "IO error during upload", e)
-                handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType, uri, e, onError, onProgress)
+                handleUploadFailure(chatViewModel, messageId, otherUserId, isCurUserBlocked,replyTo,mediaType, uri, e, onError, onProgress)
 
             } catch (e: Exception) {
                 // Log.e("UploadFlow", "Unexpected error", e)
-                handleUploadFailure(chatViewModel, messageId, otherUserId, mediaType, uri,e, onError, onProgress)
+                handleUploadFailure(chatViewModel, messageId, otherUserId, isCurUserBlocked,replyTo,mediaType, uri,e, onError, onProgress)
             }
         }
     }
@@ -140,12 +147,16 @@ class MediaSharingViewModel @Inject constructor(
     private suspend fun sendInitialMediaMessage(
         chatViewModel: ChatViewModel,
         otherUserId: String,
+        isCurUserBlocked: Boolean,
+        replyTo: Message?,
         fcmToken: String?,
         mediaPreview: Media
     ): String? {
         chatViewModel.createChatAndSendMessage(
             otherUserId,
+            isCurUserBlocked,
             "",
+            replyTo,
             fcmToken,
             mediaPreview
         )
@@ -163,6 +174,8 @@ class MediaSharingViewModel @Inject constructor(
         uri: Uri,
         mediaType: MediaType,
         otherUserId: String,
+        isCurUserBlocked: Boolean,
+        replyTo: Message?,
         fcmToken: String?,
         messageId: String,
         chatViewModel: ChatViewModel,
@@ -175,7 +188,9 @@ class MediaSharingViewModel @Inject constructor(
 
         chatViewModel.createChatAndSendMessage(
             otherUserId,
+            isCurUserBlocked,
             "",
+            replyTo,
             fcmToken,
             uploadedMedia,
             messageId
@@ -187,6 +202,8 @@ class MediaSharingViewModel @Inject constructor(
         chatViewModel: ChatViewModel,
         messageId: String?,
         otherUserId: String,
+        isCurUserBlocked: Boolean,
+        replyTo: Message?,
         mediaType: MediaType,
         uri: Uri?,
         exception: Exception,
@@ -202,7 +219,9 @@ class MediaSharingViewModel @Inject constructor(
             // Create a failed message if one was never created
             chatViewModel.createChatAndSendMessage(
                 otherUserId,
+                isCurUserBlocked,
                 "",
+                replyTo,
                 null,
                 failedMedia
             )

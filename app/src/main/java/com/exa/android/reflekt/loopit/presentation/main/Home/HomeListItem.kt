@@ -52,7 +52,6 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(4.dp)
                 .clickable {
                     openChat(
                         User(
@@ -62,14 +61,17 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
                         )
                     )
                 }
+                .padding(4.dp)
                 .padding(horizontal = 4.dp, vertical = 8.dp)
         ) {
             val context = LocalContext.current
 
-            ImageUsingCoil(context,chat.profilePicture,R.drawable.placeholder,Modifier
+            val profilePic = if(chat.isCurUserBlock)"" else chat.profilePicture
+
+            ImageUsingCoil(context,profilePic,R.drawable.placeholder,Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .clickable(!chat.profilePicture.isNullOrEmpty()) {
+                .clickable(!profilePic.isNullOrEmpty()) {
                     openImage(chat.profilePicture)
                 /*openImageIntent(context,chat.profilePicture!!)*/
                 })
@@ -100,7 +102,7 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
             Column(horizontalAlignment = Alignment.End , modifier = Modifier.padding(end = 4.dp)) {
                 val timestampInMillis = chat.lastMessageTimestamp.seconds * 1000L
                 Text(
-                    formatTimestamp(timestampInMillis),
+                    if(chat.isOtherBlock) "" else formatTimestamp(timestampInMillis),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp

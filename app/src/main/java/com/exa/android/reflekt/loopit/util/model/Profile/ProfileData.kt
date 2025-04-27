@@ -78,6 +78,18 @@ data class ExtraActivity(
 ): Parcelable
 
 @Parcelize
+data class Rating(
+    val userId : String = "",
+    val rating : Int = 0,
+    val ratedBy : Int = 0
+): Parcelable
+
+@Parcelize
+data class Verification(
+    val userId : String = ""
+): Parcelable
+
+@Parcelize
 data class SocialLinks(
     var linkedin: String? = "",
     var youtube: String? = "",
