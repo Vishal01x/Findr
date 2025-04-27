@@ -1,16 +1,27 @@
 package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.MediaSharingRepository
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
+import com.exa.android.reflekt.loopit.util.model.Comment
+import com.exa.android.reflekt.loopit.util.model.PostType
 import com.exa.android.reflekt.loopit.util.model.Project
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import javax.inject.Inject
 
 data class EditProjectState(
@@ -32,7 +43,14 @@ data class EditProjectState(
     val isInitialLoadComplete: Boolean = false,
     val isSuccess: Boolean = false,
     val error: String? = null,
-    val canSubmit: Boolean = false
+    val canSubmit: Boolean = false,
+    val urls: List<String> = emptyList(),
+    val newImages: List<Uri> = emptyList(),        // Newly added local images
+    val existingImageUrls: List<String> = emptyList(), // Existing Cloudinary URLs
+    val removedImageUrls: List<String> = emptyList(),  // Track removed existing URLs
+    val likes: List<String> = emptyList(),
+    val comments: List<Comment> = emptyList(),
+    val type: String = PostType.PROJECT.displayName,
 )
 
 data class RequestedMember(
@@ -43,7 +61,9 @@ data class RequestedMember(
 @HiltViewModel
 class EditProjectViewModel @Inject constructor(
     private val repository: ProjectRepository,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val mediaSharingRepo: MediaSharingRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EditProjectState())
@@ -76,7 +96,14 @@ class EditProjectViewModel @Inject constructor(
                             createdAt = project.createdAt,
                             isInitialLoadComplete = true,
                             isLoading = false,
-                            canSubmit = validateForm(project.title, project.description)
+                            canSubmit = validateForm(project.title, project.description),
+                            existingImageUrls = project.imageUrls,
+                            newImages = emptyList(),
+                            removedImageUrls = emptyList(),
+                            urls = project.links,
+                            likes = project.likes,
+                            comments = project.comments,
+                            type = project.type
                         )
                     }
                 },
@@ -104,6 +131,12 @@ class EditProjectViewModel @Inject constructor(
                 )}
                 return@launch
             }
+            val newUploadedUrls = state.value.newImages.mapNotNull { uri ->
+                mediaSharingRepo.uploadFileToCloudinary(
+                    createTempFileFromUri(context, uri)
+                )
+            }
+            val finalImageUrls = state.value.existingImageUrls + newUploadedUrls
 
             val project = Project(
                 id = currentState.projectId,
@@ -115,7 +148,13 @@ class EditProjectViewModel @Inject constructor(
                 createdAt = currentState.createdAt,
                 createdByName = currentState.createdByName,
                 enrolledPersons = currentState.enrolledMembers.associate { it.id to it.name },
-                requestedPersons = currentState.requestedMembers.associate { it.id to it.name }
+                requestedPersons = currentState.requestedMembers.associate { it.id to it.name },
+                type = currentState.type,
+                imageUrls = finalImageUrls,
+                links = currentState.urls,
+                likes = currentState.likes,
+                comments = currentState.comments
+
             )
 
             val result = repository.updateProject(project)
@@ -141,6 +180,26 @@ class EditProjectViewModel @Inject constructor(
                     error = result.exceptionOrNull()?.message
                 )
             }
+        }
+    }
+
+    private suspend fun createTempFileFromUri(context: Context, uri: Uri): File {
+        return withContext(Dispatchers.IO) {
+            val contentResolver = context.contentResolver
+            val inputStream = contentResolver.openInputStream(uri)
+                ?: throw IOException("Could not open file")
+
+            val file = File.createTempFile("upload_", ".tmp", context.cacheDir)
+
+            try {
+                FileOutputStream(file).use { output ->
+                    inputStream.copyTo(output)
+                }
+            } finally {
+                inputStream.close()
+            }
+
+            file
         }
     }
 
@@ -260,6 +319,31 @@ class EditProjectViewModel @Inject constructor(
 
     private fun validateForm(title: String, description: String): Boolean {
         return title.isNotBlank() && description.isNotBlank()
+    }
+
+    fun addUrl(url: String) {
+        _state.update { it.copy(urls = it.urls + url) }
+    }
+
+    fun removeUrl(url: String) {
+        _state.update { it.copy(urls = it.urls - url) }
+    }
+    // In EditProjectViewModel
+    fun addImages(uris: List<Uri>) {
+        _state.update { it.copy(newImages = it.newImages + uris) }
+    }
+
+    fun removeNewImage(uri: Uri) {
+        _state.update { it.copy(newImages = it.newImages - uri) }
+    }
+
+    fun removeExistingImage(url: String) {
+        _state.update {
+            it.copy(
+                existingImageUrls = it.existingImageUrls - url,
+                removedImageUrls = it.removedImageUrls + url
+            )
+        }
     }
 
     fun clearError() {

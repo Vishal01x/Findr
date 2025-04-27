@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.DetailChat
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.ProfileScreen
@@ -31,6 +32,7 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.Edit
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.ListedProjectsScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.ProjectDetailScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.RequestedPersonMapScreen
+import com.exa.android.reflekt.loopit.presentation.main.Home.Map.MapSearchScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 
@@ -114,14 +116,16 @@ fun NavGraphBuilder.chatInfoNavGraph(navController: NavHostController) {
     }
 }
 
-fun NavGraphBuilder.mapNavGraph(navController: NavHostController) {
+fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewModel: LocationViewModel) {
+
     navigation(
         startDestination = MapInfo.MapScreen.route,
         route = "map_graph"
     ) {
         composable(MapInfo.MapScreen.route) {
             MapScreen(
-                navController
+                navController,
+                viewModel = locationViewModel
 //                "fjidjf",
 //                onMediaClick = { navController.navigate(ChatInfo.ChatMedia.route) },
 //                onCallClick = { navController.navigate(Call.VoiceCall.route) },
@@ -136,6 +140,15 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController) {
         composable(ChatInfo.MediaVisibility.route) { MediaVisibilityScreen() }
         composable(ChatInfo.BlockUser.route) { BlockUserScreen() }
         composable(Call.VoiceCall.route) { CallScreen() }*/
+
+        composable("searchScreen") {
+            MapSearchScreen(
+                viewModel = locationViewModel,
+                onApplyFilters = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 

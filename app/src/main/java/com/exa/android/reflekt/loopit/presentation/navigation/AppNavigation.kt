@@ -16,9 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.ProjectCard
 import com.exa.android.reflekt.loopit.presentation.main.Home.Map.MapScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.header.Profile
@@ -90,14 +92,14 @@ fun RootNavGraph(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-
+    val locationViewModel : LocationViewModel = hiltViewModel()
     NavHost(
         navController = navController,
         startDestination = if (isLoggedIn) MainRoute.ROOT else AuthRoute.ROOT,
         modifier = modifier
     ) {
         authNavGraph(navController)
-        mainAppNavGraph(context,navController)
+        mainAppNavGraph(context,navController, locationViewModel)
     }
 }
 

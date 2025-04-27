@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
 import android.content.Context
 import android.location.Geocoder
+import androidx.compose.runtime.mutableStateOf
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,6 +23,19 @@ class LocationViewModel @Inject constructor(
     private val locationRepository: LocationRepository
 ) : ViewModel() {
 
+    val radius = mutableStateOf(5f)
+    val selectedRoles = mutableStateOf(setOf<String>())
+    val minRating = mutableStateOf(0f)
+
+    fun addRole(role: String) {
+        selectedRoles.value = selectedRoles.value + role
+        Timber.tag("SearchScreen").d("Selected Roles: ${selectedRoles.value}")
+    }
+
+    fun removeRole(role: String) {
+        selectedRoles.value = selectedRoles.value - role
+    }
+
     val userLocations: StateFlow<List<profileUser>> get() = locationRepository.userLocations
 
     fun startLocationUpdates(userId: String?, context: Context) {
@@ -32,10 +46,10 @@ class LocationViewModel @Inject constructor(
         locationRepository.clearUserLocations()
     }
 
-    fun fetchUserLocations(role: String, radius: Double, location: LatLng) {
+    fun fetchUserLocations(role: String, radius: Double, location: LatLng, minRating: Float) {
         viewModelScope.launch {
             clearUserLocations()
-            locationRepository.fetchUserLocations(role, radius, location)
+            locationRepository.fetchUserLocations(role, radius, location, minRating)
         }
     }
 
@@ -57,6 +71,7 @@ class LocationViewModel @Inject constructor(
 
     fun setSelectedLocation(latLng: LatLng){
         _selectedLocation.value=latLng
+        Timber.tag("SearchScreen").d("Selected Location: $latLng")
     }
     // Function to geocode the selected place and update the selected location state
     fun selectLocation(selectedPlace: String, context: Context) {

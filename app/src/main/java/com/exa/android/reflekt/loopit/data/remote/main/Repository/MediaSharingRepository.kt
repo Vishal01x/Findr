@@ -35,6 +35,9 @@ class MediaSharingRepository @Inject constructor(
         if(!isNetworkAvailable(context)){
             throw IOException("No Internet Available")
         }
+        if (file.length() > 10 * 1024 * 1024) { // 10MB limit
+            throw IOException("File size exceeds 10MB limit")
+        }
 
         val requestFile = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)

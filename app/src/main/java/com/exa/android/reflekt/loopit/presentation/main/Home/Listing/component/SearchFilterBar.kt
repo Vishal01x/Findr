@@ -1,12 +1,10 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -15,9 +13,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +36,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -76,40 +76,46 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonAddAlt1
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.em
+import coil.compose.AsyncImage
+import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
+import com.exa.android.reflekt.loopit.util.model.Comment
+import com.exa.android.reflekt.loopit.util.model.PostType
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.HorizontalPagerIndicator
+import com.google.accompanist.pager.rememberPagerState
 import com.google.firebase.Timestamp
-import io.getstream.meeting.room.compose.ui.AppTheme
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -124,6 +130,8 @@ fun SearchFilterBar(
     availableTags: List<String>,
     onTagSelected: (String) -> Unit,
     onTagDeselected: (String) -> Unit,
+    selectedPostType: PostType?,
+    onTypeSelected: (PostType?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showRolesFilter by remember { mutableStateOf(false) }
@@ -178,6 +186,13 @@ fun SearchFilterBar(
                 focusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PostTypeFilter(
+            selectedType = selectedPostType,
+            onTypeSelected = onTypeSelected
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -654,6 +669,7 @@ private fun ExpandableSection(
         }
     }
 }
+
 @Composable
 private fun RoleChip(role: String) {
     AssistChip(
@@ -735,6 +751,8 @@ fun ProjectCard(
     onViewOnMap: (List<String>) -> Unit,
     currentUserId: String?,
     onAuthorProfileClick: (String) -> Unit,
+    onToggleLike: (String) -> Unit, // Added like handler
+    onCommentEvent: (ProjectListEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -756,6 +774,10 @@ fun ProjectCard(
     val shape = MaterialTheme.shapes.extraLarge
     val typography = MaterialTheme.typography
     val colors = MaterialTheme.colorScheme
+
+    val postType = remember(project.type) {
+        PostType.entries.find { it.displayName == project.type } ?: PostType.OTHER
+    }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -853,71 +875,78 @@ fun ProjectCard(
 
             // Description
             var showFullDescription by remember { mutableStateOf(false) }
-            Column {
-                var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-                var maxLines by remember { mutableStateOf(3) }
+            if(project.description.isNotEmpty()) {
+                Column {
+                    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+                    var maxLines by remember { mutableStateOf(3) }
 
-                Text(
-                    text = project.description,
-                    style = typography.bodyLarge,
-                    color = colors.onSurface,
-                    maxLines = maxLines,
-                    overflow = TextOverflow.Ellipsis,
-                    onTextLayout = { textLayoutResult = it }
+                    Text(
+                        text = project.description,
+                        style = typography.bodyLarge,
+                        color = colors.onSurface,
+                        maxLines = maxLines,
+                        overflow = TextOverflow.Ellipsis,
+                        onTextLayout = { textLayoutResult = it }
+                    )
+
+                    if ((textLayoutResult?.lineCount ?: 0) > 3 && !showFullDescription) {
+                        TextButton(
+                            onClick = { showFullDescription = true },
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("Read more", style = typography.labelMedium)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+            if (project.imageUrls.isNotEmpty()) {
+                ImageCarousel(project.imageUrls)
+            }
+            if(project.rolesNeeded.isNotEmpty()) {
+                // Roles Section
+                ExpandableSection(
+                    icon = Icons.Filled.Group,
+                    title = "Roles Needed (${project.rolesNeeded.size})",
+                    expanded = expandedRoles,
+                    onExpandChange = { expandedRoles = it },
+                    content = {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            project.rolesNeeded.forEach { role ->
+                                RoleChip(role = role)
+                            }
+                        }
+                    }
                 )
 
-                if ((textLayoutResult?.lineCount ?: 0) > 3 && !showFullDescription) {
-                    TextButton(
-                        onClick = { showFullDescription = true },
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("Read more", style = typography.labelMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            if(project.tags.isNotEmpty()) {
+                // Tags Section
+                ExpandableSection(
+                    icon = Icons.Filled.Tag,
+                    title = "Tags (${project.tags.size})",
+                    expanded = expandedTags,
+                    onExpandChange = { expandedTags = it },
+                    content = {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            project.tags.forEach { tag ->
+                                TagChip(tag = tag)
+                            }
+                        }
                     }
-                }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Roles Section
-            ExpandableSection(
-                icon = Icons.Filled.Group,
-                title = "Roles Needed (${project.rolesNeeded.size})",
-                expanded = expandedRoles,
-                onExpandChange = { expandedRoles = it },
-                content = {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        project.rolesNeeded.forEach { role ->
-                            RoleChip(role = role)
-                        }
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Tags Section
-            ExpandableSection(
-                icon = Icons.Filled.Tag,
-                title = "Tags (${project.tags.size})",
-                expanded = expandedTags,
-                onExpandChange = { expandedTags = it },
-                content = {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        project.tags.forEach { tag ->
-                            TagChip(tag = tag)
-                        }
-                    }
-                }
-            )
-
             // Requested Members Section
-            if (isEditable) {
+            if (isEditable && project.requestedPersons.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Column {
                     Row(
@@ -1053,7 +1082,7 @@ fun ProjectCard(
                 }
             }
 
-            if (isEditable) {
+            if (isEditable && project.enrolledPersons.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Column {
                     Row(
@@ -1139,7 +1168,7 @@ fun ProjectCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Footer Section
             Row(
@@ -1214,9 +1243,324 @@ fun ProjectCard(
                     }
                 }
             }
+
+            when (postType) {
+                PostType.JOB, PostType.EVENT, PostType.OTHER -> {
+                    CommentSection(
+                        project = project,
+                        currentUserId = currentUserId,
+                        onCommentEvent = onCommentEvent // Pass handler
+                    )
+
+                    LikeButton(
+                        isLiked = project.likes.contains(currentUserId),
+                        onLike = { onToggleLike(project.id) } // Use handler
+                    )
+                }
+                else -> Unit
+            }
         }
     }
 
+}
+
+@Composable
+private fun CommentSection(
+    project: Project,
+    currentUserId: String?,
+    onCommentEvent: (ProjectListEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var commentText by remember { mutableStateOf("") }
+
+    Column(modifier = modifier) {
+        // Existing Comments
+        project.comments
+            .filter { it.senderId == currentUserId }
+            .forEach { comment ->
+                // can use UserCommentPreview
+                UserCommentItem(
+                    comment = comment,
+                    onEdit = { newText ->
+                        onCommentEvent(
+                            ProjectListEvent.UpdateComment(
+                                project.id,
+                                comment.id,
+                                newText
+                            )
+                        )
+                    },
+                    onDelete = {
+                        onCommentEvent(
+                            ProjectListEvent.DeleteComment(
+                                project.id,
+                                comment.id
+                            )
+                        )
+                    }
+                )
+            }
+
+        // New Comment Input
+        CommentInputField(
+            commentText = commentText,
+            onCommentChange = { commentText = it },
+            onSubmit = {
+                if (commentText.isNotBlank()) {
+                    onCommentEvent(
+                        ProjectListEvent.AddComment(
+                            project.id,
+                            commentText
+                        )
+                    )
+                    commentText = ""
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CommentInputField(
+    commentText: String,
+    onCommentChange: (String) -> Unit,
+    onSubmit: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        OutlinedTextField(
+            value = commentText,
+            onValueChange = onCommentChange,
+            label = { Text("Add a comment...") },
+            singleLine = false,
+            maxLines = 3,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            keyboardActions = KeyboardActions(onSend = { onSubmit() })
+        )
+
+        IconButton(
+            onClick = onSubmit,
+            enabled = commentText.isNotBlank()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Send,
+                contentDescription = "Post comment",
+                tint = if (commentText.isNotBlank())
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun UserCommentItem(
+    comment: Comment,
+    onEdit: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editedText by remember { mutableStateOf(comment.text) }
+
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        modifier = Modifier.padding(vertical = 4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = comment.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = comment.timestamp.toDate().formatAsTimeAgo(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+            }
+
+            IconButton(onClick = { showEditDialog = true }) {
+                Icon(Icons.Default.Edit, "Edit comment")
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, "Delete comment")
+            }
+        }
+    }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Comment") },
+            text = {
+                OutlinedTextField(
+                    value = editedText,
+                    onValueChange = { editedText = it },
+                    label = { Text("Edit comment") }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onEdit(editedText)
+                        showEditDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showEditDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun PostTypeFilter(
+    selectedType: PostType?,
+    onTypeSelected: (PostType?) -> Unit
+) {
+    val allTypes = remember { listOf(null) + PostType.entries } // Fixed list creation
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        allTypes.forEach { type ->
+            val isSelected = type == selectedType
+            FilterChip(
+                selected = isSelected,
+                onClick = { onTypeSelected(if (isSelected) null else type) },
+                label = {
+                    Text(
+                        type?.displayName ?: "All Posts",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                },
+                leadingIcon = if (type != null) {
+                    {
+                        Icon(
+                            type.icon,
+                            null,
+                            modifier = Modifier.size(20.dp),
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else null,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = MaterialTheme.colorScheme.outline,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                    disabledBorderColor = Color.Transparent,
+                    enabled = true,
+                    selected = isSelected
+                )
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalPagerApi::class)
+@Composable
+private fun ImageCarousel(images: List<String>) {
+    val pagerState = rememberPagerState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+    ) {
+        HorizontalPager(
+            count = images.size,
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+        ) { page ->
+            AsyncImage(
+                model = images[page],
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop,
+                placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceDim),
+                error = ColorPainter(MaterialTheme.colorScheme.errorContainer)
+            )
+        }
+
+
+        HorizontalPagerIndicator(
+            pagerState = pagerState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            activeColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            indicatorWidth = 12.dp,
+            indicatorHeight = 4.dp,
+            spacing = 4.dp
+        )
+    }
+}
+
+@Composable
+fun LikeButton(
+    isLiked: Boolean,
+    onLike: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onLike,
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+            contentDescription = "Like",
+            tint = if (isLiked) MaterialTheme.colorScheme.error
+            else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 private fun Date.formatAsTimeAgo(): String {
@@ -1262,7 +1606,9 @@ fun ProjectCardPreview() {
             onViewOnMap = { _ -> },
             currentUserId = "creator1",
             modifier = Modifier.padding(16.dp),
-            onAuthorProfileClick = {}
+            onAuthorProfileClick = {},
+            onToggleLike = {},
+            onCommentEvent = {}
         )
     }
 }
@@ -1296,7 +1642,9 @@ fun ProjectCardNonEditablePreview() {
             onViewOnMap = { _ -> },
             currentUserId = "user3",
             modifier = Modifier.padding(16.dp),
-                onAuthorProfileClick = {}
+            onAuthorProfileClick = {},
+            onToggleLike = {},
+            onCommentEvent = {}
         )
     }
 }

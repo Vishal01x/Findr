@@ -21,7 +21,8 @@ data class profileUser(
     val location: String = "",
     val companyName: String = "",
     val ctc: String = "",
-    val experience: String = ""
+    val experience: String = "",
+    val rating: Float = 0f
 ) {
     // Custom getter for Firestore deserialization
     constructor() : this(
@@ -39,7 +40,8 @@ data class profileUser(
         location = "",
         companyName = "",
         ctc = "",
-        experience = ""
+        experience = "",
+        rating = 0f
     ) {
         // No need for manual parsing if Firestore stores it as Double
     }
@@ -61,7 +63,8 @@ data class profileUser(
                 location = map["location"] as? String ?: "",
                 companyName = map["companyName"] as? String ?: "",
                 ctc = map["ctc"] as? String ?: "",
-                experience = map["experience"] as? String ?: ""
+                experience = map["experience"] as? String ?: "",
+                rating = (map["rating"] as? Number)?.toFloat() ?: 0f
             )
         }
         val Saver: Saver<profileUser?, *> = Saver(
@@ -81,7 +84,8 @@ data class profileUser(
                         it.location,
                         it.companyName,
                         it.ctc,
-                        it.experience
+                        it.experience,
+                        it.rating
                     )
                 }
             },
@@ -101,7 +105,8 @@ data class profileUser(
                         location = data[10] as String,
                         companyName = data[11] as String,
                         ctc = data[12] as String,
-                        experience = data[13] as String
+                        experience = data[13] as String,
+                        rating = data[14] as Float
                     )
                 } else null
             }

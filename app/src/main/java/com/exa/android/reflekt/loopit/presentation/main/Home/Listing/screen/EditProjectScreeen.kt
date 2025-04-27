@@ -1,6 +1,10 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 
 import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,11 +13,13 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +30,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,6 +47,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
@@ -48,6 +59,7 @@ import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Engineering
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.GroupWork
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Save
@@ -101,6 +113,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProjectState
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProjectViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.RequestedMember
@@ -272,6 +285,7 @@ private fun EditProjectContent(
     var showRolesDialog by remember { mutableStateOf(false) }
     var showTagsDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showUrlDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -281,6 +295,18 @@ private fun EditProjectContent(
     ) {
         ProjectTitleSection(state, viewModel)
         ProjectDescriptionSection(state, viewModel)
+
+        MediaAttachmentsSection(
+            existingImageUrls = state.existingImageUrls,
+            newImages = state.newImages,
+            urls = state.urls,
+            onAddMediaClick = viewModel::addImages,
+            onAddUrlClick = { showUrlDialog = true },
+            onRemoveExistingImage = viewModel::removeExistingImage,
+            onRemoveNewImage = viewModel::removeNewImage,
+            onRemoveUrl = viewModel::removeUrl
+        )
+
         RolesSection(state, viewModel, showRolesDialog) { showRolesDialog = it }
         TagsSection(state, viewModel, showTagsDialog) { showTagsDialog = it }
         if (state.requestedMembers.isNotEmpty()) EnrolledMembersSection(state)
@@ -319,7 +345,225 @@ private fun EditProjectContent(
             onDismiss = { showDeleteConfirmation = false }
         )
     }
+    if (showUrlDialog) {
+        UrlInputDialog(
+            onDismiss = { showUrlDialog = false },
+            onUrlAdded = viewModel::addUrl
+        )
+    }
 }
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun MediaAttachmentsSection(
+    existingImageUrls: List<String>,
+    newImages: List<Uri>,
+    urls: List<String>,
+    onAddMediaClick: (List<Uri>) -> Unit,
+    onAddUrlClick: () -> Unit,
+    onRemoveExistingImage: (String) -> Unit,
+    onRemoveNewImage: (Uri) -> Unit,
+    onRemoveUrl: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(),
+        onResult = { uris ->
+            uris.takeIf { it.isNotEmpty() }?.let(onAddMediaClick)
+        }
+    )
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 100.dp, max = 500.dp),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item { HeaderItem() }
+
+            item(span = { GridItemSpan(2) }) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    UploadCard(
+                        icon = Icons.Default.Image,
+                        title = "Upload picture",
+                        subtitle = "PNG, JPG or JPEG",
+                        specs = "Min. 800×400px",
+                        onClick = {
+                            photoPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    UploadCard(
+                        icon = Icons.Outlined.Link,
+                        title = "Add Link",
+                        subtitle = "Website",
+                        specs = "HTTPS required",
+                        onClick = onAddUrlClick,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Existing Images Section
+            if (existingImageUrls.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionTitle("Existing Images (${existingImageUrls.size})")
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(existingImageUrls.size) {
+                            val url = existingImageUrls[it]
+                            ExistingImageThumbnail(
+                                url = url,
+                                onRemove = { onRemoveExistingImage(url) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // New Images Section
+            if (newImages.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionTitle("New Images (${newImages.size})")
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(newImages.size) {
+                            val uri = newImages[it]
+                            NewImageThumbnail(
+                                uri = uri,
+                                onRemove = { onRemoveNewImage(uri) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // URLs section
+            if (urls.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionTitle("Attached Links (${urls.size})")
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        urls.forEach { url ->
+                            UrlChip(
+                                url = url,
+                                onRemove = onRemoveUrl
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExistingImageThumbnail(
+    url: String,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(100.dp)
+            .padding(2.dp)
+    ) {
+        AsyncImage(
+            model = url,
+            contentDescription = "Existing image",
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.medium)
+                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), MaterialTheme.shapes.medium)
+        )
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(
+                Icons.Default.Close,
+                "Remove",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(18.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = CircleShape
+                    )
+                    .padding(2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun NewImageThumbnail(
+    uri: Uri,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(100.dp)
+            .padding(2.dp)
+    ) {
+        AsyncImage(
+            model = uri,
+            contentDescription = "New image",
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.medium)
+                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), MaterialTheme.shapes.medium)
+        )
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(
+                Icons.Default.Close,
+                "Remove",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(18.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = CircleShape
+                    )
+                    .padding(2.dp)
+            )
+        }
+    }
+}
+
 
 @Composable
 private fun ProjectTitleSection(state: EditProjectState, viewModel: EditProjectViewModel) {
@@ -656,8 +900,6 @@ fun SectionHeader(
     }
 }
 
-
-
 @Composable
 private fun EnrolledMembersSection(state: EditProjectState) {
     ElevatedCard(
@@ -848,6 +1090,7 @@ fun FullScreenLoading() {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .height(200.dp)
             .background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center
     ) {

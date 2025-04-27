@@ -1,6 +1,12 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 
+import android.R
 import android.content.Context
+import android.net.Uri
+import android.util.Patterns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +18,7 @@ import androidx.compose.material3.AlertDialog
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.CreateProjectViewModel
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,42 +35,62 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Engineering
 import androidx.compose.material.icons.outlined.GroupWork
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Photo
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material.icons.outlined.Title
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -74,6 +101,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
@@ -95,20 +123,32 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.CreateProjectState
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
+import com.exa.android.reflekt.loopit.util.LinkUtils.isValidUrl
+import com.exa.android.reflekt.loopit.util.model.PostType
+import java.net.URI
+
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
@@ -249,7 +289,9 @@ fun CreateProjectScreen(
         ) {
             item {
                 when {
-                    state.isLoading -> FullScreenLoading()
+                    state.isLoading -> showLoader(
+                        message = "Creating project...",
+                    )
                     state.error != null -> ErrorState(error = state.error, onRetry = {})
                     else -> CreateProjectContent(
                         state = state,
@@ -270,15 +312,24 @@ private fun CreateProjectContent(
 ) {
     var showRolesDialog by remember { mutableStateOf(false) }
     var showTagsDialog by remember { mutableStateOf(false) }
+    var showUrlDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        PostTypeSection(state, viewModel)
         ProjectTitleSection(state, viewModel)
         ProjectDescriptionSection(state, viewModel)
+        MediaAttachmentsSection(
+            images = state.images,
+            urls = state.urls,
+            onAddMediaClick = viewModel::addImages,
+            onAddUrlClick = { showUrlDialog = true },
+            onRemoveImage = viewModel::removeImage,
+            onRemoveUrl = viewModel::removeUrl
+        )
         RolesSection(state, viewModel, showRolesDialog) { showRolesDialog = it }
         TagsSection(state, viewModel, showTagsDialog) { showTagsDialog = it }
     }
@@ -302,6 +353,13 @@ private fun CreateProjectContent(
             onTagDeselected = viewModel::onTagRemoved,
             onNewTagCreated = viewModel::onNewTagCreated,
             onDismiss = { showTagsDialog = false }
+        )
+    }
+
+    if (showUrlDialog) {
+        UrlInputDialog(
+            onDismiss = { showUrlDialog = false },
+            onUrlAdded = viewModel::addUrl
         )
     }
 }
@@ -580,9 +638,6 @@ private fun TagsSection(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoleSelectionDialog(
@@ -739,4 +794,553 @@ fun TagSelectionDialog(
             }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PostTypeSection(state: CreateProjectState, viewModel: CreateProjectViewModel) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(modifier = Modifier.padding(vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.Category,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    "Post Type",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            ExposedDropdownMenuBox(
+                expanded = state.postTypeExpanded,
+                onExpandedChange = { viewModel.togglePostTypeMenu() }
+            ) {
+                // Custom Text Field
+                OutlinedTextField(
+                    value = state.postType,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.postTypeExpanded) },
+                    placeholder = { Text("Select post type...") },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+
+                // Enhanced Dropdown Menu
+                ExposedDropdownMenu(
+                    expanded = state.postTypeExpanded,
+                    onDismissRequest = { viewModel.togglePostTypeMenu(false) },
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                ) {
+                    PostType.entries.forEachIndexed { index, type ->
+                        // Add divider between items
+                        if (index > 0) {
+                            Divider(
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                                thickness = 1.dp
+                            )
+                        }
+
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = type.icon,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        text = type.displayName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = if (state.postType == type.displayName) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
+                                    )
+                                    if (state.postType == type.displayName) {
+                                        Spacer(Modifier.weight(1f))
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            onClick = {
+                                viewModel.setPostType(type)
+                                viewModel.togglePostTypeMenu(false)
+                            },
+                            colors = MenuDefaults.itemColors(
+                                textColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp)
+                                .heightIn(min = 48.dp)
+                                .fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun MediaAttachmentsSection(
+    images: List<Uri>,
+    urls: List<String>,
+    onAddMediaClick: (List<Uri>) -> Unit,
+    onAddUrlClick: () -> Unit,
+    onRemoveImage: (Uri) -> Unit,
+    onRemoveUrl: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(),
+        onResult = { uris ->
+            uris.takeIf { it.isNotEmpty() }?.let(onAddMediaClick)
+        }
+    )
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 100.dp, max = 500.dp),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item { HeaderItem() }
+
+            item(span = { GridItemSpan(2) }) { // ✅ Span full row for UploadCards
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    UploadCard(
+                        icon = Icons.Default.Image,
+                        title = "Upload picture",
+                        subtitle = "PNG, JPG or JPEG",
+                        specs = "Min. 800×400px",
+                        onClick ={
+                            photoPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        modifier = Modifier.weight(1f) // ✅ Take equal space
+                    )
+
+                    UploadCard(
+                        icon = Icons.Outlined.Link,
+                        title = "Add Link",
+                        subtitle = "Website",
+                        specs = "HTTPS required",
+                        onClick = onAddUrlClick,
+                        modifier = Modifier.weight(1f) // ✅ Take equal space
+                    )
+                }
+            }
+
+            // Images section
+            if (images.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionTitle("Uploaded Images (${images.size})")
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        items(images.size, key = { it.toString() }) { index ->
+                            val uri = images[index]
+                            ImageThumbnail(
+                                uri = uri,
+                                onRemove = onRemoveImage,
+                                modifier = Modifier.animateItemPlacement()
+                            )
+                        }
+                    }
+                }
+            }
+
+
+            // URLs section
+            if (urls.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionTitle("Attached Links (${urls.size})")
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        urls.forEach { url ->
+                            UrlChip(
+                                url = url,
+                                onRemove = onRemoveUrl,
+                                modifier = Modifier.animateItemPlacement()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HeaderItem() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Icon(
+            imageVector = Icons.Default.AttachFile, // ✅ You can change icon if you want
+            contentDescription = "Attachments",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            "Attachments",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = 3.dp)
+    )
+}
+
+@Composable
+fun UploadCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    specs: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = specs,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImageThumbnail(
+    uri: Uri,
+    onRemove: (Uri) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(100.dp)
+            .padding(2.dp)
+    ) {
+        AsyncImage(
+            model = uri,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.medium)
+                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), MaterialTheme.shapes.medium)
+        )
+        IconButton(
+            onClick = { onRemove(uri) },
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(
+                Icons.Default.Close,
+                "Remove",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .size(18.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = CircleShape
+                    )
+                    .padding(2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun UrlChip(
+    url: String,
+    onRemove: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedAssistChip(
+        onClick = { onRemove(url) },
+        label = {
+            Text(
+                getDomainFromUrl(url),
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        trailingIcon = {
+            Icon(
+                Icons.Default.Close,
+                "Remove",
+                modifier = Modifier.size(18.dp)
+            )
+        },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            trailingIconContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        // Corrected border property
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)),
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UrlInputDialog(
+    onDismiss: () -> Unit,
+    onUrlAdded: (String) -> Unit
+) {
+    var url by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    val focusManager = LocalFocusManager.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .padding(16.dp)
+            .clip(MaterialTheme.shapes.extraLarge),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        title = {
+            Text(
+                text = "Add Website Link",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        text = {
+            Column(modifier = Modifier.padding(top = 8.dp)) {
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = {
+                        url = it
+                        error = null
+                    },
+                    label = {
+                        Text(
+                            "Website URL",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.Link,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        if (error != null) {
+                            Icon(
+                                Icons.Outlined.Warning,
+                                contentDescription = "Error",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        } else if (url.isNotEmpty()) {
+                            IconButton(onClick = { url = "" }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Clear",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    },
+                    isError = error != null,
+                    supportingText = {
+                        error?.let {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Outlined.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (isValidUrl(url)) {
+                                onUrlAdded(url)
+                                onDismiss()
+                            } else {
+                                error = "Must start with http:// or https://"
+                            }
+                            focusManager.clearFocus()
+                        }
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        errorContainerColor = Color.Transparent,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                        errorIndicatorColor = MaterialTheme.colorScheme.error,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        errorCursorColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            FilledTonalButton(
+                onClick = {
+                    if (isValidUrl(url)) {
+                        onUrlAdded(url)
+                        onDismiss()
+                    } else {
+                        error = "Please enter a valid URL starting with http:// or https://"
+                    }
+                },
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text("Add Link")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Cancel",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    )
+}
+
+private fun isValidUrl(url: String): Boolean {
+    val urlPattern = Patterns.WEB_URL
+    return urlPattern.matcher(url).matches() &&
+            (url.startsWith("http://") || url.startsWith("https://"))
+}
+
+private fun getDomainFromUrl(url: String): String {
+    return try {
+        URI(url).host?.removePrefix("www.") ?: url
+    } catch (e: Exception) {
+        url
+    }
 }

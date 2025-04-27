@@ -17,6 +17,7 @@ import java.net.URLDecoder
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.PhotoViewerScreen
 import com.exa.android.reflekt.loopit.presentation.main.StatusScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.ProfileScreen
@@ -42,7 +43,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.showToast
 
 
-fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController) {
+fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController, locationViewModel: LocationViewModel) {
 
     navigation(startDestination = "map_graph", route = "main_app") {
         homeNavGraph(navController)
@@ -51,7 +52,7 @@ fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostContr
         composable(MainRoute.Setting.route) {
             StatusScreen(navController)
         }
-        mapNavGraph(navController)
+        mapNavGraph(navController, locationViewModel)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
     }

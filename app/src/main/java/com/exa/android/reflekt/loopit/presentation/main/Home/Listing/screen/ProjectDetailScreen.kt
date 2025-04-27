@@ -3,25 +3,22 @@ package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,7 +29,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,82 +38,62 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.GroupWork
-import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PeopleAlt
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonAddDisabled
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.QuestionAnswer
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -126,15 +102,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -151,19 +123,17 @@ import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
-import com.exa.android.reflekt.loopit.util.application.ProjectListState
+import com.exa.android.reflekt.loopit.util.model.Comment
+import com.exa.android.reflekt.loopit.util.model.PostType
 import com.exa.android.reflekt.loopit.util.model.Project
 import com.google.firebase.auth.FirebaseAuth
-import io.getstream.video.android.compose.ui.components.avatar.UserAvatar
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Date
-import kotlin.math.min
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -173,9 +143,6 @@ fun ProjectDetailScreen(
     navController: NavHostController,
     viewModel: ProjectListViewModel = hiltViewModel()
 ) {
-
-
-
     val state by viewModel.state.collectAsState()
     val project = state.projects.find { it.id == projectId }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -324,6 +291,7 @@ fun ProjectDetailScreen(
                             viewModel = viewModel,
                             navController = navController,
                             context = context,
+                            currentUserId = currentUserId,
                             modifier = Modifier.padding(padding)
                         )
                     }
@@ -382,7 +350,6 @@ private fun CustomScrollLayout(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -515,6 +482,7 @@ private fun ProjectContentSection(
     viewModel: ProjectListViewModel,
     navController: NavHostController,
     context: Context,
+    currentUserId: String?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -527,6 +495,17 @@ private fun ProjectContentSection(
         DescriptionSection(project.description)
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        if(project.imageUrls.isNotEmpty()) {
+            ImageGallery(images = project.imageUrls, navController= navController)
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if(project.links.isNotEmpty()) {
+            ClickableLinks(links = project.links, context = context)
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
         ProjectChipsSection(
             roles = project.rolesNeeded,
@@ -568,6 +547,23 @@ private fun ProjectContentSection(
                 onRequestProfileClick = { userId->
                     navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
                 }
+            )
+        }
+
+        val allowedTypes = listOf(
+            PostType.JOB.displayName,
+            PostType.EVENT.displayName,
+            PostType.OTHER.displayName
+        )
+
+        val showSection = project.type in allowedTypes
+
+        if(showSection) {
+            LikeCommentSection(
+                project = project,
+                currentUserId = currentUserId,
+                viewModel = viewModel,
+                isOwner = isOwner
             )
         }
 
@@ -1268,5 +1264,241 @@ fun Date.formatAsTimeAgo(): String {
         seconds < 2592000 -> "${seconds / 86400} days ago"
         seconds < 31536000 -> "${seconds / 2592000} months ago"
         else -> "${seconds / 31536000} years ago"
+    }
+}
+
+@Composable
+private fun ImageGallery(images: List<String>, navController: NavController) {
+    if (images.isNotEmpty()) {
+        Column(modifier = Modifier.padding(vertical = 16.dp)) {
+            Text(
+                "Images",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            LazyRow {
+                items(images) { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Project image",
+                        modifier = Modifier
+                            .size(150.dp)
+                            .padding(end = 8.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(url))
+                            },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClickableLinks(links: List<String> , context: Context) {
+    if (links.isNotEmpty()) {
+        Column(modifier = Modifier.padding(vertical = 16.dp)) {
+            Text(
+                "Links",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            links.forEach { link ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { openUrl(link, context) }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Outlined.Link,
+                        contentDescription = "Link",
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        link,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+private fun openUrl(url: String, context: Context) {
+    try {
+        context.startActivity(
+            Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        )
+    } catch (e: Exception) {
+        Toast.makeText(context, "Invalid URL", Toast.LENGTH_SHORT).show()
+    }
+}
+
+@Composable
+private fun LikeCommentSection(
+    project: Project,
+    currentUserId: String?,
+    viewModel: ProjectListViewModel,
+    isOwner: Boolean
+) {
+    val isLiked = currentUserId in project.likes
+    val validTypes = listOf(PostType.JOB, PostType.EVENT, PostType.OTHER)
+    val showSection = validTypes.any { it.displayName == project.type } || isOwner
+
+    if (showSection) {
+        Column(modifier = Modifier.padding(vertical = 16.dp)) {
+            // Like Section
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                IconButton(
+                    onClick = { viewModel.toggleLike(project.id) },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Text(
+                    "${project.likes.size} likes",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            // Comments Section
+            if (project.comments.isNotEmpty() || isOwner) {
+                Text(
+                    "Comments",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp) // Limit maximum height
+                ) {
+                    items(project.comments) { comment ->
+                        CommentItem(
+                            comment = comment,
+                            currentUserId = currentUserId,
+                            isOwner = isOwner,
+                            projectId = project.id,
+                            viewModel = viewModel
+                        )
+                    }
+                }
+            }
+
+            // Comment Input
+            if (currentUserId != null) {
+                var commentText by remember { mutableStateOf("") }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    TextField(
+                        value = commentText,
+                        onValueChange = { commentText = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Add a comment...") },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                    IconButton(
+                        onClick = {
+                            if (commentText.isNotBlank()) {
+                                viewModel.addComment(project.id, commentText)
+                                commentText = ""
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Send, contentDescription = "Send comment")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentItem(
+    comment: Comment,
+    currentUserId: String?,
+    isOwner: Boolean,
+    projectId: String,
+    viewModel: ProjectListViewModel
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Add user avatar here if available
+                Text(
+                    comment.senderId.take(6), // Replace with actual username
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (currentUserId == comment.senderId || isOwner) {
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Comment actions")
+                    }
+                }
+            }
+
+            Text(
+                comment.text,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Text(
+                text = comment.timestamp.toDate().formatAsTimeAgo(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Comment") },
+            text = { Text("Are you sure you want to delete this comment?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteComment(projectId, comment.id)
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

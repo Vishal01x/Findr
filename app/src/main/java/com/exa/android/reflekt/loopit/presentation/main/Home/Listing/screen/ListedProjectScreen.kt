@@ -15,6 +15,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,11 +41,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -54,11 +57,16 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -106,6 +114,8 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.S
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
+import com.exa.android.reflekt.loopit.util.model.Comment
+import com.exa.android.reflekt.loopit.util.model.PostType
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -336,7 +346,11 @@ fun ListedProjectsScreen(
                         onTagDeselected = { viewModel.onEvent(ProjectListEvent.TagDeselected(it)) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 8.dp),
+                        selectedPostType = state.selectedPostType,
+                        onTypeSelected = { type ->
+                            viewModel.onEvent(ProjectListEvent.SelectPostType(type))
+                        }
                     )
                 }
 
@@ -425,6 +439,12 @@ fun ListedProjectsScreen(
                                     .clipToBounds(),
                                 onAuthorProfileClick = { autherId->
                                     navController.navigate(ProfileRoute.UserProfile.createRoute(autherId))
+                                },
+                                onToggleLike = { projectId ->
+                                    viewModel.onEvent(ProjectListEvent.ToggleLike(projectId))
+                                },
+                                onCommentEvent = { event ->
+                                    viewModel.onEvent(event)
                                 }
                             )
                         }
@@ -571,6 +591,46 @@ private fun EmptyStateContent(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+    }
+}
+
+
+
+@Composable
+private fun UserCommentPreview(
+    comment: Comment,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = comment.text,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Filled.Edit, "Edit")
+                }
+
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, "Delete")
+                }
+            }
+            Text(
+                text = comment.timestamp.toDate().formatAsTimeAgo(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
