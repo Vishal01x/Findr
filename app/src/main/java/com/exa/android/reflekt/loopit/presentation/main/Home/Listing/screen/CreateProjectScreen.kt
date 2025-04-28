@@ -263,7 +263,7 @@ fun CreateProjectScreen(
                         },
                         text = {
                             Text(
-                                "Create Project",
+                                "Create Activity",
                                 style = MaterialTheme.typography.titleSmall
                             )
                         },
@@ -290,7 +290,7 @@ fun CreateProjectScreen(
             item {
                 when {
                     state.isLoading -> showLoader(
-                        message = "Creating project...",
+                        message = "Creating Activity...",
                     )
                     state.error != null -> ErrorState(error = state.error, onRetry = {})
                     else -> CreateProjectContent(
@@ -385,7 +385,7 @@ private fun ProjectTitleSection(state: CreateProjectState, viewModel: CreateProj
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    "Project Title",
+                    "Activity Title",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -398,7 +398,7 @@ private fun ProjectTitleSection(state: CreateProjectState, viewModel: CreateProj
                 leadingIcon = {
                     Icon(Icons.Filled.Create, null, tint = MaterialTheme.colorScheme.outline)
                 },
-                placeholder = { Text("Amazing Project...", style = MaterialTheme.typography.bodyLarge) },
+                placeholder = { Text("Eg. Need Members, bug fix ...", style = MaterialTheme.typography.bodyLarge) },
                 isError = state.titleError != null,
                 supportingText = {
                     state.titleError?.let {
@@ -453,7 +453,7 @@ private fun ProjectDescriptionSection(state: CreateProjectState, viewModel: Crea
                 leadingIcon = {
                     Icon(Icons.Filled.Notes, null, tint = MaterialTheme.colorScheme.outline)
                 },
-                placeholder = { Text("Describe your project vision...") },
+                placeholder = { Text("Describe your Activity vision...") },
                 isError = state.descriptionError != null,
                 supportingText = {
                     state.descriptionError?.let {
@@ -813,7 +813,7 @@ private fun PostTypeSection(state: CreateProjectState, viewModel: CreateProjectV
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    "Post Type",
+                    "Activity Type",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -829,7 +829,7 @@ private fun PostTypeSection(state: CreateProjectState, viewModel: CreateProjectV
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.postTypeExpanded) },
-                    placeholder = { Text("Select post type...") },
+                    placeholder = { Text("Select Activity type...") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         unfocusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),

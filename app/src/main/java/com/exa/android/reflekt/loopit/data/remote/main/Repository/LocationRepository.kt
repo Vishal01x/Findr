@@ -102,9 +102,8 @@ class LocationRepository @Inject constructor(
                                         userRole == targetRole || userRole.contains(targetRole) || targetRole.contains(userRole)
                                     }
                                 }
-                                val meetsRating = user.rating >= minRating
 
-                                if (isMatching && meetsRating) {
+                                if (isMatching) {
                                     val updatedUser =
                                         user.copy(lat = location.latitude, lng = location.longitude)
 

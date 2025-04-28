@@ -157,7 +157,7 @@ fun EditProjectScreen(
                 title = {
 
                     Text(
-                        "Edit Project",
+                        "Edit Activity",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -584,7 +584,7 @@ private fun ProjectTitleSection(state: EditProjectState, viewModel: EditProjectV
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    "Project Title",
+                    "Activity Title",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -598,7 +598,7 @@ private fun ProjectTitleSection(state: EditProjectState, viewModel: EditProjectV
                 leadingIcon = {
                     Icon(Icons.Filled.Create, null, tint = MaterialTheme.colorScheme.outline)
                 },
-                placeholder = { Text("Amazing Project...", style = MaterialTheme.typography.bodyLarge) },
+                placeholder = { Text("Eg. Need Members, bug fix ...", style = MaterialTheme.typography.bodyLarge) },
                 isError = state.titleError != null,
                 supportingText = {
                     state.titleError?.let {
@@ -1008,7 +1008,7 @@ private fun DangerZoneSection(onDeleteClick: () -> Unit) {
             }
             Spacer(Modifier.height(16.dp))
             Text(
-                "This action cannot be undone. All project data and associated information will be permanently deleted.",
+                "This action cannot be undone. All Activity data and associated information will be permanently deleted.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
             )
