@@ -362,6 +362,7 @@ fun MapSearchScreen(
             }
         }
 
+        /*
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = MaterialTheme.shapes.extraLarge,
@@ -395,6 +396,8 @@ fun MapSearchScreen(
                 )
             }
         }
+
+         */
         // Apply Button
         Button(
             onClick = onApplyFilters,

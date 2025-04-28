@@ -45,7 +45,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.showToast
 
 
-fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController) {
+fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController, locationViewModel: LocationViewModel) {
 
     navigation(startDestination = "map_graph", route = "main_app") {
         homeNavGraph(navController)
@@ -58,7 +58,6 @@ fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostContr
         profileNavGraph(context,navController)
         photoViewScreen(navController)
     }
-
 
 }
 

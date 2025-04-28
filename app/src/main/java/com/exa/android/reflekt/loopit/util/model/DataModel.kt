@@ -1,7 +1,9 @@
 package com.exa.android.reflekt.loopit.util.model
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.BusinessCenter
+import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.MoreHoriz
@@ -13,7 +15,7 @@ import com.google.firebase.firestore.ServerTimestamp
 import java.util.UUID
 
 data class User(
-    val userId : String = "",
+    var userId : String = "",
     val name : String = "",
     val phone : String = "",
     val profilePicture : String? = "",
@@ -125,9 +127,9 @@ enum class PostType(
     val icon: ImageVector
 ) {
     PROJECT("Project", Icons.Outlined.Work),
-    COLLABORATION("Collaboration", Icons.Outlined.Group),
-    JOB("Job Opportunity", Icons.Outlined.BusinessCenter),
-    EVENT("Event", Icons.Outlined.Event),
+    BUG("Bug Fix", Icons.Outlined.Error),
+    COLLABORATION("Collab", Icons.Outlined.Group),
+    POST("Post", Icons.Outlined.Article),
     OTHER("Other", Icons.Outlined.MoreHoriz)
 }
 

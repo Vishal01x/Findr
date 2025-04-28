@@ -628,15 +628,15 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
 
 private fun getZoomLevel(radiusInKm: Float): Float {
     return when {
-        radiusInKm <= 1 -> 15.5f
-        radiusInKm <= 5 -> 13.5f
+        radiusInKm <= 1 -> 15f
+        radiusInKm <= 5 -> 13f
         radiusInKm <= 10 -> 12.5f
         radiusInKm <= 15 -> 12f
         radiusInKm <= 20 -> 11.5f
         radiusInKm <= 30 -> 11f
         radiusInKm <= 40 -> 10.5f
         radiusInKm <= 50 -> 10f
-        else -> 9.5f
+        else -> 10f
     }
 }
 
@@ -899,7 +899,13 @@ fun CustomMapMarker(
                     )
                 } else {
                     Text(
-                        text = fullName.take(1).uppercase(),
+                        text = fullName.split(" ").let { parts ->
+                            when {
+                                parts.size >= 2 -> "${parts.first().take(1)}${parts.last().take(1)}"
+                                parts.isNotEmpty() -> parts.first().take(1)
+                                else -> ""
+                            }.uppercase()
+                        },
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.align(Alignment.Center)

@@ -128,7 +128,6 @@ fun ListedProjectsScreen(
     viewModel: ProjectListViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     var showFab by remember { mutableStateOf(true) }
@@ -141,6 +140,7 @@ fun ListedProjectsScreen(
         refreshing = state.isRefreshing,
         onRefresh = { viewModel.onEvent(ProjectListEvent.Refresh) }
     )
+    val currentUserId = viewModel.currentUserId
 
     LaunchedEffect(tooltipState) {
         if (!isTooltipShown) {
@@ -161,18 +161,6 @@ fun ListedProjectsScreen(
             }
     }
 
-    LaunchedEffect(state.error) {
-        state.error?.let { error ->
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = error,
-                    actionLabel = "Dismiss"
-                )
-                viewModel.onEvent(ProjectListEvent.ClearError)
-            }
-        }
-    }
-
     BackHandler(enabled = state.showMyProjectsOnly) {
         viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
     }
@@ -183,7 +171,7 @@ fun ListedProjectsScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = if (state.showMyProjectsOnly) "My Projects" else "Explore Projects",
+                            text = if (state.showMyProjectsOnly) "My Activity" else "Explore",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -315,8 +303,7 @@ fun ListedProjectsScreen(
                     modifier = Modifier.padding(16.dp)
                 )
             }
-        },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        }
     ) { padding ->
         Box(
             modifier = Modifier
@@ -415,38 +402,51 @@ fun ListedProjectsScreen(
                             items = state.projects,
                             key = { it.id }
                         ) { project ->
-                            ProjectCard(
-                                project = project,
-                                onClick = { navController.navigate("project_detail/${project.id}") },
-                                isEditable = state.showMyProjectsOnly,
-                                onDelete = { viewModel.onEvent(ProjectListEvent.DeleteProject(project.id)) },
-                                onEdit = { navController.navigate("edit_project/${project.id}") },
-                                onEnroll = { viewModel.enrollInProject(project) },
-                                withdraw = { viewModel.withdrawFromProject(project.id) },
-                                onAccept = { userId, userName ->
-                                    viewModel.acceptJoinRequest(project.id, userId, userName)
-                                },
-                                onReject = { userId ->
-                                    viewModel.rejectJoinRequest(project.id, userId)
-                                },
-                                onViewOnMap = { userIds ->
-                                    navController.navigate("map_screen/${userIds.joinToString(",")}")
-                                },
-                                currentUserId = FirebaseAuth.getInstance().currentUser?.uid,
-                                modifier = Modifier
-                                    .animateItemPlacement()
-                                    .fillMaxWidth()
-                                    .clipToBounds(),
-                                onAuthorProfileClick = { autherId->
-                                    navController.navigate(ProfileRoute.UserProfile.createRoute(autherId))
-                                },
-                                onToggleLike = { projectId ->
-                                    viewModel.onEvent(ProjectListEvent.ToggleLike(projectId))
-                                },
-                                onCommentEvent = { event ->
-                                    viewModel.onEvent(event)
-                                }
-                            )
+                            if( state.showMyProjectsOnly  || currentUserId != project.createdBy) {
+
+                                ProjectCard(
+                                    project = project,
+                                    onClick = { navController.navigate("project_detail/${project.id}") },
+                                    isEditable = state.showMyProjectsOnly,
+                                    onDelete = {
+                                        viewModel.onEvent(
+                                            ProjectListEvent.DeleteProject(
+                                                project.id
+                                            )
+                                        )
+                                    },
+                                    onEdit = { navController.navigate("edit_project/${project.id}") },
+                                    onEnroll = { viewModel.enrollInProject(project) },
+                                    withdraw = { viewModel.withdrawFromProject(project.id) },
+                                    onAccept = { userId, userName ->
+                                        viewModel.acceptJoinRequest(project.id, userId, userName)
+                                    },
+                                    onReject = { userId ->
+                                        viewModel.rejectJoinRequest(project.id, userId)
+                                    },
+                                    onViewOnMap = { userIds ->
+                                        navController.navigate("map_screen/${userIds.joinToString(",")}")
+                                    },
+                                    currentUserId = FirebaseAuth.getInstance().currentUser?.uid,
+                                    modifier = Modifier
+                                        .animateItemPlacement()
+                                        .fillMaxWidth()
+                                        .clipToBounds(),
+                                    onAuthorProfileClick = { autherId ->
+                                        navController.navigate(
+                                            ProfileRoute.UserProfile.createRoute(
+                                                autherId
+                                            )
+                                        )
+                                    },
+                                    onToggleLike = { projectId ->
+                                        viewModel.onEvent(ProjectListEvent.ToggleLike(projectId))
+                                    },
+                                    onCommentEvent = { event ->
+                                        viewModel.onEvent(event)
+                                    }
+                                )
+                            }
                         }
 
                     }

@@ -30,6 +30,8 @@ class ProjectListViewModel @Inject constructor(
     private val _state = MutableStateFlow(ProjectListState())
     val state = _state.asStateFlow()
 
+    val currentUserId = auth.currentUser?.uid
+
     private var projectsJob: Job? = null
 
     init {
@@ -163,7 +165,7 @@ class ProjectListViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error = error.message ?: "Failed to load projects"
+                                error = "Failed to load projects"
                             )
                         }
                     }
@@ -175,21 +177,19 @@ class ProjectListViewModel @Inject constructor(
 
     private fun loadFilters() {
         _state.update { it.copy(isLoading = true, error = null) }
-        val load="loading"
-        //Timber.tag(load).d("Loading filters")
 
         viewModelScope.launch {
             val rolesResult = repository.getAvailableRoles()
             val tagsResult = repository.getAvailableTags()
-            //Timber.tag(load).d("Filters loaded")
 
             _state.update {
+                val hasError = rolesResult.isFailure || tagsResult.isFailure
+
                 it.copy(
                     isLoading = false,
                     availableRoles = rolesResult.getOrElse { emptyList() },
                     availableTags = tagsResult.getOrElse { emptyList() },
-                    error = rolesResult.exceptionOrNull()?.message
-                        ?: tagsResult.exceptionOrNull()?.message
+                    error = if (hasError) "There is some error in loading filters" else null
                 )
             }
         }
@@ -205,7 +205,7 @@ class ProjectListViewModel @Inject constructor(
                     repository.enrollInProject(project, userId, userName, profile.imageUrl)
                     loadProjects() // Refresh the list
                 } catch (e: Exception) {
-                    _state.update { it.copy(isLoading = false, error = e.message) }
+                    _state.update { it.copy(isLoading = false, error = "There is some error in enrolling project") }
                 }
             }
         }
@@ -220,7 +220,7 @@ class ProjectListViewModel @Inject constructor(
                     repository.withdrawFromProject(projectId, userId)
                     loadProjects() // Refresh the list
                 } catch (e: Exception) {
-                    _state.update { it.copy(isLoading = false, error = e.message) }
+                    _state.update { it.copy(isLoading = false, error = "There is some error in withdrawing project") }
                 }
             }
         }
@@ -233,7 +233,7 @@ class ProjectListViewModel @Inject constructor(
                 repository.acceptJoinRequest(projectId, userId, userName)
                 loadProjects()
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = e.message) }
+                _state.update { it.copy(isLoading = false, error = "There is some error in accepting join request") }
             }
         }
     }
@@ -247,7 +247,7 @@ class ProjectListViewModel @Inject constructor(
                 repository.rejectJoinRequest(projectId, userId)
                 loadProjects()
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = e.message) }
+                _state.update { it.copy(isLoading = false, error = "There is some error in rejecting join request") }
             }
         }
     }

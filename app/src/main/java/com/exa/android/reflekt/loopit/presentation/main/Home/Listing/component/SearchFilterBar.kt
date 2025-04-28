@@ -4,14 +4,22 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +47,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ContentAlpha
+import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -88,13 +98,17 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material.icons.outlined.WorkOutline
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
@@ -1202,7 +1216,7 @@ fun ProjectCard(
                 }
 
                 // Enroll/Withdraw Button
-                if (!isEditable && currentUserId != null && currentUserId != project.createdBy) {
+                if (!isEditable  && postType != PostType.POST && postType != PostType.OTHER) {
                     FilledTonalButton(
                         onClick = {
                             if (isEnrolled) {
@@ -1241,23 +1255,13 @@ fun ProjectCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(if (isEnrolled) "Withdraw" else "Enroll")
                     }
-                }
-            }
-
-            when (postType) {
-                PostType.JOB, PostType.EVENT, PostType.OTHER -> {
-                    CommentSection(
-                        project = project,
-                        currentUserId = currentUserId,
-                        onCommentEvent = onCommentEvent // Pass handler
-                    )
-
+                }else{
                     LikeButton(
                         isLiked = project.likes.contains(currentUserId),
-                        onLike = { onToggleLike(project.id) } // Use handler
+                        onLike = { onToggleLike(project.id) },
+                        modifier = Modifier.padding(4.dp)
                     )
                 }
-                else -> Unit
             }
         }
     }
@@ -1544,22 +1548,79 @@ private fun ImageCarousel(images: List<String>) {
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun LikeButton(
     isLiked: Boolean,
     onLike: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    IconButton(
-        onClick = onLike,
+    val iconColor by animateColorAsState(
+        targetValue = if (isLiked) MaterialTheme.colorScheme.error
+        else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(durationMillis = 300),
+        label = "iconColor"
+    )
+
+    val textColor by animateColorAsState(
+        targetValue = if (isLiked) MaterialTheme.colorScheme.error
+        else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(durationMillis = 300),
+        label = "textColor"
+    )
+
+    val scale by animateFloatAsState(
+        targetValue = if (isLiked) 1.2f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "scale"
+    )
+
+    Box(
         modifier = modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(
+                    bounded = false,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            ) { onLike() }
+            .padding(8.dp)
     ) {
-        Icon(
-            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            contentDescription = "Like",
-            tint = if (isLiked) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Animated icon
+            CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
+                Icon(
+                    imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = "Like",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .scale(scale),
+                    tint = iconColor
+                )
+            }
+
+            // Animated text
+            AnimatedContent(
+                targetState = isLiked,
+                transitionSpec = {
+                    slideInVertically { height -> height } + fadeIn() with
+                            slideOutVertically { height -> -height } + fadeOut()
+                }
+            ) { liked ->
+                Text(
+                    text = if (liked) "Liked" else "Like",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
     }
 }
 

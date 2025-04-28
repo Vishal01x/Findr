@@ -29,7 +29,7 @@ class ProjectRepositoryImpl @Inject constructor(
 ) : ProjectRepository {
 
     private companion object {
-        const val PROJECTS_COLLECTION = "projectss"
+        const val PROJECTS_COLLECTION = "projects"
         const val METADATA_DOCUMENT = "metadata"
         const val FILTERS_DOCUMENT = "projectFilters"
         const val ROLES_FIELD = "availableRoles"

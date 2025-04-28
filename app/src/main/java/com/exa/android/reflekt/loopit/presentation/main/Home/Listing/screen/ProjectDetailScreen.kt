@@ -551,8 +551,8 @@ private fun ProjectContentSection(
         }
 
         val allowedTypes = listOf(
-            PostType.JOB.displayName,
-            PostType.EVENT.displayName,
+            PostType.BUG.displayName,
+            PostType.POST.displayName,
             PostType.OTHER.displayName
         )
 
@@ -1328,6 +1328,7 @@ private fun ClickableLinks(links: List<String> , context: Context) {
         }
     }
 }
+
 private fun openUrl(url: String, context: Context) {
     try {
         context.startActivity(
@@ -1346,7 +1347,7 @@ private fun LikeCommentSection(
     isOwner: Boolean
 ) {
     val isLiked = currentUserId in project.likes
-    val validTypes = listOf(PostType.JOB, PostType.EVENT, PostType.OTHER)
+    val validTypes = listOf(PostType.BUG, PostType.POST, PostType.OTHER)
     val showSection = validTypes.any { it.displayName == project.type } || isOwner
 
     if (showSection) {
