@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -82,9 +83,32 @@ class SettingsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            loadPreferences()
+           // loadPreferences()
+            loadLocationModePref()
         }
     }
+
+    fun loadLocationModePref(){
+        // Load the saved value when ViewModel is created
+        viewModelScope.launch {
+            dataStore.data
+                .map { preferences ->
+                    preferences[PreferencesKeys.PRIVACY_ENABLED] ?: true
+                }
+                .collect { enabled ->
+                    _privacyEnabled.value = enabled
+                }
+        }
+    }
+
+    fun setPrivacyEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[PreferencesKeys.PRIVACY_ENABLED] = enabled
+            }
+        }
+    }
+
 
     private fun loadPreferences() {
         viewModelScope.launch {
@@ -124,9 +148,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setPrivacyEnabled(enabled: Boolean) {
-        _privacyEnabled.value = enabled
-    }
+//    fun setPrivacyEnabled(enabled: Boolean) {
+//        _privacyEnabled.value = enabled
+//    }
 
     fun changePassword(currentPassword: String, newPassword: String) {
         viewModelScope.launch {
@@ -255,3 +279,8 @@ class SettingsViewModel @Inject constructor(
         private val THEME_COLOR = intPreferencesKey("theme_color")
     }
 }
+// PreferencesKeys.kt
+object PreferencesKeys {
+    val PRIVACY_ENABLED = booleanPreferencesKey("privacy_enabled")
+}
+

@@ -59,8 +59,14 @@ import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.foundation.Canvas
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.ui.geometry.Size
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.Dp
@@ -81,9 +87,9 @@ fun CustomBottomNavigationBar(
     val items = listOf(
         BottomNavItem(
             route = HomeRoute.ChatList.route,
-            iconSelected = Icons.Filled.Home,
-            iconUnselected = Icons.Outlined.Home,
-            label = "Home"
+            iconSelected = Icons.AutoMirrored.Filled.Chat,
+            iconUnselected = Icons.AutoMirrored.Outlined.Chat,
+            label = "Chats"
         ),
         BottomNavItem(
             route = MainRoute.Map.route,
@@ -93,9 +99,9 @@ fun CustomBottomNavigationBar(
         ),
         BottomNavItem(
             route = MainRoute.Project.route,
-            iconSelected = Icons.Filled.Work,
-            iconUnselected = Icons.Outlined.Work,
-            label = "Projects"
+            iconSelected = Icons.Filled.Public,
+            iconUnselected = Icons.Outlined.Public,
+            label = "Explore"
         ),
         BottomNavItem(
             route = MainRoute.Profile.route,

@@ -472,7 +472,7 @@ fun ReplyUi(
 
     val replyColor = when(replyType){
         ReplyType.YOU -> {MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)}
-        ReplyType.OTHER -> {MaterialTheme.colorScheme.background.copy(.8f)}
+        ReplyType.OTHER -> {Color.White.copy(.8f)}
         ReplyType.NEWMESSAGE -> {MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)}
     }
 

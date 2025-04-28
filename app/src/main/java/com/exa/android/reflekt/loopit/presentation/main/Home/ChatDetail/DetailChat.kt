@@ -76,7 +76,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalFocusManager
 
 
-
 @Composable
 fun DetailChat(
     navController: NavController,
@@ -111,6 +110,7 @@ fun DetailChat(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var isLastMessageSelected by remember { mutableStateOf(false) }
     val chatIdState = rememberUpdatedState(generateChatId(curUserId, otherUserId))
     val coroutineScope =
         rememberCoroutineScope() // to handle asynchronous here for calling viewMode.delete
@@ -135,17 +135,17 @@ fun DetailChat(
         }
     }
 
-   BackHandler(true) {
+    BackHandler(true) {
 //       if (isFocused.value) {
 //           focusManager.clearFocus()
 //           replyMessage = null
 //       } else {
-           if (selectedMessages.isEmpty()) {
-               navController.popBackStack()
-           } else {
-               selectedMessages = emptySet()
-           }
-       }
+        if (selectedMessages.isEmpty()) {
+            navController.popBackStack()
+        } else {
+            selectedMessages = emptySet()
+        }
+    }
     //}
 //    val otherUserId = otherUser.userId
 
@@ -326,8 +326,10 @@ fun DetailChat(
                         selectedMessages,
                         generateChatId(curUserId, otherUserId),
                         deleteFor,
-                        coroutineScope
+                        coroutineScope,
+                        isLastMessageSelected
                     )
+                    isLastMessageSelected = false
                     selectedMessages = emptySet()
                 },
                 onClearChatClick = {
@@ -384,7 +386,7 @@ fun DetailChat(
                 isOtherUserBlocked,
                 userViewModel, editMessage,
                 focusRequester,
-                onTextMessageSend = { text, replyTo->
+                onTextMessageSend = { text, replyTo ->
                     if (editMessage != null) {
                         chatViewModel.updateMessage(editMessage!!, text)
                         editMessage = null
@@ -410,7 +412,7 @@ fun DetailChat(
                 },
                 onSendOrDiscard = { replyMessage = null },
                 onDone = { focusManager.clearFocus() },
-                onFocusChange = {isFocused.value = it.isFocused}
+                onFocusChange = { isFocused.value = it.isFocused }
             )
         }
     ) { paddingValues ->
@@ -434,7 +436,10 @@ fun DetailChat(
                 members,
                 0,
                 selectedMessages,
-                updateMessages = { selectedMessages = it },
+                updateMessages = { updatedMessages, isLastMessage ->
+                    selectedMessages = updatedMessages
+                    isLastMessageSelected = isLastMessage
+                },
                 onReply = { replyMessage = it; focusRequester.requestFocus() },
                 onRetry = { message ->
                     val uri = Uri.parse(message.media?.uri)
@@ -467,7 +472,7 @@ fun launchMediaUpload(
     uri: Uri?,
     otherUserId: String,
     isCurUserBlocked: Boolean,
-    replyTo : Message?,
+    replyTo: Message?,
     fcmToken: String?,
     mediaType: MediaType,
     messageId: String? = null,
@@ -534,7 +539,8 @@ private fun deleteMessages(
     selectedMessages: Set<Message>,
     chatId: String,
     deleteFor: Int,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    isLastMessageSelected : Boolean
 ) {
     coroutineScope.launch {
         viewModel.deleteMessages(
@@ -543,5 +549,6 @@ private fun deleteMessages(
         ) {
 //            emptySelectedMessages()
         }
+        //viewModel.clearLastMessage(chatId)
     }
 }

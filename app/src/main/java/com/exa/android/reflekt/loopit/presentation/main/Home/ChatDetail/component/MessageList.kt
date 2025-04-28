@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -86,7 +87,7 @@ fun MessageList(
     members: List<User?>,
     unreadMessages: Int,
     selectedMessages: Set<Message>,
-    updateMessages: (Set<Message>) -> Unit,
+    updateMessages: (Set<Message>, Boolean) -> Unit,
     onReply: (message: Message) -> Unit,
     onRetry: (Message) -> Unit,
     openImage: (String) -> Unit
@@ -97,9 +98,8 @@ fun MessageList(
     var highlightedIndex by remember { mutableStateOf<Int?>(null) }
     val renderedIndex = remember { mutableStateMapOf<String, Int>() }
 
-//    LaunchedEffect(messages.size) {
-//          listState.animateScrollToItem(messages.lastIndex)
-//    }
+    val lastMessage = messages.lastOrNull()
+    val isLastMessageSelected = lastMessage != null && selectedMessages.contains(lastMessage)
 
     Log.d("Chat Messages1234", "Messages - ${messages.toString()}")
 
@@ -128,7 +128,7 @@ fun MessageList(
                                 message,
                                 selectedMessages,
                                 onSelect = { updatedSelection ->
-                                    updateMessages(updatedSelection)
+                                    updateMessages(updatedSelection, isLastMessageSelected)
                                 })
                         },
                         onReply = { message ->
@@ -163,7 +163,6 @@ fun MessageList(
 
 
 }
-
 
 
 @Composable
@@ -204,7 +203,7 @@ fun MessageBubble(
                 )
             }
     ) {
-        if (offsetX.value > 50) { // show reply icon on right swipe
+        if (offsetX.value > 60) { // show reply icon on right swipe
             SwipeHint(icon = Icons.Default.Reply, alignment = Alignment.CenterStart)
         }
         Row(
@@ -229,27 +228,29 @@ fun MessageBubble(
                                 }
                             },
                             onHorizontalDrag = { change, dragAmount ->
-                                if (dragAmount > 0) {
-                                    coroutineScope.launch {
-                                        offsetX.snapTo(offsetX.value + dragAmount)
-                                    }
-                                    if (offsetX.value > 100) {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                            vibrator?.vibrate(
-                                                VibrationEffect.createOneShot(
-                                                    50,
-                                                    VibrationEffect.DEFAULT_AMPLITUDE
-                                                )
-                                            )
-                                            onReply(message) // send reply message to messageList using Lambda
-                                            coroutineScope.launch {
-                                                offsetX.animateTo(
-                                                    0f,
-                                                    animationSpec = tween(durationMillis = 600)
-                                                )
-                                            }
+                                if (kotlin.math.abs(dragAmount) > kotlin.math.abs(change.positionChange().y)) {
+                                    if (dragAmount > 0) {
+                                        coroutineScope.launch {
+                                            offsetX.snapTo(offsetX.value + dragAmount)
                                         }
-                                        change.consume()
+                                        if (offsetX.value > 180) {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                vibrator?.vibrate(
+                                                    VibrationEffect.createOneShot(
+                                                        50,
+                                                        VibrationEffect.DEFAULT_AMPLITUDE
+                                                    )
+                                                )
+                                                onReply(message)
+                                                coroutineScope.launch {
+                                                    offsetX.animateTo(
+                                                        0f,
+                                                        animationSpec = tween(durationMillis = 600)
+                                                    )
+                                                }
+                                            }
+                                            change.consume()
+                                        }
                                     }
                                 }
                             }
@@ -280,7 +281,47 @@ fun MessageBubble(
                     .background(
                         color = /*if (isHighlighted) reverseBubbleColor else */ bubbleColor,
                         shape = RoundedCornerShape(12.dp)
-                    )
+                    ).pointerInput(selectedMessagesSize <= 0) {
+                        if (message.message != "deleted") {
+                            detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    coroutineScope.launch {
+                                        offsetX.animateTo(
+                                            targetValue = 0f,
+                                            animationSpec = tween(durationMillis = 600)
+                                        )
+                                    }
+                                },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    if (kotlin.math.abs(dragAmount) > kotlin.math.abs(change.positionChange().y)) {
+                                        if (dragAmount > 0) {
+                                            coroutineScope.launch {
+                                                offsetX.snapTo(offsetX.value + dragAmount)
+                                            }
+                                            if (offsetX.value > 180) {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    vibrator?.vibrate(
+                                                        VibrationEffect.createOneShot(
+                                                            50,
+                                                            VibrationEffect.DEFAULT_AMPLITUDE
+                                                        )
+                                                    )
+                                                }
+                                                onReply(message)
+                                                coroutineScope.launch {
+                                                    offsetX.animateTo(
+                                                        0f,
+                                                        animationSpec = tween(durationMillis = 600)
+                                                    )
+                                                }
+                                            }
+                                            change.consume()
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
                     .padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
             ) {
                 Box(modifier = Modifier

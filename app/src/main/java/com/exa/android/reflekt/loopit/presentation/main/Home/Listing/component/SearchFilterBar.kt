@@ -1246,11 +1246,11 @@ fun ProjectCard(
 
             when (postType) {
                 PostType.JOB, PostType.EVENT, PostType.OTHER -> {
-                    CommentSection(
-                        project = project,
-                        currentUserId = currentUserId,
-                        onCommentEvent = onCommentEvent // Pass handler
-                    )
+//                    CommentSection(
+//                        project = project,
+//                        currentUserId = currentUserId,
+//                        onCommentEvent = onCommentEvent // Pass handler
+//                    )
 
                     LikeButton(
                         isLiked = project.likes.contains(currentUserId),

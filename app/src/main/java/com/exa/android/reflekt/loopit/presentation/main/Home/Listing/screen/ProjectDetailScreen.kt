@@ -1373,7 +1373,7 @@ private fun LikeCommentSection(
             }
 
             // Comments Section
-            if (project.comments.isNotEmpty() || isOwner) {
+            /*if (project.comments.isNotEmpty() || isOwner) {
                 Text(
                     "Comments",
                     style = MaterialTheme.typography.titleMedium,
@@ -1394,10 +1394,10 @@ private fun LikeCommentSection(
                         )
                     }
                 }
-            }
+            }*/
 
             // Comment Input
-            if (currentUserId != null) {
+            /*if (currentUserId != null) {
                 var commentText by remember { mutableStateOf("") }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1424,7 +1424,7 @@ private fun LikeCommentSection(
                         Icon(Icons.Default.Send, contentDescription = "Send comment")
                     }
                 }
-            }
+            }*/
         }
     }
 }

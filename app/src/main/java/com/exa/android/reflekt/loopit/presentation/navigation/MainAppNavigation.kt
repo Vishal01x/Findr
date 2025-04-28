@@ -45,7 +45,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.showToast
 
 
-fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController) {
+fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController,locationViewModel: LocationViewModel) {
 
     navigation(startDestination = "map_graph", route = "main_app") {
         homeNavGraph(navController)
@@ -282,7 +282,7 @@ fun showContactSupportOptions(context: Context) {
                 "Email" -> {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "message/rfc822"
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf("ankitraj4323@gmail.com"))
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf("findr.contact.help@gmail.com"))
                         putExtra(Intent.EXTRA_SUBJECT, "App Support Request")
                     }
                     try {

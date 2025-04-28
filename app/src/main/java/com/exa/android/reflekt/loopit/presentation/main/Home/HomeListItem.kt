@@ -101,12 +101,14 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
             }
             Column(horizontalAlignment = Alignment.End , modifier = Modifier.padding(end = 4.dp)) {
                 val timestampInMillis = chat.lastMessageTimestamp.seconds * 1000L
-                Text(
-                    if(chat.isOtherBlock) "" else formatTimestamp(timestampInMillis),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 13.sp
-                )
+                if(timestampInMillis > 0) {
+                    Text(
+                        if (chat.isOtherBlock) "" else formatTimestamp(timestampInMillis),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 13.sp
+                    )
+                }
                 if (chat.unreadMessages > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(

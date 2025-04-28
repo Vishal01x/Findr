@@ -13,7 +13,7 @@ import com.google.firebase.firestore.ServerTimestamp
 import java.util.UUID
 
 data class User(
-    val userId : String = "",
+    var userId : String = "",
     val name : String = "",
     val phone : String = "",
     val profilePicture : String? = "",

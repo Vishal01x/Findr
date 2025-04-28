@@ -406,6 +406,21 @@ class FirestoreService @Inject constructor(
         }
     }
 
+    suspend fun clearLastMessage(chatId: String){
+        val chatRef = chatCollection.document(chatId)
+
+        val batch = db.batch()
+
+        try {
+            batch.update(chatRef, mapOf("lastMessage" to ""))
+            batch.update(chatRef, mapOf("lastMessageTimestamp" to Timestamp(0,0)))
+            batch.commit().await()
+            // Log.d("FireStore Operation", "Messages Edited Successfully")
+        } catch (e: Exception) {
+            // Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
+        }
+    }
+
 
     suspend fun deleteAllMessages(
         chatId: String

@@ -133,6 +133,13 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun clearLastMessage(chatId: String){
+        viewModelScope.launch {
+            repo.clearLastMessage(chatId)
+        }
+    }
+
+
     fun deleteAllMessages(
         chatId: String
     ) {
