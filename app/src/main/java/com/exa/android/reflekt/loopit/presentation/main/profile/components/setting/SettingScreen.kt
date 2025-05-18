@@ -33,8 +33,16 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra
 import com.exa.android.reflekt.loopit.theme.Purple40
 import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import android.Manifest
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.firebase.auth.FirebaseAuth
+import com.google.accompanist.permissions.rememberPermissionState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -67,6 +75,10 @@ fun SettingsScreen(
     val passwordError by settingsViewModel.passwordChangeError.collectAsState()
     val emailError by settingsViewModel.emailUpdateError.collectAsState()
     var canDeleteAccount by remember { mutableStateOf(true) }
+
+    val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
+    val auth = FirebaseAuth.getInstance()
+    val userId = auth.currentUser?.uid
 
     LaunchedEffect(cacheSize) {
         settingsViewModel.loadCacheSize(context)
@@ -153,9 +165,15 @@ fun SettingsScreen(
                     checked = privacyEnabled,
                     onCheckedChange = { checked ->
                         settingsViewModel.setPrivacyEnabled(checked)
+                        Timber.tag("Geofire").d("Location Mode Enabled: $checked")
                         if (checked) {
-                            locationViewModel.startLocationUpdates(null, context)
+                            //locationViewModel.startLocationUpdates(null, context)
                             // Optionally save to persistent storage
+                            if (locationPermissionState.status.isGranted) {
+                                userId?.let {
+                                    locationViewModel.startLocationUpdates(it)
+                                }
+                            }
                             showToast(context, "Explore & Connect")
                         } else {
                             locationViewModel.stopLocationUpdates()

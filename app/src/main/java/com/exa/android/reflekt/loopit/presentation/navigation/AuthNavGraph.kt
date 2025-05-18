@@ -8,8 +8,11 @@ import com.exa.android.reflekt.loopit.presentation.auth.ForgotPasswordScreen
 import com.exa.android.reflekt.loopit.presentation.auth.LoginScreen
 import com.exa.android.reflekt.loopit.presentation.auth.SignUpScreen
 import com.exa.android.reflekt.loopit.presentation.auth.VerificationEmailScreen
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsPrivacyWebView
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsWebView
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 
 fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
     navigation(
@@ -39,6 +42,9 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                         popUpTo(AuthRoute.Register.route) { inclusive = true }
                     }
                 },
+                onTermsClick = {
+                    navController.navigate(AuthRoute.TermsCondition.route)
+                },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -52,6 +58,14 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+
+
+        composable(AuthRoute.TermsCondition.route) {
+            TermsWebView {
+                navController.popBackStack()
+            }
+        }
+
         composable(AuthRoute.ForgetPassword.route) {
             ForgotPasswordScreen(
                 onSuccess = { navController.popBackStack() },

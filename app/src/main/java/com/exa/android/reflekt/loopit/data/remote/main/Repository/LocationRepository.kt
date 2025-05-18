@@ -1,6 +1,8 @@
 package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Looper
 import com.exa.android.reflekt.loopit.data.remote.main.MapDataSource.FirebaseDataSource
 import com.exa.android.reflekt.loopit.data.remote.main.MapDataSource.LocationDataSource
 import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationForegroundService
@@ -62,28 +64,70 @@ class LocationRepository @Inject constructor(
                 locationResult.lastLocation?.let { location ->
                     firebaseDataSource.saveUserLocation(userId?:currentUserId!!, GeoLocation(location.latitude, location.longitude)) { key, error ->
                         if (error != null) {
-                            //Timber.tag("GeoFire").e("Error saving location: ${error.message}")
+                            Timber.tag("GeoFire").e("Error saving location: ${error.message}")
                         } else {
-                            // Timber.tag("GeoFire").d("Location saved for $key")
+                            Timber.tag("GeoFire").d("LR Location saved for $key")
                         }
                     }
                 }
             }
         }
-        // Timber.tag("GeoFire").d("Starting location updates for user $userId")
+        Timber.tag("GeoFire").d("Starting location updates for user $userId")
         locationDataSource.startLocationUpdates(context, locationRequest, locationCallback)
     }
-    fun startLocationUpdates(userId: String) {
-        // Timber.tag("GeoFire").d("Starting foreground service for user $userId")
-        LocationForegroundService.startService(context, userId)
+
+    private var locationCallback: LocationCallback? = null
+    private var fusedLocationClient: FusedLocationProviderClient? = null
+
+    @SuppressLint("MissingPermission")
+    fun startLocationUpdates(userId: String?) {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
+            .setMinUpdateIntervalMillis(5000)
+            .build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    firebaseDataSource.saveUserLocation(userId ?: "",
+                        GeoLocation(location.latitude, location.longitude)) { key, error ->
+                        // Handle save result
+                        if (error != null) {
+                            Timber.tag("GeoFire").e("Error saving location: ${error.message}")
+                        } else {
+                            Timber.tag("GeoFire").d("LR Location saved for $key")
+                        }
+                    }
+                }
+            }
+        }
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient?.requestLocationUpdates(
+            locationRequest,
+            locationCallback!!,
+            Looper.getMainLooper()
+        )
+
+        // Start foreground service
+        if(userId!=null) {
+            LocationForegroundService.startService(context, userId)
+        }
     }
 
     fun stopLocationUpdates() {
+        // Stop regular location updates
+        locationCallback?.let { callback ->
+            fusedLocationClient?.removeLocationUpdates(callback)
+        }
+        locationCallback = null
+        fusedLocationClient = null
+
+        // Stop foreground service
         LocationForegroundService.stopService(context)
     }
 
     fun fetchUserLocations(role: String, radius: Double, location: LatLng, minRating: Float) {
-        Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
+        // Timber.tag("GeoFire").d("Fetching user locations for role: $role, radius: $radius, location: $location")
         // clearUserLocations()
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {
@@ -94,7 +138,7 @@ class LocationRepository @Inject constructor(
                         if (user != null && user.uid != currentUserId) {
                             val userRoles = user.role.split(",").map { it.trim().lowercase() } .filter { it.isNotEmpty() }
                             val targetRoles = role.split(",").map { it.trim().lowercase() } .filter { it.isNotEmpty() }
-                            Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
+                            // Timber.tag("LocationSearch").d("Match users: .$userRoles. .$targetRoles.")
                             // Check if any role from userRoles matches any role from targetRoles
                             if (userRoles.isNotEmpty() && targetRoles.isNotEmpty()) {
                                 val isMatching = userRoles.any { userRole ->
@@ -111,7 +155,7 @@ class LocationRepository @Inject constructor(
                                     _userLocations.value = _userLocations.value + updatedUser
                                 }
                             } else {
-                                Timber.tag("LocationSearch").d("Skipping user with no roles.")
+                                // Timber.tag("LocationSearch").d("Skipping user with no roles.")
                             }
                         }
                     },
@@ -149,7 +193,7 @@ class LocationRepository @Inject constructor(
     }
 
     fun fetchAllNearbyUsers(radius: Double, location: LatLng) {
-        Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
+        // Timber.tag("GeoFire").d("Fetching all users within radius: $radius, location: $location")
 
         val geoQueryListener = object : GeoQueryEventListener {
             override fun onKeyEntered(key: String, location: GeoLocation) {

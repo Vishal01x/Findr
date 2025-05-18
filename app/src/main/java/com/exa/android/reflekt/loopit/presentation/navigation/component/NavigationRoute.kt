@@ -14,6 +14,7 @@ sealed class AuthRoute(val route : String){
     object Register : AuthRoute("register")
     object Verification : AuthRoute("verification")
     object ForgetPassword : AuthRoute("forget_password")
+    object TermsCondition : AuthRoute("terms")
     companion object{
         const val ROOT="auth"
     }

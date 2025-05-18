@@ -80,6 +80,7 @@ import com.exa.android.reflekt.loopit.data.remote.authentication.vm.SignUpState
 fun SignUpScreen(
     viewModel: AuthVM = hiltViewModel(),
     onSignUpSuccess: () -> Unit,
+    onTermsClick : () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val state = viewModel.signUpState.value
@@ -896,6 +897,26 @@ fun SignUpScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "By continuing, you agree to our ",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = "Terms and Conditions",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable {
+                                    // Handle navigation to terms screen
+                                    onTermsClick()
+                                }
+                            )
                         }
                     }
                 }
