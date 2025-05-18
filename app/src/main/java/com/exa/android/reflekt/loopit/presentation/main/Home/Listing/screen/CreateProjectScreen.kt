@@ -189,7 +189,7 @@ fun CreateProjectScreen(
                 ),
                 title = {
                     Text(
-                        "Create Project",
+                        "Create Activity",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface

@@ -1508,7 +1508,7 @@ private fun ImageCarousel(images: List<String>) {
             .fillMaxWidth()
             .height(280.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         HorizontalPager(
             count = images.size,
@@ -1535,13 +1535,13 @@ private fun ImageCarousel(images: List<String>) {
             pagerState = pagerState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(10.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
                     shape = RoundedCornerShape(16.dp)
                 )
                 .padding(horizontal = 8.dp, vertical = 4.dp),
-            activeColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            activeColor = MaterialTheme.colorScheme.primary,
             inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             indicatorWidth = 12.dp,
             indicatorHeight = 4.dp,

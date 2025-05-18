@@ -13,6 +13,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewMod
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import android.Manifest
+import androidx.annotation.RequiresApi
 import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationForegroundService
 
 class MyLifecycleObserver(
@@ -23,21 +24,12 @@ class MyLifecycleObserver(
 ) : LifecycleObserver {
 
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     fun onAppForeground() {
         viewModel.updateOnlineStatus(userId, true)
-        val requiredPermissions = listOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.FOREGROUND_SERVICE
-        ) + if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            listOf(Manifest.permission.FOREGROUND_SERVICE_LOCATION)
-        } else {
-            emptyList()
-        }
 
-        if (requiredPermissions.all {
-                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-            }) {
+        if (hasLocationPermissions()) {
             LocationForegroundService.startService(context.applicationContext, userId)
         }
     }
@@ -58,6 +50,7 @@ class MyLifecycleObserver(
     fun onDestroy() {
         locationViewModel.stopLocationUpdates()
     }
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun hasLocationPermissions(): Boolean {
         val requiredPermissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,

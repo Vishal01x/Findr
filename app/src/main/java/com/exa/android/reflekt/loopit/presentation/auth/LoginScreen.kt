@@ -238,7 +238,8 @@ fun LoginScreen(
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.onLoginEvent(LoginEvent.EmailChanged(state.email)) // Reset error
+            //viewModel.onLoginEvent(LoginEvent.EmailChanged(state.email)) // Reset error
+            viewModel.onLoginEvent(LoginEvent.ClearError)
         }
     }
 

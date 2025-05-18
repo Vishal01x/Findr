@@ -246,10 +246,10 @@ fun ListedProjectsScreen(
                         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
                         tooltip = {
                             if (state.showMyProjectsOnly){
-                                TrianglePointerTooltip( "Show all projects")
+                                TrianglePointerTooltip( "Show all activity")
                             }
                             else{
-                                TrianglePointerTooltip("Show only my projects")
+                                TrianglePointerTooltip("Show only my activity")
                             }
 
                         },
@@ -294,7 +294,7 @@ fun ListedProjectsScreen(
                     },
                     text = {
                         Text(
-                            "New Project",
+                            "New Activity",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                         )
                     },

@@ -84,6 +84,9 @@ class AuthVM @Inject constructor(
                     loginState.value.copy(passwordVisible = !loginState.value.passwordVisible)
 
             is LoginEvent.Submit -> login()
+            LoginEvent.ClearError -> {
+                loginState.value = loginState.value.copy(errorMessage = null)
+            }
         }
     }
 
@@ -410,6 +413,7 @@ sealed class LoginEvent {
     data class PasswordChanged(val password: String) : LoginEvent()
     object TogglePasswordVisibility : LoginEvent()
     object Submit : LoginEvent()
+    object ClearError : LoginEvent()
 }
 
 data class SignUpState(
