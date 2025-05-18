@@ -60,7 +60,8 @@ fun AudioWaveForm(
         List(10) { Random.nextFloat() } // Mock random wave amplitudes
     }
 
-    Canvas(modifier = modifier
+    Canvas(
+        modifier = modifier
         .fillMaxWidth()
         .height(40.dp)) {
         val waveWidth = size.width / waveAmplitudes.size

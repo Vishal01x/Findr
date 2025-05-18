@@ -9,6 +9,9 @@ import android.os.Build
 import android.os.Bundle
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
 import android.app.AlertDialog
 import android.net.Uri
 import android.os.PowerManager
@@ -21,6 +24,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +72,7 @@ class MainActivity : ComponentActivity() {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     @SuppressLint("ObsoleteSdkInt", "BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -168,7 +173,9 @@ class MainActivity : ComponentActivity() {
         when {
             hasAllPermissions(requiredPermissions) -> {
                 // Permissions already granted
-                LocationForegroundService.startService(applicationContext, userId)
+                if (isAppInForeground()) {
+                    LocationForegroundService.startService(applicationContext, userId)
+                }
                 scheduleLocationWorker(userId)
             }
             shouldShowPermissionRationale(requiredPermissions) -> {
@@ -182,6 +189,12 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+    private fun isAppInForeground(): Boolean {
+        val appProcessInfo = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(appProcessInfo)
+        return appProcessInfo.importance == IMPORTANCE_FOREGROUND ||
+                appProcessInfo.importance == IMPORTANCE_VISIBLE
     }
     @SuppressLint("InlinedApi")
     private fun showPermissionRationaleDialog(userId: String) {
@@ -295,6 +308,7 @@ class MainActivity : ComponentActivity() {
 }
 
 
+@RequiresApi(Build.VERSION_CODES.N)
 @Composable
 fun updateStatus(context: Context) {
     val viewModel: UserViewModel = hiltViewModel()
