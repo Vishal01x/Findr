@@ -7,6 +7,8 @@ import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
 import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
 import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
 import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
+import com.exa.android.reflekt.loopit.util.ChatCryptoUtil
+import com.exa.android.reflekt.loopit.util.ChatCryptoUtil.encrypt
 import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
@@ -213,7 +215,7 @@ class FirestoreService @Inject constructor(
         userId2: String,
         isCurUserBlocked: Boolean,
         text: String,
-        replyTo : Message?,
+        replyTo: Message?,
         media: Media?,
         receiverToken: String?,
         curUser: User? = null,
@@ -237,11 +239,14 @@ class FirestoreService @Inject constructor(
             status = if (isCurUserBlocked) "sent" else "delivered"
         )
 
+        val encryptedText = encrypt(text, chatId)
+        val encryptedMessage = message.copy(message = encryptedText)
+
         try {
             withContext(Dispatchers.IO) {
 
                 val messageRef = chatCollection.document(chatId).collection("messages")
-                messageRef.document(finalMessageId).set(message).await()
+                messageRef.document(finalMessageId).set(encryptedMessage).await()
 
                 val chatDoc = chatCollection.document(chatId)
                 val snapshot = chatDoc.get().await()
@@ -406,14 +411,14 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    suspend fun clearLastMessage(chatId: String){
+    suspend fun clearLastMessage(chatId: String) {
         val chatRef = chatCollection.document(chatId)
 
         val batch = db.batch()
 
         try {
             batch.update(chatRef, mapOf("lastMessage" to ""))
-            batch.update(chatRef, mapOf("lastMessageTimestamp" to Timestamp(0,0)))
+            batch.update(chatRef, mapOf("lastMessageTimestamp" to Timestamp(0, 0)))
             batch.commit().await()
             // Log.d("FireStore Operation", "Messages Edited Successfully")
         } catch (e: Exception) {
@@ -497,12 +502,26 @@ class FirestoreService @Inject constructor(
                         if (exception != null) {
                             trySend(Response.Error(exception.message ?: "Unknown error")).isFailure
                         } else {
-                            val messages = snapshot?.toObjects(Message::class.java) ?: emptyList()
+                            val encryptedMessages =
+                                snapshot?.toObjects(Message::class.java) ?: emptyList()
+
+                            val decryptedMessages = encryptedMessages.map { msg ->
+                                try {
+                                    msg.copy(
+                                        message = ChatCryptoUtil.decrypt(
+                                            msg.message,
+                                            msg.chatId
+                                        )
+                                    )
+                                } catch (e: Exception) {
+                                    Message()
+                                }
+                            }
                             if (!activeChatId.isNullOrEmpty()) {
                                 updateUnreadMessages(chatId)
-                                updateMessageStatusToSeen(chatId, messages)
+                                updateMessageStatusToSeen(chatId, decryptedMessages)
                             }
-                            val result = trySend(Response.Success(messages))
+                            val result = trySend(Response.Success(decryptedMessages))
                             if (result.isFailure) {
                                 // Log or handle the failure (optional)
                                 // Log.e("Firestore", "Failed to send messages to the flow.")
@@ -819,7 +838,7 @@ class FirestoreService @Inject constructor(
                         val chat = ChatList(
                             userId = otherUserId,
                             name = profileData.name,
-                            profilePicture = if(isCurUserBlocked) "" else profileData.profilePicture,
+                            profilePicture = if (isCurUserBlocked) "" else profileData.profilePicture,
                             lastMessage = if (isOtherUserBlocked) "" else lastMessage, // Important change
                             lastMessageTimestamp = if (isOtherUserBlocked) Timestamp(
                                 0,

@@ -27,6 +27,9 @@ material = "1.12.0"
 activity = "1.10.1"
 firebaseCrashlytics = "19.4.2"
 googleFirebaseCrashlytics = "3.0.3"
+datastoreCoreAndroid = "1.1.5"
+datastorePreferencesCoreAndroid = "1.1.5"
+datastorePreferencesCoreJvm = "1.1.5"
 
 [libraries]
 stream-video-ui-compose = { group = "io.getstream", name = "stream-video-android-ui-compose", version.ref = "streamVideo" }
@@ -60,6 +63,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
+androidx-datastore-preferences-core-jvm = { group = "androidx.datastore", name = "datastore-preferences-core-jvm", version.ref = "datastorePreferencesCoreJvm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

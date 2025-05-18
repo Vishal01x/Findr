@@ -24,9 +24,6 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.ChatInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MeetingRoute
-import com.google.gson.Gson
-import com.exa.android.reflekt.loopit.data.remote.main.meeting.call.CallScreen
-import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.CreateProjectScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.EditProjectScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.ListedProjectsScreen
@@ -79,18 +76,18 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
             SearchScreen(navController, viewModel)
         }
 
-        composable(
-            route = MeetingRoute.LobbyScreen.route,
-            arguments = listOf(navArgument("usersJson") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val usersJson = backStackEntry.arguments?.getString("usersJson") ?: "[]"
-            val users = Gson().fromJson(usersJson, Array<String>::class.java).toList()
-            LobbyScreen(navController = navController, users = users)
-        }
-
-        composable(MeetingRoute.CallScreen.route) {
-            CallScreen(navController = navController)
-        }
+//        composable(
+//            route = MeetingRoute.LobbyScreen.route,
+//            arguments = listOf(navArgument("usersJson") { type = NavType.StringType })
+//        ) { backStackEntry ->
+//            val usersJson = backStackEntry.arguments?.getString("usersJson") ?: "[]"
+//            val users = Gson().fromJson(usersJson, Array<String>::class.java).toList()
+//            LobbyScreen(navController = navController, users = users)
+//        }
+//
+//        composable(MeetingRoute.CallScreen.route) {
+//            CallScreen(navController = navController)
+//        }
 
         chatInfoNavGraph(navController)
 //        mapNavGraph(navController)

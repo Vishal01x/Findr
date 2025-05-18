@@ -32,7 +32,6 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
-import io.getstream.video.android.compose.theme.VideoTheme
 
 @Composable
 fun AppNavigation(

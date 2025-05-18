@@ -519,7 +519,7 @@ fun HeaderWithProfile(
 
             if (showReportDialog) {
                 ReportUserDialog(
-                    onDismiss = { showBlockDialog = false },
+                    onDismiss = { showReportDialog = false },
                     onReportSubmit = { reason, proofText, proofImageUri ->
                         showReportDialog = false
                         onReportClick(reason, proofText, proofImageUri) // Your actual report logic

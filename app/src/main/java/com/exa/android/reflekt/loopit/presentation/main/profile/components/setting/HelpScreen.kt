@@ -1,6 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.setting
 
 import android.annotation.SuppressLint
+import android.webkit.WebView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.exa.android.reflekt.BuildConfig
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -343,5 +345,41 @@ fun TermsPrivacyScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TermsPrivacyWebView(onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Terms & Privacy", color = MaterialTheme.colorScheme.onPrimary) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        AndroidView(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize(),
+            factory = { context ->
+                WebView(context).apply {
+                    settings.javaScriptEnabled = true
+                    loadUrl("https://findr-privacy-policy-guide.lovable.app/privacy")
+                }
+            }
+        )
     }
 }

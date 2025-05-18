@@ -39,7 +39,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true
+        //isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -109,14 +109,18 @@ dependencies {
     implementation ("com.google.accompanist:accompanist-pager:0.28.0")
     implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
+    //datastore
+    implementation("androidx.datastore:datastore-preferences:1.1.5")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.6")
+
     // Stream Video SDK
-    implementation(libs.stream.video.ui.compose)
-    implementation(libs.stream.video.ui.previewdata)
+//    implementation(libs.stream.video.ui.compose)
+//    implementation(libs.stream.video.ui.previewdata)
 
     //for permission dialog
     implementation(libs.accompanist.permissions)
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    //coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     //Hilt
     implementation("com.google.dagger:hilt-android:2.51.1")

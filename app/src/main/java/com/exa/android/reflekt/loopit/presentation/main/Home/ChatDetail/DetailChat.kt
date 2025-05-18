@@ -59,7 +59,6 @@ import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.model.Message
 import com.exa.android.reflekt.loopit.util.model.User
-import com.exa.android.reflekt.loopit.data.remote.main.meeting.lobby.LobbyViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.getMediaTypeFromUri
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.isFileTooLarge
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
@@ -84,7 +83,7 @@ fun DetailChat(
 ) {
     val chatViewModel: ChatViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
-    val lobbyVM: LobbyViewModel = hiltViewModel()
+//    val lobbyVM: LobbyViewModel = hiltViewModel()
     val mediaSharingViewModel: MediaSharingViewModel = hiltViewModel()
 
     val responseChatMessages by remember { chatViewModel.messages }.collectAsState() // all the chats of cur and other User

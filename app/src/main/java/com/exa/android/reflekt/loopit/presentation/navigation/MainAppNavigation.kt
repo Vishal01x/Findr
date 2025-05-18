@@ -31,6 +31,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.heade
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.HelpScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.SettingsScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsPrivacyScreen
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsPrivacyWebView
 import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.VerifierScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
@@ -255,7 +256,7 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
             )
         }
         composable(ProfileRoute.ProfileTerms.route) {
-            TermsPrivacyScreen(
+            /*TermsPrivacyScreen(
                 onBack = { navController.popBackStack() },
                 // Only include onAcceptTerms if this is a mandatory acceptance screen
                 // Otherwise omit the parameter to hide the accept button
@@ -265,6 +266,9 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                         navController.popBackStack()
                     }
                 }
+            )*/
+            TermsPrivacyWebView(
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -280,13 +284,19 @@ fun showContactSupportOptions(context: Context) {
         .setItems(options.toTypedArray()) { _, which ->
             when (options[which]) {
                 "Email" -> {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "message/rfc822"
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf("findr.contact.help@gmail.com"))
-                        putExtra(Intent.EXTRA_SUBJECT, "App Support Request")
+                    val email = "findr.contact.help@gmail.com"
+                    val subject = Uri.encode("App Support Request")
+                    val body = Uri.encode(
+                        "Hi Findr Support,\n\nI'm experiencing an issue with the app. Please help me with the following:\n\n[Describe your issue here]\n\nThank you!"
+                    )
+                    val mailto = "mailto:$email?subject=$subject&body=$body"
+
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = Uri.parse(mailto)
                     }
+
                     try {
-                        context.startActivity(Intent.createChooser(intent, "Send email..."))
+                        context.startActivity(intent)
                     } catch (e: ActivityNotFoundException) {
                         Toast.makeText(
                             context,
@@ -295,6 +305,7 @@ fun showContactSupportOptions(context: Context) {
                         ).show()
                     }
                 }
+
 
                 "WhatsApp" -> {
                     val phoneNumber = "7645992680" // Replace with your full phone number (country code + number, no "+")

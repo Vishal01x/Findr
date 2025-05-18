@@ -1,5 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.auth
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
@@ -18,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -104,7 +107,20 @@ fun VerificationEmailScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { viewModel.resendVerificationEmail() },
+            onClick = { val intent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_APP_EMAIL)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+                try {
+                    context.startActivity(intent)
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(
+                        context,
+                        "No email app found. Please install one to verify your email.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
@@ -117,14 +133,48 @@ fun VerificationEmailScreen(
             if (state.isLoading) {
                 CircularProgressIndicator(color = Color.White)
             } else {
-                Text("Resend Verification Email", fontWeight = FontWeight.Bold)
+                Text("Open Email to Verify", fontWeight = FontWeight.Bold)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+//        Text(
+//            text = "Resend Verification Email",
+//            style = MaterialTheme.typography.bodyMedium,
+//            textAlign = TextAlign.Center,
+//            modifier = Modifier.clickable{ viewModel.resendVerificationEmail() },
+//            color = MaterialTheme.colorScheme.primary,
+//            fontWeight = FontWeight.SemiBold
+//        )
+
+        Row(
+            modifier = Modifier
+                .clickable { viewModel.resendVerificationEmail() }
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Email, // or use Icons.Default.Send
+                contentDescription = "Resend Email",
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Resend Verification Email",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         TextButton(onClick = onNavigateBack) {
-            Text("Back to Login", color = Color.Blue)
+            Text("Back to Login", color = MaterialTheme.colorScheme.primary)
         }
     }
 }

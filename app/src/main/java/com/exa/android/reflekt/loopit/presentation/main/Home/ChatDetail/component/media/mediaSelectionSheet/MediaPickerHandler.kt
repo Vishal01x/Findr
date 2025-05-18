@@ -21,6 +21,7 @@ import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.componen
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.openCamera
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.launchMediaUpload
 import com.exa.android.reflekt.loopit.util.model.MediaType
+import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 
@@ -89,7 +90,9 @@ fun MediaPickerHandler(
                 if (activity != null) {
                     launchCameraWithPermission(
                         activity = activity,
-                        onPermissionDenied = { },
+                        onPermissionDenied = {
+                            showToast(context, "Needed Permission to open Camera")
+                        },
                         onImageUriReady = { uri -> cameraImageUri.value = uri },
                         launchCamera = { uri -> takePictureLauncher.launch(uri) }
                     )
