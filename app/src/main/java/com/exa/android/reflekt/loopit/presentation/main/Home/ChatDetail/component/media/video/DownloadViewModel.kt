@@ -29,7 +29,7 @@ class VideoDownloadViewModel @Inject constructor(
 
     private val downloadedFilePaths = mutableMapOf<String, String>()
     private val downloadSemaphore =
-        kotlinx.coroutines.sync.Semaphore(permits = 3) // Max 3 at a time
+        kotlinx.coroutines.sync.Semaphore(permits = 1) // Max  at a time
 
     init {
         cleanUpTempFiles(context)

@@ -19,8 +19,8 @@ android {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -28,8 +28,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-//            isMinifyEnabled = true // <--- Enable shrinking
-//            isShrinkResources = true // Optional: Remove unused resources
+            //isMinifyEnabled = true // <--- Enable shrinking
+            //isShrinkResources = true // Optional: Remove unused resources
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

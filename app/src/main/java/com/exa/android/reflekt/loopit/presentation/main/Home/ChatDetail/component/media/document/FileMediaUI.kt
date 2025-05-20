@@ -37,7 +37,7 @@ fun DocumentMessageItem(
 
     LaunchedEffect(fileName, uploadStatus) {
         if (isSendByCurUser && uploadStatus == UploadStatus.SUCCESS && downloadState !is DownloadState.Completed) {
-            viewModel.downloadFile(context, fileUrl, fileName)
+           // viewModel.downloadFile(context, fileUrl, fileName)
         }
     }
 

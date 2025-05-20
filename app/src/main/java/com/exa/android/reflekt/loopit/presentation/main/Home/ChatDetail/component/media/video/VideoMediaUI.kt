@@ -59,7 +59,7 @@ fun VideoMessageItem(
 
     LaunchedEffect(fileName, uploadStatus) {
         if (isSendByCurUser && uploadStatus == UploadStatus.SUCCESS) {
-            viewModel.downloadFile(context, videoUrl, fileName)
+           // viewModel.downloadFile(context, videoUrl, fileName)
         }
     }
 
