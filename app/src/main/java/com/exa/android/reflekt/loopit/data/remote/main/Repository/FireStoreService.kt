@@ -239,8 +239,16 @@ class FirestoreService @Inject constructor(
             status = if (isCurUserBlocked) "sent" else "delivered"
         )
 
-        val encryptedText = encrypt(text, chatId)
-        val encryptedMessage = message.copy(message = encryptedText)
+        val encryptedMessage: Message
+
+        if (media != null) {
+            val encryptedUrl = encrypt(media.mediaUrl, chatId)
+            val encryptedMedia = media.copy(mediaUrl = encryptedUrl)
+            encryptedMessage = message.copy(media = encryptedMedia)
+        } else {
+            val encryptedText = encrypt(text, chatId)
+            encryptedMessage = message.copy(message = encryptedText)
+        }
 
         try {
             withContext(Dispatchers.IO) {
@@ -507,12 +515,22 @@ class FirestoreService @Inject constructor(
 
                             val decryptedMessages = encryptedMessages.map { msg ->
                                 try {
-                                    msg.copy(
-                                        message = ChatCryptoUtil.decrypt(
-                                            msg.message,
-                                            msg.chatId
+                                    if (msg.media != null) {
+                                        val decryptedMedia = msg.media?.copy(
+                                            mediaUrl = ChatCryptoUtil.decrypt(
+                                                msg.media.mediaUrl,
+                                                msg.chatId
+                                            )
                                         )
-                                    )
+                                        msg.copy(media = decryptedMedia)
+                                    } else {
+                                        msg.copy(
+                                            message = ChatCryptoUtil.decrypt(
+                                                msg.message,
+                                                msg.chatId
+                                            )
+                                        )
+                                    }
                                 } catch (e: Exception) {
                                     Message()
                                 }

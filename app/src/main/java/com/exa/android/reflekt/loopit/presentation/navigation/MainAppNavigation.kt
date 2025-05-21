@@ -20,7 +20,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.PhotoViewerScreen
-import com.exa.android.reflekt.loopit.presentation.main.StatusScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.ProfileScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.EditEducationScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.EditExperienceScreen
@@ -50,11 +49,6 @@ fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostContr
 
     navigation(startDestination = "map_graph", route = "main_app") {
         homeNavGraph(navController)
-
-
-        composable(MainRoute.Setting.route) {
-            StatusScreen(navController)
-        }
         mapNavGraph(navController, locationViewModel)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
