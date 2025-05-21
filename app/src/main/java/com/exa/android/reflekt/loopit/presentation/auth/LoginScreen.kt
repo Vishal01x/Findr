@@ -379,6 +379,7 @@ fun LoginScreen(
 
             Row(
                 horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("New User? ", style = typography.bodyLarge)

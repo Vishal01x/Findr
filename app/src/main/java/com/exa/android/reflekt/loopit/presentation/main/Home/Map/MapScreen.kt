@@ -109,6 +109,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.SettingsViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.google.accompanist.permissions.shouldShowRationale
@@ -118,7 +119,7 @@ import timber.log.Timber
 @SuppressLint("UnrememberedMutableState", "MissingPermission")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltViewModel()) {
+fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltViewModel(), settingViewModel: SettingsViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid ?: return
@@ -250,6 +251,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
         viewModel.fetchAllRoles()
     }
 
+    val locationUpdateCheck by settingViewModel.privacyEnabled.collectAsState()
     // update
     // Location permission handling
     LaunchedEffect(locationPermissionState.status) {
@@ -270,12 +272,23 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                 }
 
             // Start location updates for the authenticated user
-            viewModel.startLocationUpdates(userId, context)
+            Timber.tag("GeoFire").d("Map Screen Location updates started: ${locationUpdateCheck}")
+            if(locationUpdateCheck) {
+                //viewModel.startLocationUpdates(userId, context)
+                viewModel.startLocationUpdates(userId)
+            }
             // Timber.tag("GeoFire").d("Location updates started: $userId")
 
         } else {
             showPermissionDialog = true
             locationPermissionState.launchPermissionRequest()
+        }
+    }
+    LaunchedEffect(locationUpdateCheck) {
+        if (locationUpdateCheck && locationPermissionState.status.isGranted) {
+            viewModel.startLocationUpdates(userId)
+        } else {
+            viewModel.stopLocationUpdates()
         }
     }
 
