@@ -71,11 +71,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen.ProjectDetailScreen
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.RequestNotificationPermissionIfNeeded
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.ChatList
@@ -89,8 +91,16 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
     var originalChatList by remember { mutableStateOf(emptyList<ChatList>()) }
 
     BackHandler(enabled = true) {
-        if(isQueryClicker)isQueryClicker = false
-        else (context as Activity).finish()
+        if(isQueryClicker){
+            searchQuery = TextFieldValue("")
+            isQueryClicker = false
+        }
+        //else (context as Activity).finish()
+        else navController.navigate("project_graph"){
+            popUpTo(ProjectRoute.ProjectList.route){
+                inclusive = true
+            }
+        }
     }
 
 

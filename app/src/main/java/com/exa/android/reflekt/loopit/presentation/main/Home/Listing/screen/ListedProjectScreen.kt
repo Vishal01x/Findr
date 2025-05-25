@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -161,9 +162,23 @@ fun ListedProjectsScreen(
             }
     }
 
-    BackHandler(enabled = state.showMyProjectsOnly) {
-        viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
+//    BackHandler(enabled = state.showMyProjectsOnly) {
+//        viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
+//    }
+
+
+    BackHandler {
+        if(state.showMyProjectsOnly){
+            viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
+        }else if(state.selectedRoles.isNotEmpty() || state.selectedTags.isNotEmpty()){
+            //viewModel.onEvent(ProjectListEvent.SelectPostType(type)) // need to make it "all"
+            viewModel.onEvent(ProjectListEvent.ClearFilters)
+            tooltipState.dismiss()
+        }else{
+            (context as Activity).finish()
+        }
     }
+
 
     Scaffold(
         topBar = {

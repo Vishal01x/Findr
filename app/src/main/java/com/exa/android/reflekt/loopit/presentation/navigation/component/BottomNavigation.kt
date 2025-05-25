@@ -86,10 +86,10 @@ fun CustomBottomNavigationBar(
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     val items = listOf(
         BottomNavItem(
-            route = HomeRoute.ChatList.route,
-            iconSelected = Icons.AutoMirrored.Filled.Chat,
-            iconUnselected = Icons.AutoMirrored.Outlined.Chat,
-            label = "Chats"
+            route = MainRoute.Project.route,
+            iconSelected = Icons.Filled.Home,
+            iconUnselected = Icons.Outlined.Home,
+            label = "Home"
         ),
         BottomNavItem(
             route = MainRoute.Map.route,
@@ -98,10 +98,10 @@ fun CustomBottomNavigationBar(
             label = "Map"
         ),
         BottomNavItem(
-            route = MainRoute.Project.route,
-            iconSelected = Icons.Filled.Public,
-            iconUnselected = Icons.Outlined.Public,
-            label = "Explore"
+            route = HomeRoute.ChatList.route,
+            iconSelected = Icons.AutoMirrored.Filled.Chat,
+            iconUnselected = Icons.AutoMirrored.Outlined.Chat,
+            label = "Chats"
         ),
         BottomNavItem(
             route = MainRoute.Profile.route,

@@ -36,6 +36,8 @@ import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
 
+
+
     navigation(startDestination = HomeRoute.ChatList.route, route = "home") {
         composable(HomeRoute.ChatList.route) {
             val viewModel: ChatViewModel = hiltViewModel()
@@ -61,7 +63,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
             arguments = listOf(navArgument("userId") {
                 type = NavType.StringType
             }),
-            deepLinks = listOf(navDeepLink { uriPattern = "reflekt://chat/{userId}" })
+            deepLinks = listOf(navDeepLink { uriPattern = "findr://chat/{userId}" })
         ) { backStackEntry ->
 //            val encodedUserJson = backStackEntry.arguments?.getString("userJson")
 //            val user = Gson().fromJson(URLDecoder.decode(encodedUserJson, "UTF-8"), User::class.java)
@@ -91,7 +93,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
 
         chatInfoNavGraph(navController)
 //        mapNavGraph(navController)
-        projectNavGraph(navController)
+//        projectNavGraph(navController)
     }
 }
 
@@ -151,6 +153,7 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
 
 
 fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
+    homeNavGraph(navController)
     navigation(
         startDestination = ProjectRoute.ProjectList.route,
         route = "project_graph"

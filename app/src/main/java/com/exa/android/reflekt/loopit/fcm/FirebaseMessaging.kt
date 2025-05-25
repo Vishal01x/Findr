@@ -208,6 +208,7 @@ private fun showNotification(
 
     // Intent to open the deep link
     val deepLinkIntent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
+        setPackage(applicationContext.packageName)
         flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
 
