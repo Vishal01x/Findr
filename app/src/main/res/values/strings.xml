@@ -7,4 +7,31 @@
     <string name="join_call_description">You are about to join a call. %d more people are in the call.</string>
     <string name="join_call">Join Call</string>
     <string name="BRANDFTECH_API_KEY">Bearer QgZEfKxWxHFQcuGj7/WJchosKVslLVCtYCKcJCJZAGM=</string>
+
+
+    <plurals name="message_count">
+        <item quantity="one">%d new message</item>
+        <item quantity="other">%d new messages</item>
+    </plurals>
+
+    <plurals name="project_update_count">
+        <item quantity="one">%d project update</item>
+        <item quantity="other">%d project updates</item>
+    </plurals>
+
+    <plurals name="post_count">
+        <item quantity="one">%d new post</item>
+        <item quantity="other">%d new posts</item>
+    </plurals>
+
+    <plurals name="profile_activity_count">
+        <item quantity="one">%d profile activity</item>
+        <item quantity="other">%d profile activities</item>
+    </plurals>
+
+    <string name="project_updates">Project Updates</string>
+    <string name="new_posts">New Posts</string>
+    <string name="profile_activity">Profile Activity</string>
+    <string name="system_updates">System Updates</string>
+    <string name="system_updates_summary">System updates available</string>
 </resources>

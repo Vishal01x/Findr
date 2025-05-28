@@ -2,8 +2,10 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.content.Context
 import android.util.Log
+import com.exa.android.reflekt.loopit.fcm.Topics
 import com.exa.android.reflekt.loopit.util.model.Comment
 import com.exa.android.reflekt.loopit.util.model.Project
+import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,7 +17,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,7 +37,8 @@ class ProjectRepositoryImpl @Inject constructor(
         const val TAGS_FIELD = "availableTags"
     }
 
-    override suspend fun createProject(project: Project): Result<Unit> {
+
+    override suspend fun createProject(project: Project, profile: profileUser): Result<Unit> {
         return try {
             Log.d("Firestore", "Creating project: $project")
             require(auth.currentUser != null) { "User must be authenticated" }
@@ -45,10 +47,14 @@ class ProjectRepositoryImpl @Inject constructor(
             val projectMap = project.toMap()
 
 
-            db.collection(PROJECTS_COLLECTION)
+            //db.collection(PROJECTS_COLLECTION)
+            db.collection("post_test")
                 .document(project.id)
                 .set(projectMap)
                 .await()
+
+            sendPostNotification(context, Topics.Post,project, profile)
+
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("Firestore", "Error creating project", e)
@@ -176,7 +182,7 @@ class ProjectRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateProject(project: Project): Result<Unit> {
+    override suspend fun updateProject(project: Project, profile: profileUser): Result<Unit> {
         return try {
             require(auth.currentUser?.uid == project.createdBy) {
                 "Only project owner can update"
@@ -189,6 +195,7 @@ class ProjectRepositoryImpl @Inject constructor(
                 .document(project.id)
                 .set(projectMap)
                 .await()
+
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("Firestore", "Error updating project", e)
@@ -271,11 +278,13 @@ class ProjectRepositoryImpl @Inject constructor(
                     mapOf("requestedPersons.$userId" to userName)
                 )
                 .await()
-            sendPushNotification(
+            sendProjectNotification(
                 context,
                 userRepository.getUserFcm(project.createdBy),
-                "$userName is requested to enroll in your project : ${project.title}",
+                "$userName is requested to enroll in your project", // : ${project.title}",
                 project.title,
+                project.id,
+                userId,
                 imageUrl
             )
 
@@ -310,7 +319,12 @@ class ProjectRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
-    override suspend fun acceptJoinRequest(projectId: String, userId: String, userName: String): Result<Unit> {
+    override suspend fun acceptJoinRequest(
+        project : Project,
+        userId: String,
+        userName: String,
+        profileUser: profileUser
+    ): Result<Unit> {
         return try {
             require(auth.currentUser != null) { "User must be authenticated" }
 
@@ -320,24 +334,32 @@ class ProjectRepositoryImpl @Inject constructor(
             )
 
             db.collection(PROJECTS_COLLECTION)
-                .document(projectId)
+                .document(project.id)
                 .update(updates)
                 .await()
 
+            userRepository.getUserFcm(userId)
+                .let {
+                    Log.d("FCM", "project request to - $it")
+                    sendRequestUpdate(context, it,project,profileUser, "accepted")
+                }
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("Firestore", "Error accepting join request", e)
             Result.failure(e)
         }
     }
-    override suspend fun rejectJoinRequest(projectId: String, userId: String): Result<Unit> {
+    override suspend fun rejectJoinRequest(project : Project, userId: String, value: profileUser): Result<Unit> {
         return try {
             require(auth.currentUser != null) { "User must be authenticated" }
 
             db.collection(PROJECTS_COLLECTION)
-                .document(projectId)
+                .document(project.id)
                 .update("requestedPersons.$userId", FieldValue.delete())
                 .await()
+            userRepository.getUserFcm(userId)
+                ?.let {fcm->
+            sendRequestUpdate(context,fcm,project,value, "rejected")}
 
             Result.success(Unit)
         } catch (e: Exception) {

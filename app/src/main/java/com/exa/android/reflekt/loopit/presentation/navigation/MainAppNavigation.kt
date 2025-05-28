@@ -68,7 +68,8 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
-            })
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "findr://profile/{userId}" })
         ) {
             val userId = it.arguments?.getString("userId")
 
@@ -212,6 +213,29 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
         ){backStackEntry->
             val userId = backStackEntry.arguments?.getString("userId")
             VerifierScreen(
+                true,
+                userId,
+                onProfileClick = {userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = ProfileRoute.ProfileViewer.route,
+            arguments = listOf(navArgument("userId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "findr://profile_views/{userId}" })
+        ){backStackEntry->
+            val userId = backStackEntry.arguments?.getString("userId")
+            VerifierScreen(
+                false,
                 userId,
                 onProfileClick = {userId->
                     navController.navigate(ProfileRoute.UserProfile.createRoute(userId))

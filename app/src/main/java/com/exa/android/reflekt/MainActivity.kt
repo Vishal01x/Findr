@@ -48,6 +48,7 @@ import com.exa.android.reflekt.loopit.util.application.NetworkCallbackReceiver
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationForegroundService
 import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationWorker
+import com.exa.android.reflekt.loopit.fcm.DeepLinkHelper
 import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
@@ -126,9 +127,8 @@ class MainActivity : ComponentActivity() {
                 dynamicColor = false // ✅ Optional: prevent Material You theme changes
             ) {
                 navController = rememberNavController()
-
-                updateStatus(this)
                 App(currentIntent)
+                updateStatus(this)
             }
         }
         clearAllNotifications(this)
@@ -314,7 +314,8 @@ class MainActivity : ComponentActivity() {
         // Handle new intents when app is already running
         LaunchedEffect(currentIntent) {
             if (currentIntent != null) {
-                handleDeepLink(navController, currentIntent)
+                //handleDeepLink(navController, currentIntent)
+                handleDeepLink(navController,currentIntent)
             }
         }
 
@@ -327,19 +328,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLink(navController: NavController, intent: Intent) {
-        intent.data?.let { uri ->
-            if (uri.toString().startsWith("findr://chat")) {
-                val userId = uri.lastPathSegment ?: return@let
-                navController.navigate(HomeRoute.ChatDetail.createRoute(userId)) {
-                    popUpTo(HomeRoute.ChatList.route) { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
-        }
+//        intent.data?.let { uri ->
+//            if (uri.toString().startsWith("findr://chat")) {
+//                val userId = uri.lastPathSegment ?: return@let
+//                navController.navigate(HomeRoute.ChatDetail.createRoute(userId)) {
+//                    popUpTo(HomeRoute.ChatList.route) { inclusive = false }
+//                    launchSingleTop = true
+//                }
+//            }
+//        }
 
-        //navController.handleDeepLink(intent) // since deep link navigation is slow keep direct
+        navController.handleDeepLink(intent) // since deep link navigation is slow keep direct
     }
 
+
+    private fun handleDeepLinkNav(navController: NavController,intent: Intent) {
+        intent.data?.let { uri ->
+            DeepLinkHelper.handleDeepLink(navController, uri)
+        }
+    }
 }
 
 

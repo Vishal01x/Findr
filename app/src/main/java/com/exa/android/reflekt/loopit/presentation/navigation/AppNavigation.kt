@@ -13,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
@@ -28,7 +29,12 @@ fun AppNavigation(
     isLoggedIn: Boolean,
     otherUserId: String? = null
 ) {
-
+    if(isLoggedIn){
+        val userViewModel : UserViewModel = hiltViewModel()
+        LaunchedEffect(Unit) {
+            userViewModel.subscribeTopics()
+        }
+    }
 
 
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route

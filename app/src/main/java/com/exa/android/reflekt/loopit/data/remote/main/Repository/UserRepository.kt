@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.exa.android.reflekt.loopit.fcm.NotificationRepository
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.generateChatId
 import com.exa.android.reflekt.loopit.util.isNetworkAvailable
@@ -26,7 +27,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -34,9 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emitAll
@@ -50,6 +49,7 @@ class UserRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
     private val rdb: FirebaseDatabase, // Realtime Database
+    private val notificationRepository: NotificationRepository,
     @ApplicationContext private val context: Context
 ) {
 
@@ -77,6 +77,36 @@ class UserRepository @Inject constructor(
             // Log.e("Firebase Operation", "Failed to update user status", e)
         }
     }
+
+
+    suspend fun subscribeTopics(){
+
+        val topics = fetchEnabledTopics()
+        //Log.d("FCM", topics.toString())
+        val subscribedTopics = notificationRepository.ensureDefaultSubscription(topics)
+
+        //Log.d("FCM", "subscribed to - $subscribedTopics")
+    }
+
+
+    private suspend fun fetchEnabledTopics(): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = FirebaseFirestore.getInstance()
+                .collection("topics")
+                .whereEqualTo("enabled", true)
+                .get()
+                .await()
+
+            return@withContext snapshot.documents.mapNotNull { doc ->
+                doc.getString("topic") // Get only the topic names
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            //Log.d("FCM", "failed in fetching topics - ${e.message}")
+            return@withContext emptyList()
+        }
+    }
+
 
     fun observeUserConnectivity() {
         val onlineStatus = mapOf(
@@ -337,10 +367,74 @@ class UserRepository @Inject constructor(
             .document(currentUser!!) // The viewer's document inside "viewers"
 
         val viewData = mapOf(
+            "userId" to currentUser,
             "viewedAt" to FieldValue.serverTimestamp() // Record the time of viewing
         )
 
         viewerDoc.set(viewData, SetOptions.merge()).await()
+    }
+
+
+    suspend fun getLastProfileViewNotificationTime(viewedUserId: String): Timestamp? = withContext(Dispatchers.IO) {
+        try {
+            val doc = userCollection
+                .document(viewedUserId)
+                .collection("notifications")
+                .document("lastProfileViewNotification")
+                .get()
+                .await()
+
+            if (doc.exists()) {
+                doc.getTimestamp("lastNotifiedAt")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun updateLastProfileViewNotificationTime(viewedUserId: String) = withContext(Dispatchers.IO) {
+        userCollection
+            .document(viewedUserId)
+            .collection("notifications")
+            .document("lastProfileViewNotification")
+            .set(mapOf("lastNotifiedAt" to FieldValue.serverTimestamp()))
+            .await()
+    }
+
+    suspend fun countNewViewsSince(viewedUserId: String, since: Timestamp?): Int = withContext(Dispatchers.IO) {
+        val viewersRef = userCollection
+            .document(viewedUserId)
+            .collection("viewers")
+
+        val query = if (since != null) {
+            viewersRef.whereGreaterThan("viewedAt", since)
+        } else {
+            viewersRef
+        }
+
+        try {
+            val snapshot = query.get().await()
+            snapshot.size()
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    suspend fun checkAndNotifyProfileViews(viewedUserId: String, profileImageUrl: String) = withContext(Dispatchers.IO) {
+        updateProfileView(viewedUserId)
+        val lastNotifiedAt = getLastProfileViewNotificationTime(viewedUserId)
+        val newViewsCount = countNewViewsSince(viewedUserId, lastNotifiedAt)
+
+        val viewersLimit = 3
+
+        if (newViewsCount >= viewersLimit) {
+            // TODO: Send notification here (off main thread)
+            val fcm = getUserFcm(viewedUserId)
+            sendProfileNotification(context,fcm, viewedUserId, newViewsCount, profileImageUrl)
+            updateLastProfileViewNotificationTime(viewedUserId)
+        }
     }
 
 
@@ -672,7 +766,10 @@ class UserRepository @Inject constructor(
                         "timestamp" to Timestamp.now() // optional
                     )
                 ).await()
+                val fcm = getUserFcm(targetUserId)
+                sendVerifyNotification(context,fcm, verifierUserId,targetUserId)
             }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -839,4 +936,81 @@ class UserRepository @Inject constructor(
             listenerRegistration.remove()
         }
     }
+
+    suspend fun getTopViewersProfileData(userId: String?): Flow<Response<List<ProfileHeaderData>>> = callbackFlow {
+        val pathRef = userCollection
+            .document(userId ?: currentUser ?: "")
+            .collection("viewers")
+
+        val TOP_LIMIT = 10L
+
+        val registration = pathRef
+            .orderBy("viewedAt", Query.Direction.DESCENDING)
+            .limit(TOP_LIMIT)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Response.Error("Firestore error: ${error.message}"))
+                    return@addSnapshotListener
+                }
+
+                if (snapshot == null || snapshot.isEmpty) {
+                    trySend(Response.Success(emptyList()))
+                    return@addSnapshotListener
+                }
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val viewerMap = snapshot.documents.mapNotNull { doc ->
+                            val viewerId = doc.id
+                            val viewedAt = doc.getTimestamp("viewedAt") ?: Timestamp.now()
+                            viewerId to viewedAt
+                        }.toMap()
+
+                        val chunks = viewerMap.keys.chunked(10) // support max 10 in whereIn
+                        val deferreds = chunks.map { ids ->
+                            async {
+                                try {
+                                    userCollection
+                                        .whereIn(FieldPath.documentId(), ids)
+                                        .get()
+                                        .await()
+                                        .documents
+                                        .mapNotNull { userDoc ->
+                                            try {
+                                                val profile = userDoc.get("profileData.profileHeader") as? Map<*, *>
+                                                ProfileHeaderData(
+                                                    uid = userDoc.id,
+                                                    name = profile?.get("name") as? String ?: "",
+                                                    profileImageUrl = profile?.get("profileImageUrl") as? String ?: "",
+                                                    headline = profile?.get("headline") as? String ?: "",
+                                                    createdAt = viewerMap[userDoc.id]
+                                                )
+                                            } catch (e: Exception) {
+                                                null
+                                            }
+                                        }
+                                } catch (e: Exception) {
+                                    emptyList()
+                                }
+                            }
+                        }
+
+                        val allProfiles = deferreds.awaitAll()
+                            .flatten()
+                            .sortedByDescending { it.createdAt?.seconds ?: 0 }
+
+                        trySend(Response.Success(allProfiles))
+                    } catch (e: Exception) {
+                        trySend(Response.Error("Failed to load profiles: ${e.message}"))
+                    }
+                }
+            }
+
+        awaitClose {
+            registration.remove()
+        }
+    }
+
+
 }
+

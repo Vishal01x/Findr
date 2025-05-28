@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.MediaSharingRepository
+import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProjectRepository
 import com.exa.android.reflekt.loopit.util.model.Comment
 import com.exa.android.reflekt.loopit.util.model.PostType
@@ -63,6 +64,7 @@ class EditProjectViewModel @Inject constructor(
     private val repository: ProjectRepository,
     private val auth: FirebaseAuth,
     private val mediaSharingRepo: MediaSharingRepository,
+    private val profileRepository: ProfileRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -125,10 +127,12 @@ class EditProjectViewModel @Inject constructor(
 
             val currentState = state.value
             val currentUserId = auth.currentUser?.uid ?: run {
-                _state.update { it.copy(
-                    isLoading = false,
-                    error = "User not authenticated"
-                )}
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "User not authenticated"
+                    )
+                }
                 return@launch
             }
             val newUploadedUrls = state.value.newImages.mapNotNull { uri ->
@@ -157,13 +161,17 @@ class EditProjectViewModel @Inject constructor(
 
             )
 
-            val result = repository.updateProject(project)
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    isSuccess = result.isSuccess,
-                    error = result.exceptionOrNull()?.message
-                )
+            auth.currentUser?.uid?.let {userId->
+
+                val profile = profileRepository.getUserProfile(userId)
+                val result = repository.updateProject(project,profile)
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isSuccess = result.isSuccess,
+                        error = result.exceptionOrNull()?.message
+                    )
+                }
             }
         }
     }

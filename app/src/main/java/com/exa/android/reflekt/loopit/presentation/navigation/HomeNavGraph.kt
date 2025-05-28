@@ -167,7 +167,9 @@ fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(ProjectRoute.ProjectDetail.route) { backStackEntry ->
+        composable(ProjectRoute.ProjectDetail.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "findr://project/{projectId}" })
+        ) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             ProjectDetailScreen(
                 projectId = projectId,

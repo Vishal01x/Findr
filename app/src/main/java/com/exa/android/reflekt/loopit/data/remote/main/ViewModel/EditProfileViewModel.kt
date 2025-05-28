@@ -3,11 +3,8 @@ package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
@@ -23,6 +20,7 @@ import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.model.Profile.SocialLinks
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -368,17 +366,19 @@ class EditProfileViewModel @Inject constructor(
     private val _rating = MutableStateFlow<Response<Pair<Int,Float>>>(Response.Success(Pair(0,0f)))
     val rating: StateFlow<Response<Pair<Int,Float>>> = _rating
 
-    private val _verifiers =
+    private val _userProfiles =
         MutableStateFlow<Response<List<ProfileHeaderData>>>(Response.Success(emptyList()))
-    val verifiers: StateFlow<Response<List<ProfileHeaderData>>> = _verifiers
+    val userProfiles: StateFlow<Response<List<ProfileHeaderData>>> = _userProfiles
+
+
 
     // State to hold the rating as Int
     private val _curUserRating = mutableStateOf(0)
     val curUserRating: State<Int> get() = _curUserRating
 
-    fun updateProfileView(userId: String) {
+    fun updateProfileView(userId: String, profileImageUrl: String) {
         viewModelScope.launch {
-            userRepository.updateProfileView(userId)
+            userRepository.checkAndNotifyProfileViews(userId, profileImageUrl)
         }
     }
 
@@ -444,11 +444,22 @@ class EditProfileViewModel @Inject constructor(
     }
 
     fun getAllVerifiersDetail(targetUserId: String?) {
-        _verifiers.value = Response.Loading  // Show loading state
+        _userProfiles.value = Response.Loading  // Show loading state
 
         viewModelScope.launch {
             userRepository.getAllVerifiersDetail(targetUserId).collect{
-                _verifiers.value = it
+                _userProfiles.value = it
+            }
+
+        }
+    }
+
+    fun getAllViewersDetail(targetUserId: String?) {
+        _userProfiles.value = Response.Loading  // Show loading state
+
+        viewModelScope.launch {
+            userRepository.getTopViewersProfileData(targetUserId).collect{
+                _userProfiles.value = it
             }
 
         }

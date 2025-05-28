@@ -74,6 +74,13 @@ class UserViewModel @Inject constructor(
         }
     }
 
+    fun subscribeTopics(){
+        viewModelScope.launch {
+            userRepository.subscribeTopics()
+        }
+    }
+
+
     fun getUserDetail(userId: String) {
         viewModelScope.launch {
             userRepository.getUserDetail(userId)

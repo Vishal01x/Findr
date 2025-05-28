@@ -70,10 +70,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="chat"
-                    android:pathPrefix="/"
-                    android:scheme="findr" />
+                <data android:scheme="findr"/>
+                <data android:pathPrefix="/"/>
+                <data android:host="chat"/>
+                <data android:host="project"/>
+                <data android:host="profile"/>
+                <data android:host="profile_views"/>
             </intent-filter>
         </activity>
 
@@ -108,6 +110,17 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".loopit.fcm.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="action_reply"/>
+                <action android:name="action_accept"/>
+                <action android:name="action_reject"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

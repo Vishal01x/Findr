@@ -13,6 +13,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
@@ -216,10 +217,12 @@ class AuthRepositoryImpl @Inject constructor(
                     val updates = mapOf("name" to name, "profilePicture" to "")
                     transaction.set(userDocRef, newUser, SetOptions.merge())
                     transaction.set(userDocRef, updates, SetOptions.merge())
+                    //transaction.set( userDocRef,"lastNotifiedAt" to FieldValue.serverTimestamp())
                     firestoreService.registerFCMToken()
                 } else {
                     transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
                     transaction.update(userDocRef, "name", name)
+
                     firestoreService.registerFCMToken()
                 }
             }.await() // Important to wait on transaction completion

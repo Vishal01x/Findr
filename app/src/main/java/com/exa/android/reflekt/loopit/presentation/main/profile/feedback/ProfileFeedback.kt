@@ -1,6 +1,5 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.feedback
 
-import android.util.Log
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,8 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -25,7 +22,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,7 +46,6 @@ import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileView
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
 import com.exa.android.reflekt.loopit.util.showToast
-import com.google.common.io.Files.append
 import androidx.compose.runtime.derivedStateOf
 
 
@@ -58,7 +53,7 @@ import androidx.compose.runtime.derivedStateOf
 fun ProfileFeedback(userId: String?, editProfileViewModel: EditProfileViewModel, onViewVerifier : () -> Unit) {
 
     val curUser = remember { editProfileViewModel.curUser }
-    val verifierDetailResponse by  editProfileViewModel.verifiers.collectAsState()
+    val verifierDetailResponse by  editProfileViewModel.userProfiles.collectAsState()
     var verifierDetail by remember { mutableStateOf(emptyList<ProfileHeaderData>()) }
     val rating = remember { editProfileViewModel.curUserRating }
 

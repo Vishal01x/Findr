@@ -100,7 +100,7 @@ fun MessageList(
 
     val lastMessage = messages.lastOrNull()
     val isLastMessageSelected = lastMessage != null && selectedMessages.contains(lastMessage)
-
+    var lastOtherUserMessageIdx = -1
     Log.d("Chat Messages1234", "Messages - ${messages.toString()}")
 
     LazyColumn(
@@ -110,6 +110,7 @@ fun MessageList(
         itemsIndexed(messages.reversed()) { index, message ->
             renderedIndex[message.messageId] = index
             val isSentByCurrentUser = message.senderId == curUser
+            if(!isSentByCurrentUser && lastOtherUserMessageIdx == -1)lastOtherUserMessageIdx = index
             val hasUnfinishedMedia =
                 (message.media != null && message.media.uploadStatus != UploadStatus.SUCCESS)
 
@@ -123,6 +124,7 @@ fun MessageList(
                         isSelected = selectedMessages.contains(message),
                         selectedMessagesSize = selectedMessages.size,
                         isHighlighted = highlightedIndex == index,
+                        isSeen = (isSentByCurrentUser && lastOtherUserMessageIdx != -1 && lastOtherUserMessageIdx < index),
                         onTapOrLongPress = {
                             onMessageLongPress(
                                 message,
@@ -174,6 +176,7 @@ fun MessageBubble(
     selectedMessagesSize: Int, // it is passed to use a key for pointerInput so it changes whenever
     // selection changes and causes the detectGesture to call
     isHighlighted: Boolean, // it used to change color of messages for 500ms to reply that reply message is rendered
+    isSeen : Boolean,
     onTapOrLongPress: () -> Unit, //select and unselect messages
     onReply: (Message) -> Unit, // pass the message which is to be reply
     onReplyClick: (String) -> Unit, // pass the click reply index to messageList to scroll and update the ui of replied message
@@ -435,20 +438,22 @@ fun MessageBubble(
                         color = if (curUserId == message.senderId) Color.White else Color.Gray
                     )
 
+                    val messageStatus = if(isSeen)"seen" else message.status
+
                     Spacer(Modifier.width(1.dp))
 
                     if (curUserId == message.senderId && message.message != "deleted") {
                         Spacer(modifier = Modifier.width(2.dp))
                         Log.d("Detail Chat", message.status)
 
-                        if (message.status == "sent") {
+                        if (messageStatus == "sent") {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Sent",
                                 tint = MaterialTheme.colorScheme.tertiary.copy(.9f),  // Gray color for sent
                                 modifier = Modifier.size(14.dp)
                             )
-                        } else if (message.status == "delivered") {
+                        } else if (messageStatus == "delivered") {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_seen),
                                 contentDescription = "Delivered",

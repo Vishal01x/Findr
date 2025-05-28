@@ -1,7 +1,5 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.feedback
 
-import android.app.LocaleConfig
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,18 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
@@ -38,16 +32,19 @@ import com.exa.android.reflekt.loopit.util.showToast
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VerifierScreen(
+    isVerifier : Boolean,
     userId: String?,
     onProfileClick: (String) -> Unit,
     onBackClick: () -> Unit,
     editProfileViewModel: EditProfileViewModel = hiltViewModel()
 ) {
-    val usersResponse by editProfileViewModel.verifiers.collectAsState()
+    val usersResponse by editProfileViewModel.userProfiles.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(userId) {
+        if(isVerifier)
         editProfileViewModel.getAllVerifiersDetail(userId)
+        else editProfileViewModel.getAllViewersDetail(userId)
     }
 
     Scaffold(
@@ -55,7 +52,7 @@ fun VerifierScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Verifier Users",
+                        if(isVerifier)"Verifier Users" else "Profile Viewers",
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
@@ -75,13 +72,15 @@ fun VerifierScreen(
         }
     ) { paddingValues ->
 
+        val error = if(isVerifier)"Verifiers" else "Viewers"
+
         when (val response = usersResponse) {
             is Response.Loading -> {
-                showLoader(message = "Verifier Loading...")
+                showLoader(message = if(isVerifier)"Verifier Loading..." else "Viewers Loading...")
             }
 
             is Response.Error -> {
-                showToast(context, "Error in loading Verifiers")
+                showToast(context, "Error in loading $error")
             }
 
             is Response.Success -> {
@@ -92,7 +91,7 @@ fun VerifierScreen(
                         .fillMaxSize()
                 ) {
                     items(users) { user ->
-                        VerifierUserItem(
+                        UserProfileItem(
                             user = user,
                             onClick = {
                                 // Navigate to user profile
@@ -115,7 +114,7 @@ fun VerifierScreen(
 }
 
 @Composable
-fun VerifierUserItem(
+fun UserProfileItem(
     user: ProfileHeaderData,
     onClick: () -> Unit
 ) {

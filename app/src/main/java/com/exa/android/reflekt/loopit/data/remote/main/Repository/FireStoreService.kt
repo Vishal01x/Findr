@@ -2,11 +2,15 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.content.Context
 import android.util.Log
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
-import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
+import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationContent
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
+//import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
+import com.exa.android.reflekt.loopit.fcm.NotificationSender
+import com.exa.android.reflekt.loopit.fcm.NotificationType
+import com.exa.android.reflekt.loopit.fcm.Topics
 import com.exa.android.reflekt.loopit.util.ChatCryptoUtil
 import com.exa.android.reflekt.loopit.util.ChatCryptoUtil.encrypt
 import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
@@ -52,6 +56,7 @@ import javax.inject.Inject
 class FirestoreService @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
+    //private val userRepository: UserRepository,
     @ApplicationContext private val context: Context
 ) {
     private val userCollection = db.collection("users")
@@ -223,6 +228,7 @@ class FirestoreService @Inject constructor(
     ): String? {
         val userId1 = auth.currentUser?.uid ?: return null
         val chatId = generateChatId(userId1, userId2)
+       // val curUserFcm = userRepository.getUserFcm(currentUser!!)
         val finalMessageId = messageId ?: UUID.randomUUID().toString()
 
         val members = if (isCurUserBlocked) listOf(userId1) else listOf(userId1, userId2)
@@ -238,6 +244,8 @@ class FirestoreService @Inject constructor(
             replyTo = replyTo,
             status = if (isCurUserBlocked) "sent" else "delivered"
         )
+
+        Log.d("FCM", "$text $chatId, $userId1, $userId2, $receiverToken, $curUser")
 
         val encryptedMessage: Message
 
@@ -290,7 +298,7 @@ class FirestoreService @Inject constructor(
             }
 
             if (!receiverToken.isNullOrEmpty()) {
-                sendPushNotification(receiverToken, message, curUser)
+                sendPushNotification(receiverToken,message, curUser)
             }
 
             return finalMessageId
@@ -300,8 +308,29 @@ class FirestoreService @Inject constructor(
         }
     }
 
-
     private fun sendPushNotification(receiverToken: String, message: Message, curUser: User?) {
+        val chatNotification = NotificationContent(
+            type = NotificationType.CHAT_MESSAGE,
+            title = curUser?.name ?: "User",
+            body = if (message.media != null) message.media.mediaType.name else message.message,
+            imageUrl = curUser?.profilePicture,
+            targetId = message.chatId,
+            senderId = message.senderId,
+            fcm = curUser?.fcmToken,
+            metadata = mapOf(
+                "messageId" to message.messageId,
+                "isMedia" to (message.media != null).toString()
+            )
+        )
+
+        NotificationSender(context).sendNotification(
+            deviceToken = receiverToken,
+            topics = Topics.NULL,
+            content = chatNotification
+        )
+    }
+
+    /*private fun sendPushNotification(receiverToken: String, message: Message, curUser: User?) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val accessToken = getAccessToken(context)
@@ -347,7 +376,7 @@ class FirestoreService @Inject constructor(
                 // Log.e("FireStore Operation", "FCM Request Failed", e)
             }
         }
-    }
+    }*/
 
 
     private fun updateUserList(currentUser: String, newUser: String) {
@@ -493,7 +522,7 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    private fun updateUnreadMessages(chatId: String) {
+     fun updateUnreadMessages(chatId: String) {
         chatCollection.document(chatId).update("unreadMessages.$currentUser", 0)
     }
 

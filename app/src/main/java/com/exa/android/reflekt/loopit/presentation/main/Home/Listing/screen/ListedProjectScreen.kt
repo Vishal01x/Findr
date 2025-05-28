@@ -434,10 +434,10 @@ fun ListedProjectsScreen(
                                     onEnroll = { viewModel.enrollInProject(project) },
                                     withdraw = { viewModel.withdrawFromProject(project.id) },
                                     onAccept = { userId, userName ->
-                                        viewModel.acceptJoinRequest(project.id, userId, userName)
+                                        viewModel.acceptJoinRequest(project, userId, userName)
                                     },
                                     onReject = { userId ->
-                                        viewModel.rejectJoinRequest(project.id, userId)
+                                        viewModel.rejectJoinRequest(project, userId)
                                     },
                                     onViewOnMap = { userIds ->
                                         navController.navigate("map_screen/${userIds.joinToString(",")}")
