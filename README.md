@@ -1,10 +1,10 @@
-# 🔍 Findr – A Networking Platform
+# 🔍 Findr – A Networking Platform - Live at Play Store
 
 &#x20;
 
-## 📱 Download APK
+## 📱 Download APP - from Play store
 
-> [⬇️ Download Findr APK (v1.0)](https://lnkd.in/diY2ZKQi)
+> [⬇️ Download Findr](https://play.google.com/store/apps/details?id=com.exa.android.reflekt)
 > ✅ 350+ downloads | ⏰ 65+ active projects tracked via Firebase
 
 ---
