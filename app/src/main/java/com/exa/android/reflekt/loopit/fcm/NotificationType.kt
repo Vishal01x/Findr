@@ -81,7 +81,7 @@ enum class NotificationType(
         defaultTitle = "App Update Available",
         deepLinkBase = "myapp://updates",
         iconResId = R.drawable.send, // use for app update
-        actions = listOf( NotificationAction("Reply", ActionType.Update, R.drawable.send, true))
+        actions = listOf( NotificationAction("Update App", ActionType.Update, R.drawable.send, false))
     );
 
     companion object {

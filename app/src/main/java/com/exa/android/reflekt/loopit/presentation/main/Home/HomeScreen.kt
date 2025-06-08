@@ -102,16 +102,11 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
             }
         }
     }
+    RequestNotificationPermissionIfNeeded(true)
 
-
-        RequestNotificationPermissionIfNeeded(true)
-
-
-
-
-    val filteredList by remember(searchQuery, originalChatList) {
+    val filteredList by remember(searchQuery, originalChatList,isQueryClicker) {
         derivedStateOf {
-            if (searchQuery.text.isBlank()) originalChatList
+            if (searchQuery.text.isBlank() || !isQueryClicker) originalChatList
             else {
                 val words = searchQuery.text.trim().lowercase().split("\\s+".toRegex())
                 originalChatList.filter { chat ->
@@ -136,8 +131,8 @@ fun HomeScreen(navController: NavController, viewModel: ChatViewModel) {
                 searchQuery = searchQuery,
                 onQueryChange = { searchQuery = it },
                 onBackClick = {
-                    isQueryClicker = false
                     searchQuery = TextFieldValue("")
+                    isQueryClicker = false
                 }
             )
         }

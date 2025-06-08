@@ -47,8 +47,7 @@ class ProjectRepositoryImpl @Inject constructor(
             val projectMap = project.toMap()
 
 
-            //db.collection(PROJECTS_COLLECTION)
-            db.collection("post_test")
+            db.collection(PROJECTS_COLLECTION)
                 .document(project.id)
                 .set(projectMap)
                 .await()

@@ -12,9 +12,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ChatViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.BottomBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
@@ -52,9 +54,17 @@ fun AppNavigation(
                 currentDestination == MapInfo.MapScreen.route ||
                 currentDestination == ProjectRoute.ProjectList.route
             ) {
-                CustomBottomNavigationBar(navController) {
+
+                val chatViewModel : ChatViewModel = hiltViewModel()
+
+                CustomBottomNavigationBar(navController, chatViewModel) {
                     bottomSheet = true
                 }
+
+//                BottomBar(
+//                    navController = navController,
+//                    viewModel = chatViewModel
+//                )
             }
         }
     ) { paddingValues ->

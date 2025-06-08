@@ -119,7 +119,7 @@ class FirestoreService @Inject constructor(
     }
 
     fun updateToken(token: String?) {
-        if (token.isNullOrEmpty() || currentUser.isNullOrEmpty()) return
+        if (token == null || currentUser.isNullOrEmpty()) return
 
         val userRef = userCollection.document(currentUser)
 
@@ -330,55 +330,6 @@ class FirestoreService @Inject constructor(
         )
     }
 
-    /*private fun sendPushNotification(receiverToken: String, message: Message, curUser: User?) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val accessToken = getAccessToken(context)
-                val request = FCMRequest(
-                    message = MessageData(
-                        token = receiverToken,
-//                        notification = NotificationData(
-//                            title = "New Message",
-//                            body = message
-//                        )
-                        data = NotificationData(
-                            title = curUser?.name ?: "",
-                            senderId = message.senderId,
-                            chatId = message.chatId,
-                            body = if (message.media != null) message.media.mediaType.name else message.message,
-                            imageUrl = curUser?.profilePicture ?: "",
-                            isChat = "Yes"
-                        )
-                    )
-                )
-
-                val response =
-                    RetrofitInstance.api.sendNotification("Bearer $accessToken", request).execute()
-
-                if (response.isSuccessful) {
-                    /*
-                    Log.d(
-                        "FireStore Operation",
-                        "Notification sent successfully: ${response.body()}"
-                    )
-
-                     */
-                } else {
-                    /*
-                    Log.e(
-                        "FireStore Operation",
-                        "Error sending notification: ${response.errorBody()?.string()}"
-                    )
-
-                     */
-                }
-            } catch (e: Exception) {
-                // Log.e("FireStore Operation", "FCM Request Failed", e)
-            }
-        }
-    }*/
-
-
     private fun updateUserList(currentUser: String, newUser: String) {
         val userRef = userCollection.document(currentUser)
         userRef.update("user_list", FieldValue.arrayUnion(newUser))
@@ -421,30 +372,26 @@ class FirestoreService @Inject constructor(
         deleteFor: Int = 1,
         onCleared: () -> Unit
     ) {
-
         val chatRef = chatCollection.document(chatId).collection("messages")
 
-        val batch = db.batch()
         try {
-            for (messageId in messages) {
-                val messageRef = chatRef.document(messageId)
-                if (deleteFor == 2) {
-                    batch.update(messageRef, mapOf("message" to "deleted"))
-                } else {
-                    batch.update(
-                        messageRef,
-                        mapOf("members" to FieldValue.arrayRemove(currentUser))
-                    )
-                    val members = messageRef.get().await().get("members") as List<*>
-                    if (members.isEmpty()) batch.delete(messageRef)
-                }
+            coroutineScope {
+                messages.map { messageId ->
+                    async {
+                        val messageRef = chatRef.document(messageId)
+                        if (deleteFor == 2) {
+                            messageRef.update("message", "deleted").await()
+                        } else {
+                            messageRef.update("members", FieldValue.arrayRemove(currentUser)).await()
+                            val members = messageRef.get().await().get("members") as? List<*> ?: emptyList<Any>()
+                            if (members.isEmpty())messageRef.delete().await() else {}
+                        }
+                    }
+                }.awaitAll()
             }
-            batch.commit().await()
-
-            // Log.d("FireStore Operation", "Messages Deleted Successfully")
             onCleared()
         } catch (e: Exception) {
-            // Log.d("FireStore Operation", "Error in Message Deletion - ${e.message}")
+            // Log.e("Firestore", "Error in parallel message deletion: ${e.message}")
         }
     }
 
@@ -552,13 +499,19 @@ class FirestoreService @Inject constructor(
                                             )
                                         )
                                         msg.copy(media = decryptedMedia)
-                                    } else {
-                                        msg.copy(
-                                            message = ChatCryptoUtil.decrypt(
-                                                msg.message,
-                                                msg.chatId
-                                            )
+                                    } else if(msg.message != "deleted"){
+                                        var decryptedText = ChatCryptoUtil.decrypt(
+                                            msg.message,
+                                            msg.chatId
                                         )
+                                        if(decryptedText.isNullOrEmpty()){
+                                            decryptedText = msg.message
+                                        }
+                                        msg.copy(
+                                            message = decryptedText.ifBlank { msg.message }
+                                        )
+                                    } else {
+                                        msg
                                     }
                                 } catch (e: Exception) {
                                     Message()

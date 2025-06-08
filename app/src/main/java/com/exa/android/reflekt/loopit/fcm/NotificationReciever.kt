@@ -10,7 +10,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
+//import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -139,10 +139,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var chatRepository: FirestoreService
+
     @Inject
     lateinit var userRepository: UserRepository
-    @Inject
-    lateinit var projectRepository: ProjectRepository
 
     override fun onReceive(context: Context, intent: Intent) {
         // Verify intent came from your app
@@ -154,33 +153,45 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         when (ActionType.fromActionId(action)) {
             ActionType.Reply -> handleReply(context, groupKey, remoteInput, intent)
-            ActionType.Accept -> handleProjectAction(context, groupKey, true)
-            ActionType.Reject -> handleProjectAction(context, groupKey, false)
+            ActionType.Accept -> handleProjectAction(context, groupKey, true, intent)
+            ActionType.Reject -> handleProjectAction(context, groupKey, false, intent)
             ActionType.Update -> {}
-            ActionType.Mark_As_Read -> {handleMarkRead(context,intent)}
-            ActionType.Ignore -> {handleIgnore(context,intent)}
-            null -> Log.e("NotificationAction", "Unknown action type")
+            ActionType.Mark_As_Read -> {
+                handleMarkRead(context, intent)
+            }
+
+            ActionType.Ignore -> {
+                handleIgnore(context, intent)
+            }
+
+            null -> { /*Log.e("NotificationAction", "Unknown action type") */
+            }
         }
     }
 
-    private fun handleReply(context: Context, chatId: String?, remoteInput: Bundle?, intent: Intent) {
+    private fun handleReply(
+        context: Context,
+        chatId: String?,
+        remoteInput: Bundle?,
+        intent: Intent
+    ) {
         val replyText = remoteInput?.getString("key_text_reply")
         val senderId = intent.getStringExtra("otherUser")
         val receiverFcm = intent.getStringExtra("receiverFcm")
 
         if (chatId == null || senderId == null || receiverFcm == null) {
-            Log.e("NotificationAction", "Missing required parameters for reply")
+            //Log.e("NotificationAction", "Missing required parameters for reply")
             return
         }
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val curUser = userRepository.getCurUser() ?: run {
-                    Log.e("NotificationAction", "User not logged in")
+                    //Log.e("NotificationAction", "User not logged in")
                     return@launch
                 }
 
-                Log.d("FCM", "$replyText $chatId, ${Firebase.auth.currentUser?.uid}, $senderId, $receiverFcm, $curUser")
+                //Log.d("FCM", "$replyText $chatId, ${Firebase.auth.currentUser?.uid}, $senderId, $receiverFcm, $curUser")
 
                 chatRepository.createChatAndSendMessage(
                     userId2 = senderId,
@@ -194,16 +205,17 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 ).also {
                     // Only dismiss notification after successful send
                     //chatRepository.getMessages(Firebase.auth.currentUser?.uid?:"", senderId ?: "")
-                    Log.d("FCM", "success")
+                    //Log.d("FCM", "success")
                     withContext(Dispatchers.Main) {
                         //clearChatNotifications(context, chatId)
-                        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        val notificationManager =
+                            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                         notificationManager.cancel(chatId.hashCode())
-                        Log.d("FCM", "success22")
+                        //Log.d("FCM", "success22")
                     }
                 }
             } catch (e: Exception) {
-                Log.e("NotificationAction", "Failed to send message", e)
+                //Log.e("NotificationAction", "Failed to send message", e)
                 // Show error notification
                 showErrorNotification(context, "Failed to send message")
             }
@@ -211,13 +223,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
     }
 
     private fun handleMarkRead(context: Context, intent: Intent) {
-        Log.d("FCM", "readCalled")
+        //Log.d("FCM", "readCalled")
 
         val notificationId = intent.getIntExtra("notificationId", -1)
         val groupKey = intent.getStringExtra("groupKey")
 
-        if (notificationId != -1) {
-            NotificationManagerCompat.from(context).cancel(notificationId)
+        if (!groupKey.isNullOrEmpty()) {
+            chatRepository.updateUnreadMessages(groupKey)
         }
 
         // Clear from SharedPreferences
@@ -226,40 +238,47 @@ class NotificationActionReceiver : BroadcastReceiver() {
             .remove(groupKey)
             .apply()
 
-        Log.d("FCM", "readFinish")
+        if (notificationId != -1) {
+            NotificationManagerCompat.from(context).cancel(notificationId)
+        }
+
+        //Log.d("FCM", "readFinish")
     }
 
     private fun handleIgnore(context: Context, intent: Intent) {
-        Log.d("FCM", "ignorecallee")
+        //Log.d("FCM", "ignorecallee")
         val notificationId = intent.getIntExtra("notificationId", -1)
         if (notificationId != -1) {
             NotificationManagerCompat.from(context).cancel(notificationId)
         }
-        Log.d("FCM", "ignorefinish")
+        //Log.d("FCM", "ignorefinish")
     }
 
-    private fun handleProjectAction(context: Context, projectId: String?, accept: Boolean) {
+    private fun handleProjectAction(
+        context: Context,
+        projectId: String?,
+        accept: Boolean,
+        originalIntent: Intent
+    ) {
         if (projectId == null) {
-            Log.e("NotificationAction", "Missing project ID")
             return
         }
+        try {
+            // Create deep link to open project screen
+            val deepLinkUri = "findr://project/$projectId"
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-//                if (accept) {
-//                    projectRepository.acceptProjectInvite(projectId)
-//                } else {
-//                    projectRepository.rejectProjectInvite(projectId)
-//                }
-//                withContext(Dispatchers.Main) {
-//                    NotificationManagerCompat.from(context).cancel(projectId.hashCode())
-//                }
-            } catch (e: Exception) {
-                Log.e("NotificationAction", "Project action failed", e)
-                showErrorNotification(context, "Action failed")
+            val deepLinkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLinkUri)).apply {
+                setPackage(context.packageName)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
+
+            context.startActivity(deepLinkIntent)
+
+        } catch (e: Exception) {
+            showErrorNotification(context, "Action failed ${e.localizedMessage}")
         }
     }
+
 
     private fun showErrorNotification(context: Context, message: String) {
 
@@ -267,7 +286,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED
             ) {
-                Log.e("Post Notification", "Notification permission not granted!")
+                //Log.e("Post Notification", "Notification permission not granted!")
                 return
             }
         }
@@ -285,5 +304,4 @@ class NotificationActionReceiver : BroadcastReceiver() {
             }
     }
 }
-
 

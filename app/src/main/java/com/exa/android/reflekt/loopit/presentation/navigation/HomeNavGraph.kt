@@ -153,12 +153,13 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
 
 
 fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
-    homeNavGraph(navController)
+    //homeNavGraph(navController)
     navigation(
         startDestination = ProjectRoute.ProjectList.route,
         route = "project_graph"
     ) {
         composable(ProjectRoute.ProjectList.route) {
+            val chatViewModel : ChatViewModel = hiltViewModel()
             ListedProjectsScreen(
                 navController = navController,
                 onProjectClick = { projectId ->

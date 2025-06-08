@@ -116,8 +116,11 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="action_reply"/>
+                <action android:name="mark_as_read"/>
+                <action android:name="ignore"/>
                 <action android:name="action_accept"/>
                 <action android:name="action_reject"/>
+                <action android:name="action_update"/>
             </intent-filter>
         </receiver>
 

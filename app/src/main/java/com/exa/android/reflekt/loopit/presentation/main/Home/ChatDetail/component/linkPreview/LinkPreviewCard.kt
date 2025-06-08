@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +30,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableTarget
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,12 +44,15 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.local.domain.LinkMetadata
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel.LinkState
 import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.linkPreview.viewModel.MetaDataViewModel
+import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
+import com.exa.android.reflekt.loopit.util.LinkUtils
 import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.launch
 import java.net.URL
@@ -61,6 +68,7 @@ fun LinkPreview(message: String, isSentByMe: Boolean, selectedMessagesSize: Int)
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
     val annotatedString = getAnnotatedString(message, isSentByMe)
 
@@ -73,7 +81,7 @@ fun LinkPreview(message: String, isSentByMe: Boolean, selectedMessagesSize: Int)
                 metadata = metaData,
                 isSentByMe = isSentByMe,
                 selectedMessagesSize = selectedMessagesSize,
-                onClick = { if (selectedMessagesSize <= 0) openLink(annotatedString, context, 0) }
+                onClick = { if (selectedMessagesSize <= 0) openUrl(context,metaData.url) }
                 // onRetry = { metaDataViewModel.refreshMetadata(message) }
             )
         }
@@ -94,6 +102,9 @@ fun LinkPreview(message: String, isSentByMe: Boolean, selectedMessagesSize: Int)
                 if (selectedMessagesSize <= 0)
                     openLink(annotatedString, context, offset)
             },
+            onTextLayout = { layoutResult ->
+                textLayoutResult = layoutResult
+            },
             modifier = Modifier.pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { offset ->
@@ -101,11 +112,14 @@ fun LinkPreview(message: String, isSentByMe: Boolean, selectedMessagesSize: Int)
                             openLink(annotatedString, context, 0)
                         }
                     },
-                    onLongPress = { offset ->
-                        val link = getLinkFromText(annotatedString, 0)
-                        link?.let {
-                            coroutineScope.launch {
-                                copyToClipboard(context, it)
+                    onLongPress = { tapOffset ->
+                        textLayoutResult?.let { layout ->
+                            val offset = layout.getOffsetForPosition(tapOffset)
+                            val link = getLinkFromText(annotatedString, offset)
+                            link?.let {
+                                coroutineScope.launch {
+                                    copyToClipboard(context, it)
+                                }
                             }
                         }
                     }
@@ -230,7 +244,7 @@ private fun LinkPreviewError(message: String, onRetry: () -> Unit) {
     }
 }
 
-fun openLink(annotatedString: AnnotatedString, context: Context, offset: Int) {
+fun openLink(annotatedString: AnnotatedString, context: Context, offset: Int) { // offset to check at click point is there any link
     val annotation = annotatedString.getStringAnnotations(start = offset, end = offset)
         .firstOrNull() ?: return
 
@@ -248,7 +262,6 @@ fun openLink(annotatedString: AnnotatedString, context: Context, offset: Int) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
-
         } else {
             showToast(context, "Invalid link or email")
         }

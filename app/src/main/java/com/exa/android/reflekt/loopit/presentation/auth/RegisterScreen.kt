@@ -424,13 +424,13 @@ fun SignUpScreen(
                                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         )
+
+                                        // Role Suggestions
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-
-                            // Role Suggestions
-                            if (roleSuggestions.isNotEmpty()) {
+if (roleSuggestions.isNotEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -938,8 +938,7 @@ private fun isFormComplete(state: SignUpState): Boolean {
         } else {
             state.location.isNotBlank() &&
                     state.companyName.isNotBlank() &&
-                    state.experience.isNotBlank() &&
-                    state.ctc.isNotBlank()
+                    state.experience.isNotBlank()
         }
     }
 }

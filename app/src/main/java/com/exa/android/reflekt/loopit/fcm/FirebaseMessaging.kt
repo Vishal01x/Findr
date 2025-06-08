@@ -80,26 +80,30 @@ class FirebaseService : FirebaseMessagingService() {
                 }
 
                 NotificationType.APP_UPDATE -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                            != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            Log.e("Post Notification", "Notification permission not granted!")
-                            return
-                        }
-                    }
+                    handleAppUpdateMessage(data, type.actions)
+                    /* val title = message.data["title"]
+                     val body = message.data["body"]
 
-                    NotificationCompat.Builder(this, MyApp.CHANNEL_SYSTEM)
-                        .setSmallIcon(R.drawable.findr_logo)
-                        .setContentTitle("Action Failed")
-                        .setContentText("New app update")
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .build().also {
-                            NotificationManagerCompat.from(this).notify(
-                                UUID.randomUUID().hashCode(),
-                                it
-                            )
-                        }
+                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                             != PackageManager.PERMISSION_GRANTED
+                         ) {
+                             Log.e("Post Notification", "Notification permission not granted!")
+                             return
+                         }
+                     }
+
+                     NotificationCompat.Builder(this, MyApp.CHANNEL_SYSTEM)
+                         .setSmallIcon(R.drawable.findr_logo)
+                         .setContentTitle(title)
+                         .setContentText(body)
+                         .setPriority(NotificationCompat.PRIORITY_HIGH)
+                         .build().also {
+                             NotificationManagerCompat.from(this).notify(
+                                 UUID.randomUUID().hashCode(),
+                                 it
+                             )
+                         }*/
                 }
             }
 
@@ -212,7 +216,35 @@ class FirebaseService : FirebaseMessagingService() {
             NotificationCompat.CATEGORY_SOCIAL
         )
     }
+
+    private fun handleAppUpdateMessage(data: Map<String, String>, actions: List<NotificationAction>) {
+        if (Firebase.auth.currentUser == null || Firebase.auth.currentUser?.uid == null) return
+
+        val senderId = data["senderId"] ?: Firebase.auth.currentUser?.uid ?: ""
+        val targetId = data["targetId"] ?: Firebase.auth.currentUser?.uid ?: ""
+        val category = data["postcategory"] ?: ""
+
+        //Log.d("FCM", "category - $category")
+
+        val deepLink =
+             Uri.parse("findr://app/update")
+
+        notificationHelper.showNotification(
+            NotificationData(
+                type = NotificationType.APP_UPDATE,
+                title = data["title"] ?: "App Update",
+                body = data["body"] ?: "New update is available \n Update from Play Store",
+                deepLink = deepLink,
+                actions = actions,
+                largeIcon = data["imageUrl"]?.let { Uri.parse(it) },
+                groupKey = targetId
+            ),
+            NotificationCompat.CATEGORY_SOCIAL
+        )
+    }
 }
+
+
 
 class NotificationHelpe(private val context: Context) {
 
@@ -534,7 +566,7 @@ class NotificationHelperr(private val context: Context) {
             NotificationType.APP_UPDATE -> buildAppUpdateStyle(data, pendingIntent, groupKey)
         }.apply {
             setSmallIcon(R.drawable.findr_logo)
-            setColor(ContextCompat.getColor(context,R.color.notification_color))
+            setColor(ContextCompat.getColor(context, R.color.notification_color))
             setCategory(category)
             setPriority(NotificationCompat.PRIORITY_HIGH)
             setAutoCancel(true)
@@ -546,7 +578,13 @@ class NotificationHelperr(private val context: Context) {
 
         addNotificationActions(builder, data, notificationId)
         loadAndSetLargeIcon(data, builder, notificationId)
-        createOrUpdateGroupSummary(data.type, FINDR_GROUP_KEY, channelId, category, notificationId) // actually use group key
+        createOrUpdateGroupSummary(
+            data.type,
+            FINDR_GROUP_KEY,
+            channelId,
+            category,
+            notificationId
+        ) // actually use group key
 
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }
