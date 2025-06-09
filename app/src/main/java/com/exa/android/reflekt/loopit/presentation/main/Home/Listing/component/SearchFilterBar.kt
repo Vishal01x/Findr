@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -38,9 +39,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -50,10 +53,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ContentAlpha
+import androidx.compose.material.Divider
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
@@ -106,8 +111,10 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -776,6 +783,7 @@ fun ProjectCard(
     var expandedTags by remember { mutableStateOf(false) }
     var expandedRequests by remember { mutableStateOf(false) }
     var expandedEnrolled by remember { mutableStateOf(false) }
+    var expandedComments by remember { mutableStateOf(false) }
 
     var isEnrolled by remember(project) {
         mutableStateOf(currentUserId?.let { project.requestedPersons.containsKey(it) } ?: false)
@@ -1202,6 +1210,7 @@ fun ProjectCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
+                /*
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = project.createdByName,
@@ -1213,6 +1222,29 @@ fun ProjectCard(
                             text = date.formatAsTimeAgo(),
                             style = typography.labelMedium,
                             color = colors.outline
+                        )
+                    }
+                }
+
+                 */
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Like Button
+                    LikeButton(
+                        isLiked = project.likes.contains(currentUserId),
+                        onLike = { onToggleLike(project.id) },
+                        modifier = Modifier.padding(4.dp)
+                    )
+
+                    // Comment Button
+                    IconButton(
+                        onClick = { expandedComments = !expandedComments },
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Comment,
+                            contentDescription = "Comments",
+                            tint = if (expandedComments) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -1257,19 +1289,269 @@ fun ProjectCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(if (isEnrolled) "Withdraw" else "Enroll")
                     }
-                }else{
+                }
+                /*
+                else{
                     LikeButton(
                         isLiked = project.likes.contains(currentUserId),
                         onLike = { onToggleLike(project.id) },
                         modifier = Modifier.padding(4.dp)
                     )
                 }
+
+                 */
+            }
+            AnimatedVisibility(
+                visible = expandedComments,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth()
+            ) {
+                CommentPreviewSection(
+                    project = project,
+                    currentUserId = currentUserId,
+                    onCommentEvent = onCommentEvent,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
 
 }
 
+@Composable
+fun CommentPreviewSection(
+    project: Project,
+    currentUserId: String?,
+    onCommentEvent: (ProjectListEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val allComments = remember(project.comments) { project.comments.reversed() }
+    var visibleCommentCount by remember { mutableIntStateOf(3) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(12.dp)
+    ) {
+        // Add comment input at the TOP
+        CommentInputField(
+            onSubmit = { text ->
+                if (text.isNotBlank()) {
+                    onCommentEvent(
+                        ProjectListEvent.AddComment(
+                            project.id,
+                            text
+                        )
+                    )
+                }
+            },
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        if (allComments.isNotEmpty()) {
+            Text(
+                text = "Comments",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Replace Column with LazyColumn for proper scrolling
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 200.dp) // Set max height
+            ) {
+                val comments= allComments.take(visibleCommentCount)
+                items(comments.size) {
+                    val comment = comments[it]
+                    CommentItem(
+                        comment = comment,
+                        currentUserId = currentUserId,
+                        onEdit = { newText ->
+                            onCommentEvent(
+                                ProjectListEvent.UpdateComment(
+                                    project.id,
+                                    comment.id,
+                                    newText
+                                )
+                            )
+                        },
+                        onDelete = {
+                            onCommentEvent(
+                                ProjectListEvent.DeleteComment(
+                                    project.id,
+                                    comment.id
+                                )
+                            )
+                        }
+                    )
+                    Divider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                }
+
+                // Show more button
+                if (visibleCommentCount < allComments.size) {
+                    item {
+                        TextButton(
+                            onClick = { visibleCommentCount += 5 },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Show more comments")
+                        }
+                    }
+                }
+            }
+        } else {
+            Text(
+                text = "No comments yet",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+    }
+}
+
+// Update the AnimatedVisibility in ProjectCard
+
+
+
+// Updated CommentInputField with better styling
+@Composable
+fun CommentInputField(
+    onSubmit: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var text by remember { mutableStateOf("") }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.weight(1f),
+            placeholder = { Text("Add a comment...") },
+            singleLine = false,
+            maxLines = 3,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface,
+            )
+        )
+
+        IconButton(
+            onClick = {
+                onSubmit(text)
+                text = ""
+            },
+            enabled = text.isNotBlank()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Send,
+                contentDescription = "Send",
+                tint = if (text.isNotBlank()) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+            )
+        }
+    }
+}
+
+@Composable
+fun CommentItem(
+    comment: Comment,
+    currentUserId: String?,
+    onEdit: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    val isCurrentUser = comment.senderId == currentUserId
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        // Avatar
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(
+                    color = if (isCurrentUser) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = comment.senderName.take(1).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = comment.senderName,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = comment.timestamp.toDate().formatAsTimeAgo(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Text(
+                text = comment.text,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+
+        // Edit/Delete options (only for current user)
+        if (isCurrentUser) {
+            Row {
+                IconButton(
+                    onClick = { onEdit(comment.text) },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+/*
 @Composable
 private fun CommentSection(
     project: Project,
@@ -1326,47 +1608,8 @@ private fun CommentSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CommentInputField(
-    commentText: String,
-    onCommentChange: (String) -> Unit,
-    onSubmit: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        OutlinedTextField(
-            value = commentText,
-            onValueChange = onCommentChange,
-            label = { Text("Add a comment...") },
-            singleLine = false,
-            maxLines = 3,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(onSend = { onSubmit() })
-        )
+ */
 
-        IconButton(
-            onClick = onSubmit,
-            enabled = commentText.isNotBlank()
-        ) {
-            Icon(
-                imageVector = Icons.Default.Send,
-                contentDescription = "Post comment",
-                tint = if (commentText.isNotBlank())
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
 
 @Composable
 private fun UserCommentItem(
