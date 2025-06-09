@@ -2,11 +2,15 @@ package com.exa.android.reflekt.loopit.data.remote.main.Repository
 
 import android.content.Context
 import android.util.Log
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
-import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
-import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
+import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationContent
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
+//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
+//import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
+import com.exa.android.reflekt.loopit.fcm.NotificationSender
+import com.exa.android.reflekt.loopit.fcm.NotificationType
+import com.exa.android.reflekt.loopit.fcm.Topics
 import com.exa.android.reflekt.loopit.util.ChatCryptoUtil
 import com.exa.android.reflekt.loopit.util.ChatCryptoUtil.encrypt
 import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
@@ -52,6 +56,7 @@ import javax.inject.Inject
 class FirestoreService @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
+    //private val userRepository: UserRepository,
     @ApplicationContext private val context: Context
 ) {
     private val userCollection = db.collection("users")
@@ -114,7 +119,7 @@ class FirestoreService @Inject constructor(
     }
 
     fun updateToken(token: String?) {
-        if (token.isNullOrEmpty() || currentUser.isNullOrEmpty()) return
+        if (token == null || currentUser.isNullOrEmpty()) return
 
         val userRef = userCollection.document(currentUser)
 
@@ -223,6 +228,7 @@ class FirestoreService @Inject constructor(
     ): String? {
         val userId1 = auth.currentUser?.uid ?: return null
         val chatId = generateChatId(userId1, userId2)
+       // val curUserFcm = userRepository.getUserFcm(currentUser!!)
         val finalMessageId = messageId ?: UUID.randomUUID().toString()
 
         val members = if (isCurUserBlocked) listOf(userId1) else listOf(userId1, userId2)
@@ -239,8 +245,18 @@ class FirestoreService @Inject constructor(
             status = if (isCurUserBlocked) "sent" else "delivered"
         )
 
-        val encryptedText = encrypt(text, chatId)
-        val encryptedMessage = message.copy(message = encryptedText)
+        Log.d("FCM", "$text $chatId, $userId1, $userId2, $receiverToken, $curUser")
+
+        val encryptedMessage: Message
+
+        if (media != null) {
+            val encryptedUrl = encrypt(media.mediaUrl, chatId)
+            val encryptedMedia = media.copy(mediaUrl = encryptedUrl)
+            encryptedMessage = message.copy(media = encryptedMedia)
+        } else {
+            val encryptedText = encrypt(text, chatId)
+            encryptedMessage = message.copy(message = encryptedText)
+        }
 
         try {
             withContext(Dispatchers.IO) {
@@ -282,7 +298,7 @@ class FirestoreService @Inject constructor(
             }
 
             if (!receiverToken.isNullOrEmpty()) {
-                sendPushNotification(receiverToken, message, curUser)
+                sendPushNotification(receiverToken,message, curUser)
             }
 
             return finalMessageId
@@ -292,55 +308,27 @@ class FirestoreService @Inject constructor(
         }
     }
 
-
     private fun sendPushNotification(receiverToken: String, message: Message, curUser: User?) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val accessToken = getAccessToken(context)
-                val request = FCMRequest(
-                    message = MessageData(
-                        token = receiverToken,
-//                        notification = NotificationData(
-//                            title = "New Message",
-//                            body = message
-//                        )
-                        data = NotificationData(
-                            title = curUser?.name ?: "",
-                            senderId = message.senderId,
-                            chatId = message.chatId,
-                            body = if (message.media != null) message.media.mediaType.name else message.message,
-                            imageUrl = curUser?.profilePicture ?: "",
-                            isChat = "Yes"
-                        )
-                    )
-                )
+        val chatNotification = NotificationContent(
+            type = NotificationType.CHAT_MESSAGE,
+            title = curUser?.name ?: "User",
+            body = if (message.media != null) message.media.mediaType.name else message.message,
+            imageUrl = curUser?.profilePicture,
+            targetId = message.chatId,
+            senderId = message.senderId,
+            fcm = curUser?.fcmToken,
+            metadata = mapOf(
+                "messageId" to message.messageId,
+                "isMedia" to (message.media != null).toString()
+            )
+        )
 
-                val response =
-                    RetrofitInstance.api.sendNotification("Bearer $accessToken", request).execute()
-
-                if (response.isSuccessful) {
-                    /*
-                    Log.d(
-                        "FireStore Operation",
-                        "Notification sent successfully: ${response.body()}"
-                    )
-
-                     */
-                } else {
-                    /*
-                    Log.e(
-                        "FireStore Operation",
-                        "Error sending notification: ${response.errorBody()?.string()}"
-                    )
-
-                     */
-                }
-            } catch (e: Exception) {
-                // Log.e("FireStore Operation", "FCM Request Failed", e)
-            }
-        }
+        NotificationSender(context).sendNotification(
+            deviceToken = receiverToken,
+            topics = Topics.NULL,
+            content = chatNotification
+        )
     }
-
 
     private fun updateUserList(currentUser: String, newUser: String) {
         val userRef = userCollection.document(currentUser)
@@ -384,30 +372,26 @@ class FirestoreService @Inject constructor(
         deleteFor: Int = 1,
         onCleared: () -> Unit
     ) {
-
         val chatRef = chatCollection.document(chatId).collection("messages")
 
-        val batch = db.batch()
         try {
-            for (messageId in messages) {
-                val messageRef = chatRef.document(messageId)
-                if (deleteFor == 2) {
-                    batch.update(messageRef, mapOf("message" to "deleted"))
-                } else {
-                    batch.update(
-                        messageRef,
-                        mapOf("members" to FieldValue.arrayRemove(currentUser))
-                    )
-                    val members = messageRef.get().await().get("members") as List<*>
-                    if (members.isEmpty()) batch.delete(messageRef)
-                }
+            coroutineScope {
+                messages.map { messageId ->
+                    async {
+                        val messageRef = chatRef.document(messageId)
+                        if (deleteFor == 2) {
+                            messageRef.update("message", "deleted").await()
+                        } else {
+                            messageRef.update("members", FieldValue.arrayRemove(currentUser)).await()
+                            val members = messageRef.get().await().get("members") as? List<*> ?: emptyList<Any>()
+                            if (members.isEmpty())messageRef.delete().await() else {}
+                        }
+                    }
+                }.awaitAll()
             }
-            batch.commit().await()
-
-            // Log.d("FireStore Operation", "Messages Deleted Successfully")
             onCleared()
         } catch (e: Exception) {
-            // Log.d("FireStore Operation", "Error in Message Deletion - ${e.message}")
+            // Log.e("Firestore", "Error in parallel message deletion: ${e.message}")
         }
     }
 
@@ -485,7 +469,7 @@ class FirestoreService @Inject constructor(
         }
     }
 
-    private fun updateUnreadMessages(chatId: String) {
+     fun updateUnreadMessages(chatId: String) {
         chatCollection.document(chatId).update("unreadMessages.$currentUser", 0)
     }
 
@@ -507,12 +491,28 @@ class FirestoreService @Inject constructor(
 
                             val decryptedMessages = encryptedMessages.map { msg ->
                                 try {
-                                    msg.copy(
-                                        message = ChatCryptoUtil.decrypt(
+                                    if (msg.media != null) {
+                                        val decryptedMedia = msg.media?.copy(
+                                            mediaUrl = ChatCryptoUtil.decrypt(
+                                                msg.media.mediaUrl,
+                                                msg.chatId
+                                            )
+                                        )
+                                        msg.copy(media = decryptedMedia)
+                                    } else if(msg.message != "deleted"){
+                                        var decryptedText = ChatCryptoUtil.decrypt(
                                             msg.message,
                                             msg.chatId
                                         )
-                                    )
+                                        if(decryptedText.isNullOrEmpty()){
+                                            decryptedText = msg.message
+                                        }
+                                        msg.copy(
+                                            message = decryptedText.ifBlank { msg.message }
+                                        )
+                                    } else {
+                                        msg
+                                    }
                                 } catch (e: Exception) {
                                     Message()
                                 }

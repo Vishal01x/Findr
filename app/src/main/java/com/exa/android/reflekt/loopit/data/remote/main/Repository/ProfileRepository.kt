@@ -33,9 +33,11 @@ class ProfileRepository @Inject constructor(
                     lng = data.lng
                 )
             } else {
+                return profileUser()
                 throw Exception("Profile not found")
             }
         } catch (e: Exception) {
+            return profileUser()
             throw Exception("Failed to fetch profile: ${e.message}")
         }
     }

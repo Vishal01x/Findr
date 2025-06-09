@@ -3,6 +3,10 @@ package com.exa.android.reflekt.loopit.data.remote.authentication.vm
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.datastore.core.DataStore
+import androidx.datastore.dataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.authentication.repo.AuthRepository
@@ -10,6 +14,7 @@ import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreServi
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.worker.PreferenceHelper
+import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.util.Response
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -32,6 +37,7 @@ class AuthVM @Inject constructor(
     val auth: FirebaseAuth,
     private val preferenceHelper: PreferenceHelper,
     private val userRepository: UserRepository,
+    private val dataStore: DataStore<Preferences>,
     private val firestoreService: FirestoreService
 ) : ViewModel() {
 
@@ -380,8 +386,11 @@ class AuthVM @Inject constructor(
         viewModelScope.launch {
             val userId = repository.getCurrentUser()?.uid ?: ""
             preferenceHelper.clearUserId()
-            repository.logout()
-            loginState.value = LoginState() // Reset login state
+            dataStore.edit { it.clear() }
+            activeChatId = null
+            repository.logout(){
+                loginState.value = LoginState() // Reset login state
+            }
         }
     }
 }

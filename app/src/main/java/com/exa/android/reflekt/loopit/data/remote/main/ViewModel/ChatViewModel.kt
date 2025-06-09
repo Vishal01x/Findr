@@ -41,8 +41,12 @@ class ChatViewModel @Inject constructor(
     private val _responseState = mutableStateOf<Response<Boolean>>(Response.Success(false))
     val responseState: State<Response<Boolean>> = _responseState
 
+    private val _unreadCount = mutableStateOf(0)
+    val unreadCount: State<Int> = _unreadCount
+
     val curUserId = MutableStateFlow("")
     val curUser = MutableStateFlow<User?>(null)
+
 
     init {
         viewModelScope.launch {
@@ -111,14 +115,6 @@ class ChatViewModel @Inject constructor(
     }
 
 
-    fun getMessages(userId1: String, userId2: String) {
-        viewModelScope.launch {
-            repo.getMessages(userId1, userId2).collect { response ->
-                _messages.value = response
-            }
-        }
-    }
-
     fun deleteMessages(
         messages: List<String>,
         chatId: String,
@@ -158,7 +154,24 @@ class ChatViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .collect { response ->
                     _chatList.value = response
+
+                    // Extract and update unread count from chat list
+                    if (response is Response.Success) {
+                        val totalUnreadChats = response.data.count { it.unreadMessages > 0 }
+                        _unreadCount.value = totalUnreadChats
+                    }
+
                 }
+
+
+        }
+    }
+
+    fun getMessages(userId1: String, userId2: String) {
+        viewModelScope.launch {
+            repo.getMessages(userId1, userId2).collect { response ->
+                _messages.value = response
+            }
         }
     }
 

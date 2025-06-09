@@ -20,7 +20,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.PhotoViewerScreen
-import com.exa.android.reflekt.loopit.presentation.main.StatusScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.ProfileScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.EditEducationScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.EditExperienceScreen
@@ -48,14 +47,10 @@ import com.exa.android.reflekt.loopit.util.showToast
 
 fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController,locationViewModel: LocationViewModel) {
 
-    navigation(startDestination = "map_graph", route = "main_app") {
+    navigation(startDestination = "project_graph", route = "main_app") {
         homeNavGraph(navController)
-
-
-        composable(MainRoute.Setting.route) {
-            StatusScreen(navController)
-        }
         mapNavGraph(navController, locationViewModel)
+        projectNavGraph(navController)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
     }
@@ -73,7 +68,8 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
-            })
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "findr://profile/{userId}" })
         ) {
             val userId = it.arguments?.getString("userId")
 
@@ -217,6 +213,29 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
         ){backStackEntry->
             val userId = backStackEntry.arguments?.getString("userId")
             VerifierScreen(
+                true,
+                userId,
+                onProfileClick = {userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = ProfileRoute.ProfileViewer.route,
+            arguments = listOf(navArgument("userId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "findr://profile_views/{userId}" })
+        ){backStackEntry->
+            val userId = backStackEntry.arguments?.getString("userId")
+            VerifierScreen(
+                false,
                 userId,
                 onProfileClick = {userId->
                     navController.navigate(ProfileRoute.UserProfile.createRoute(userId))

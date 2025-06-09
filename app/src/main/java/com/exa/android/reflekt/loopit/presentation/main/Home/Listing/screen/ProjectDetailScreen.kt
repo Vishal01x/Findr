@@ -143,6 +143,9 @@ fun ProjectDetailScreen(
     navController: NavHostController,
     viewModel: ProjectListViewModel = hiltViewModel()
 ) {
+
+    Log.d("project", "$projectId")
+
     val state by viewModel.state.collectAsState()
     val project = state.projects.find { it.id == projectId }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -532,10 +535,10 @@ private fun ProjectContentSection(
                 expanded = expandedRequests,
                 onHeaderClick = onRequestClick,
                 onAccept = { userId, userName ->
-                    viewModel.acceptJoinRequest(project.id, userId, userName)
+                    viewModel.acceptJoinRequest(project,userId, userName)
                 },
                 onReject = { userId ->
-                    viewModel.rejectJoinRequest(project.id, userId)
+                    viewModel.rejectJoinRequest(project, userId)
                 },
                 onViewMap = {
                     if (project.requestedPersons.isNotEmpty()) {

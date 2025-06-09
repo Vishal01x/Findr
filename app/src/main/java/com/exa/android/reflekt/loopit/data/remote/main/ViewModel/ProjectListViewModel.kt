@@ -11,6 +11,7 @@ import com.exa.android.reflekt.loopit.util.application.ProjectListEvent.SelectPo
 import com.exa.android.reflekt.loopit.util.application.ProjectListState
 import com.exa.android.reflekt.loopit.util.model.Comment
 import com.exa.android.reflekt.loopit.util.model.Project
+import com.exa.android.reflekt.loopit.util.model.profileUser
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,8 @@ class ProjectListViewModel @Inject constructor(
     private val _state = MutableStateFlow(ProjectListState())
     val state = _state.asStateFlow()
 
+    private val curUserProfile =  MutableStateFlow(profileUser())
+
     val currentUserId = auth.currentUser?.uid
 
     private var projectsJob: Job? = null
@@ -39,7 +42,17 @@ class ProjectListViewModel @Inject constructor(
     init {
         loadFilters()
         loadProjects()
+        getProfile()
     }
+
+    fun getProfile(){
+        viewModelScope.launch {
+            currentUserId?.let {
+                curUserProfile.value = profileRepository.getUserProfile(currentUserId)
+            }
+        }
+    }
+
 
     fun onEvent(event: ProjectListEvent) {
         when (event) {
@@ -210,7 +223,7 @@ class ProjectListViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, error = null) }
             viewModelScope.launch {
                 try {
-                    val profile = profileRepository.getUserProfile(userId)
+                    val profile = curUserProfile.value
                     val userName = profile.name
                     repository.enrollInProject(project, userId, userName, profile.imageUrl)
                     loadProjects() // Refresh the list
@@ -235,12 +248,13 @@ class ProjectListViewModel @Inject constructor(
             }
         }
     }
-    fun acceptJoinRequest(projectId: String, userId: String, userName: String) {
+    fun acceptJoinRequest(project : Project, userId: String, userName: String) {
         _state.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
             try {
-                repository.acceptJoinRequest(projectId, userId, userName)
+                val profileUser = curUserProfile.value
+                repository.acceptJoinRequest(project, userId, userName, profileUser)
                 loadProjects()
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = "There is some error in accepting join request") }
@@ -249,12 +263,12 @@ class ProjectListViewModel @Inject constructor(
     }
 
 
-    fun rejectJoinRequest(projectId: String, userId: String) {
+    fun rejectJoinRequest(project: Project, userId: String) {
         _state.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
             try {
-                repository.rejectJoinRequest(projectId, userId)
+                repository.rejectJoinRequest(project, userId, curUserProfile.value)
                 loadProjects()
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = "There is some error in rejecting join request") }

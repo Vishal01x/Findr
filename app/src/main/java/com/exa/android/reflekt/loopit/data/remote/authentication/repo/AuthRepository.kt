@@ -13,12 +13,16 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -44,7 +48,7 @@ interface AuthRepository {
         ): Result<Unit>
     fun getCurrentUser(): FirebaseUser?
     suspend fun sendEmailVerification()
-    fun logout()
+    fun logout(onSuccess : () -> Unit)
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>
 }
 
@@ -216,10 +220,12 @@ class AuthRepositoryImpl @Inject constructor(
                     val updates = mapOf("name" to name, "profilePicture" to "")
                     transaction.set(userDocRef, newUser, SetOptions.merge())
                     transaction.set(userDocRef, updates, SetOptions.merge())
+                    //transaction.set( userDocRef,"lastNotifiedAt" to FieldValue.serverTimestamp())
                     firestoreService.registerFCMToken()
                 } else {
                     transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
                     transaction.update(userDocRef, "name", name)
+
                     firestoreService.registerFCMToken()
                 }
             }.await() // Important to wait on transaction completion
@@ -237,8 +243,18 @@ class AuthRepositoryImpl @Inject constructor(
         auth.currentUser?.sendEmailVerification()?.await()
     }
 
-    override fun logout() {
-        auth.signOut()
+    override fun logout(onSuccess: () -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+               // FirebaseMessaging.getInstance().deleteToken()
+                firestoreService.updateToken("")
+                auth.signOut()
+                onSuccess()
+            }catch (e : Exception){
+
+            }
+
+        }
     }
     override suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
         return try {

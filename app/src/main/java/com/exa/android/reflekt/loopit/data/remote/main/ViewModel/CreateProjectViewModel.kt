@@ -154,7 +154,7 @@ class CreateProjectViewModel @Inject constructor(
             )
             Log.d("project", "createProject: $project")
             try {
-                repository.createProject(project)
+                repository.createProject(project, profileResult)
                 _state.value = _state.value.copy(
                     isLoading = false,
                     isSuccess = true

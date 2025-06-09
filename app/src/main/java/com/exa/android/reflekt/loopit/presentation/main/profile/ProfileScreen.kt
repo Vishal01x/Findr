@@ -28,7 +28,6 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.Profile
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.model.Profile.*
-import com.google.firestore.v1.Cursor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,12 +46,6 @@ fun ProfileScreen(
 ) {
     val profileData by userViewModel.userProfileData.collectAsState()
     val curUser = editProfileViewModel.curUser
-
-    LaunchedEffect(userId) {
-        if (userId != curUser && userId != null) {
-            editProfileViewModel.updateProfileView(userId)
-        }
-    }
 
     LaunchedEffect(Unit) {
         userViewModel.getProfileData(userId)
@@ -152,6 +145,12 @@ fun ProfileContent(
     editProfileViewModel: EditProfileViewModel
 ) {
     val scrollState = rememberLazyListState()
+
+    LaunchedEffect(userId) {
+        if (userId != curUser && userId != null) {
+            editProfileViewModel.updateProfileView(userId, profileData.profileHeader.profileImageUrl)
+        }
+    }
 
     LazyColumn(
         state = scrollState,

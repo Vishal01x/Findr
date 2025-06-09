@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.util
 import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.app.NotificationManagerCompat
 
 
 fun clearChatNotifications(context: Context, chatId: String) {
@@ -13,6 +14,14 @@ fun clearChatNotifications(context: Context, chatId: String) {
     // Get NotificationManager and cancel the notification
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     notificationManager.cancel(chatId.hashCode()) // Remove notifications for this chat
+
+//    val manager = NotificationManagerCompat.from(context)
+//    manager.activeNotifications.forEach {
+//        if (it.notification.group == "group_chat_${chatId}") {
+//            manager.cancel(it.id)
+//        }
+//    }
+
 }
 
 

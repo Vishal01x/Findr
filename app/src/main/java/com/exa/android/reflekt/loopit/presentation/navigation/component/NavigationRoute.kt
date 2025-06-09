@@ -86,6 +86,7 @@ sealed class ProfileRoute(val route: String) {
         }
 
     }
+    object ProfileViewer : ProfileRoute("profile_viewer")
     object ProfileSetting : ProfileRoute("profile_setting")
     object ProfileHelp : ProfileRoute("help")
     object ProfileTerms : ProfileRoute("terms")

@@ -13,28 +13,24 @@ import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
 import android.app.AlertDialog
-import android.net.Uri
-import android.os.PowerManager
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -52,22 +48,23 @@ import com.exa.android.reflekt.loopit.util.application.NetworkCallbackReceiver
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationForegroundService
 import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationWorker
+import com.exa.android.reflekt.loopit.fcm.DeepLinkHelper
 import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
 import com.exa.android.reflekt.loopit.util.clearAllNotifications
-import com.google.firebase.auth.FirebaseAuth
 import io.getstream.meeting.room.compose.ui.AppTheme
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private var currentIntent by mutableStateOf<Intent?>(intent)
     private lateinit var navController: NavController  // Define navController at class level
     private lateinit var requestNotificationPermissionLauncher: ActivityResultLauncher<String>
     private var lifecycleObserver: MyLifecycleObserver? = null
     val userViewModel: UserViewModel by viewModels()
     val locationViewModel: LocationViewModel by viewModels()
+
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
     }
@@ -81,9 +78,9 @@ class MainActivity : ComponentActivity() {
         val curUser = userViewModel.curUser
         curUser?.let {
             lifecycleObserver = MyLifecycleObserver(
-                viewModel=userViewModel,
-                userId=it,
-                locationViewModel=locationViewModel,
+                viewModel = userViewModel,
+                userId = it,
+                locationViewModel = locationViewModel,
                 context = this
             )
             lifecycle.addObserver(lifecycleObserver!!)
@@ -125,12 +122,13 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            AppTheme (
+            AppTheme(
                 darkTheme = false, // ✅ Force light theme
                 dynamicColor = false // ✅ Optional: prevent Material You theme changes
             ) {
-              updateStatus(this)
-               App()
+                navController = rememberNavController()
+                App(currentIntent)
+                updateStatus(this)
             }
         }
         clearAllNotifications(this)
@@ -178,9 +176,11 @@ class MainActivity : ComponentActivity() {
                 }
                 scheduleLocationWorker(userId)
             }
+
             shouldShowPermissionRationale(requiredPermissions) -> {
                 showPermissionRationaleDialog(userId)
             }
+
             else -> {
                 ActivityCompat.requestPermissions(
                     this,
@@ -190,12 +190,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     private fun isAppInForeground(): Boolean {
         val appProcessInfo = ActivityManager.RunningAppProcessInfo()
         ActivityManager.getMyMemoryState(appProcessInfo)
         return appProcessInfo.importance == IMPORTANCE_FOREGROUND ||
                 appProcessInfo.importance == IMPORTANCE_VISIBLE
     }
+
     @SuppressLint("InlinedApi")
     private fun showPermissionRationaleDialog(userId: String) {
         AlertDialog.Builder(this)
@@ -225,6 +227,7 @@ class MainActivity : ComponentActivity() {
             .create()
             .show()
     }
+
     private fun scheduleLocationWorker(userId: String) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -245,7 +248,6 @@ class MainActivity : ComponentActivity() {
     }
 
 
-
     private fun hasAllPermissions(permissions: List<String>): Boolean {
         return permissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
@@ -261,14 +263,10 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-//        val deepLinkUri = intent.data
-//        deepLinkUri?.let {
-//            val userId = it.lastPathSegment // Extract userId from notification
-//            if (!userId.isNullOrEmpty()) {
-//                navController.navigate(HomeRoute.ChatDetail.createRoute(userId))
-//            }
-//        }
+        currentIntent = intent // Update the state
+
     }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -292,19 +290,63 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun App() {
+    fun App(currentIntent: Intent?) {
         val viewModel: AuthVM = hiltViewModel()
         val isLoggedIn = viewModel.loginState.value.loginSuccess
         val navController = rememberNavController()  // Assign instance to class property
-        val currentIntent = rememberUpdatedState(LocalActivity.current).value?.intent
+        //val currentIntent = rememberUpdatedState(LocalActivity.current).value?.intent
+
+//        // Handle initial intent when app is cold-started
+//        LaunchedEffect(Unit) {
+//            navController.handleDeepLink(this@MainActivity.currentIntent)
+//        }
+//
+//        // Handle new intents when app is already running
+//        LaunchedEffect(currentIntent) {
+//            navController.handleDeepLink(currentIntent)
+//        }
+
+        // Handle initial intent when app is cold-started
+        LaunchedEffect(Unit) {
+            handleDeepLink(navController, this@MainActivity.intent)
+        }
+
+        // Handle new intents when app is already running
+        LaunchedEffect(currentIntent) {
+            if (currentIntent != null) {
+                //handleDeepLink(navController, currentIntent)
+                handleDeepLink(navController,currentIntent)
+            }
+        }
 
         val senderId = currentIntent?.data?.lastPathSegment
         //val intent = Intent()
         //val senderId = intent?.data?.lastPathSegment
 
+
         AppNavigation(navController, isLoggedIn, senderId)
     }
 
+    private fun handleDeepLink(navController: NavController, intent: Intent) {
+//        intent.data?.let { uri ->
+//            if (uri.toString().startsWith("findr://chat")) {
+//                val userId = uri.lastPathSegment ?: return@let
+//                navController.navigate(HomeRoute.ChatDetail.createRoute(userId)) {
+//                    popUpTo(HomeRoute.ChatList.route) { inclusive = false }
+//                    launchSingleTop = true
+//                }
+//            }
+//        }
+
+        navController.handleDeepLink(intent) // since deep link navigation is slow keep direct
+    }
+
+
+    private fun handleDeepLinkNav(navController: NavController,intent: Intent) {
+        intent.data?.let { uri ->
+            DeepLinkHelper.handleDeepLink(navController, uri)
+        }
+    }
 }
 
 
