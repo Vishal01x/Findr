@@ -41,4 +41,18 @@ class ProfileRepository @Inject constructor(
             throw Exception("Failed to fetch profile: ${e.message}")
         }
     }
+    suspend fun getAllUserEmails(): List<String> {
+        val userCollection = firestore.collection("users")
+        return try {
+            userCollection.get().await().documents.mapNotNull { document ->
+                document.toObject(ProfileDataWrapper::class.java)
+                    ?.profileData
+                    ?.profileHeader
+                    ?.email
+                    ?.takeIf { it.isNotEmpty() }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }

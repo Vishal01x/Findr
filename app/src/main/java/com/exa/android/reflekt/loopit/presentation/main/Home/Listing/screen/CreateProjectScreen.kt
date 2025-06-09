@@ -280,26 +280,26 @@ fun CreateProjectScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState) // Regular scroll instead of LazyColumn
+                .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(paddingValues),
-            state = listState
         ) {
-            item {
-                when {
-                    state.isLoading -> showLoader(
-                        message = "Creating Activity...",
-                    )
-                    state.error != null -> ErrorState(error = state.error, onRetry = {})
-                    else -> CreateProjectContent(
-                        state = state,
-                        viewModel = viewModel,
-                        context = context
-                    )
-                }
+
+            when {
+                state.isLoading -> showLoader(
+                    message = "Creating Activity...",
+                )
+                state.error != null -> ErrorState(error = state.error, onRetry = {})
+                else -> CreateProjectContent(
+                    state = state,
+                    viewModel = viewModel,
+                    context = context
+                )
             }
+
         }
     }
 }

@@ -30,7 +30,7 @@ class ProjectRepositoryImpl @Inject constructor(
 ) : ProjectRepository {
 
     private companion object {
-        const val PROJECTS_COLLECTION = "projects"
+        const val PROJECTS_COLLECTION = "post_test"
         const val METADATA_DOCUMENT = "metadata"
         const val FILTERS_DOCUMENT = "projectFilters"
         const val ROLES_FIELD = "availableRoles"
@@ -386,9 +386,7 @@ class ProjectRepositoryImpl @Inject constructor(
         return try {
             db.collection(PROJECTS_COLLECTION)
                 .document(projectId)
-                .collection("comments")
-                .document(comment.id)
-                .set(comment)
+                .update("comments", FieldValue.arrayUnion(comment))
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {

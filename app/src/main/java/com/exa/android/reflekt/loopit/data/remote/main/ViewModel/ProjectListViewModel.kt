@@ -1,5 +1,7 @@
 package com.exa.android.reflekt.loopit.data.remote.main.ViewModel
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.remote.main.Repository.ProfileRepository
@@ -93,14 +95,9 @@ class ProjectListViewModel @Inject constructor(
                 loadProjects()
             }
             is ProjectListEvent.AddComment -> {
-                val comment = Comment(
-                    id = UUID.randomUUID().toString(),
-                    text = event.text,
-                    senderId = auth.currentUser?.uid ?: return,
-                    timestamp = Timestamp.now()
-                )
                 viewModelScope.launch {
-                    repository.addComment(event.projectId, comment)
+                    //repository.addComment(event.projectId, comment)
+                    addComment(event.projectId, event.text)
                 }
             }
             is ProjectListEvent.UpdateComment -> {
@@ -186,6 +183,19 @@ class ProjectListViewModel @Inject constructor(
             }
         }
     }
+    private val _emails = mutableStateOf<List<String>>(emptyList())
+    val emails: State<List<String>> = _emails
+
+    fun fetchAllUserEmails() {
+        viewModelScope.launch {
+            try {
+                _emails.value = profileRepository.getAllUserEmails()
+            } catch (e: Exception) {
+                // Handle error if needed
+                _state.update { it.copy(error = "Failed to fetch emails") }
+            }
+        }
+    }
 
 
     private fun loadFilters() {
@@ -265,14 +275,22 @@ class ProjectListViewModel @Inject constructor(
             }
         }
     }
-    fun addComment(projectId: String, text: String) {
-        viewModelScope.launch {
-            repository.addComment(projectId, Comment(
+    // In ProjectListViewModel
+    suspend fun addComment(projectId: String, text: String) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // Fetch user profile to get name
+            val profile = profileRepository.getUserProfile(currentUser.uid)
+            val userName = profile?.name ?: "Unknown"
+
+            val comment = Comment(
                 id = UUID.randomUUID().toString(),
                 text = text,
-                senderId = auth.currentUser?.uid ?: return@launch,
-                timestamp = Timestamp.now()
-            ))
+                senderId = currentUser.uid,
+                senderName = userName
+            )
+
+            repository.addComment(projectId, comment)
         }
     }
 

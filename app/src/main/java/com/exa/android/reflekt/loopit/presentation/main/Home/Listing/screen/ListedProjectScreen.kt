@@ -1,6 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -130,23 +131,9 @@ fun ListedProjectsScreen(
             }
     }
 
-//    BackHandler(enabled = state.showMyProjectsOnly) {
-//        viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
-//    }
-
-
-    BackHandler {
-        if(state.showMyProjectsOnly){
-            viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
-        }else if(state.selectedRoles.isNotEmpty() || state.selectedTags.isNotEmpty()){
-            //viewModel.onEvent(ProjectListEvent.SelectPostType(type)) // need to make it "all"
-            viewModel.onEvent(ProjectListEvent.ClearFilters)
-            tooltipState.dismiss()
-        }else{
-            (context as Activity).finish()
-        }
+    BackHandler(enabled = state.showMyProjectsOnly) {
+        viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
     }
-
 
     Scaffold(
         /*topBar = {
@@ -412,10 +399,10 @@ fun ListedProjectsScreen(
                                     onEnroll = { viewModel.enrollInProject(project) },
                                     withdraw = { viewModel.withdrawFromProject(project.id) },
                                     onAccept = { userId, userName ->
-                                        viewModel.acceptJoinRequest(project, userId, userName)
+                                        viewModel.acceptJoinRequest(project.id, userId, userName)
                                     },
                                     onReject = { userId ->
-                                        viewModel.rejectJoinRequest(project, userId)
+                                        viewModel.rejectJoinRequest(project.id, userId)
                                     },
                                     onViewOnMap = { userIds ->
                                         navController.navigate("map_screen/${userIds.joinToString(",")}")

@@ -134,9 +134,10 @@ enum class PostType(
 }
 
 data class Comment(
-    val id: String,
-    val text: String,
-    val senderId: String,
+    val id: String = "",
+    val text: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
     val timestamp: Timestamp = Timestamp.now()
 )
 
