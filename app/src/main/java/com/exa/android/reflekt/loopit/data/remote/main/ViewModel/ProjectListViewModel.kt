@@ -97,7 +97,7 @@ class ProjectListViewModel @Inject constructor(
             is ProjectListEvent.AddComment -> {
                 viewModelScope.launch {
                     //repository.addComment(event.projectId, comment)
-                    addComment(event.projectId, event.text)
+                    addComment(event.project, event.text)
                 }
             }
             is ProjectListEvent.UpdateComment -> {
@@ -276,7 +276,7 @@ class ProjectListViewModel @Inject constructor(
         }
     }
     // In ProjectListViewModel
-    suspend fun addComment(projectId: String, text: String) {
+    suspend fun addComment(project : Project, text: String) {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             // Fetch user profile to get name
@@ -290,7 +290,7 @@ class ProjectListViewModel @Inject constructor(
                 senderName = userName
             )
 
-            repository.addComment(projectId, comment)
+            repository.addComment(project, curUserProfile.value, comment)
         }
     }
 

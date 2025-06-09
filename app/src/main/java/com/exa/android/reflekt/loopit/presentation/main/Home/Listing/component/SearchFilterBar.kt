@@ -55,8 +55,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.Divider
 import androidx.compose.material.LocalContentAlpha
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Comment
@@ -104,6 +106,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonAddAlt1
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Work
@@ -855,6 +858,9 @@ fun ProjectCard(
         PostType.entries.find { it.displayName == project.type } ?: PostType.OTHER
     }
 
+    val showEnroll =
+        !isEditable && currentUserId != null && currentUserId != project.createdBy && project.type != PostType.OTHER.displayName && project.type != PostType.POST.displayName
+
     val curUserDetailsMap by userViewModel.userDetail.collectAsState()
     val curUserDetails = curUserDetailsMap[project.createdBy]
 
@@ -909,7 +915,9 @@ fun ProjectCard(
                 .padding(16.dp)
         ) {
 
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onAuthorProfileClick(project.createdBy)}) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { onAuthorProfileClick(project.createdBy) }) {
                 val data = (curUserDetails as? Response.Success)?.data
                 val imageUrl = data?.profilePicture
 
@@ -920,7 +928,7 @@ fun ProjectCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .clickable { onAuthorProfileClick(project.createdBy)}
+                            .clickable { onAuthorProfileClick(project.createdBy) }
                     )
                 } else {
                     UserAvatar(
@@ -1317,70 +1325,88 @@ fun ProjectCard(
             // Footer Section
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        onAuthorProfileClick(project.createdBy)
-                    }
             ) {
-                // Author Info
-//                UserAvatar(
-//                    name = project.createdByName,
-//                    modifier = Modifier.size(40.dp)
-//                )
-//
-//                Spacer(modifier = Modifier.width(12.dp))
-//
-//                Column(modifier = Modifier.weight(1f)) {
-//                    Text(
-//                        text = project.createdByName,
-//                        style = typography.labelLarge,
-//                        color = colors.onSurface
-//                    )
-//                    project.createdAt?.toDate()?.let { date ->
-//                        Text(
-//                            text = date.formatAsTimeAgo(),
-//                            style = typography.labelMedium,
-//                            color = colors.outline
-//                        )
-//                    }
-//                }
+                /*      // Author Info
+      //                UserAvatar(
+      //                    name = project.createdByName,
+      //                    modifier = Modifier.size(40.dp)
+      //                )
+      //
+      //                Spacer(modifier = Modifier.width(12.dp))
+      //
+      //                Column(modifier = Modifier.weight(1f)) {
+      //                    Text(
+      //                        text = project.createdByName,
+      //                        style = typography.labelLarge,
+      //                        color = colors.onSurface
+      //                    )
+      //                    project.createdAt?.toDate()?.let { date ->
+      //                        Text(
+      //                            text = date.formatAsTimeAgo(),
+      //                            style = typography.labelMedium,
+      //                            color = colors.outline
+      //                        )
+      //                    }
+      //                }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                      Spacer(modifier = Modifier.width(12.dp))
 
-                LikeButton(
-                        isLiked = project.likes.contains(currentUserId),
-                        onLike = { onToggleLike(project.id) },
-                        modifier = Modifier.padding(4.dp)
+                      LikeButton(
+                              isLiked = project.likes.contains(currentUserId),
+                              onLike = { onToggleLike(project.id) },
+                              modifier = Modifier.padding(4.dp)
+                          )
+                       */
+                Row(
+                    verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f),
+                    horizontalArrangement = if (!showEnroll) Arrangement.SpaceEvenly else Arrangement.spacedBy(
+                        2.dp
                     )
-
-
-
-                 */
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                ) {
                     // Like Button
-                    LikeButton(
-                        isLiked = project.likes.contains(currentUserId),
-                        onLike = { onToggleLike(project.id) },
-                        modifier = Modifier.padding(4.dp)
-                    )
-
-                    // Comment Button
-                    IconButton(
-                        onClick = { expandedComments = !expandedComments },
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Comment,
-                            contentDescription = "Comments",
-                            tint = if (expandedComments) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                    if(!showEnroll) {
+                        LikeButton(
+                            isLiked = project.likes.contains(currentUserId),
+                            likes = project.likes.size,
+                            onLike = { onToggleLike(project.id) },
+                            modifier = Modifier.padding(4.dp)
                         )
                     }
-                }
 
+//                    // Comment Button
+//                    IconButton(
+//                        onClick = { expandedComments = !expandedComments },
+//                        modifier = Modifier.padding(4.dp)
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Default.Comment,
+//                            contentDescription = "Comments",
+//                            tint = if (expandedComments) MaterialTheme.colorScheme.primary
+//                            else MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                    }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(.1f)), // Light Grey ,
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ActionButton(
+                            icon = Icons.Default.ChatBubbleOutline,
+                            label = "Comment",
+                            onClick = { expandedComments = !expandedComments })
+                    }
+                }
                 // Enroll/Withdraw Button
-                if (!isEditable && currentUserId != null && currentUserId != project.createdBy && (project.type != PostType.POST.displayName && project.type != PostType.OTHER.displayName)) {
+                if (showEnroll) {
+
+                    //Spacer(Modifier.weight(1f))
+
                     FilledTonalButton(
                         onClick = {
                             if (isEnrolled) {
@@ -1483,7 +1509,7 @@ fun CommentPreviewSection(
                 if (text.isNotBlank()) {
                     onCommentEvent(
                         ProjectListEvent.AddComment(
-                            project.id,
+                            project,
                             text
                         )
                     )
@@ -1504,7 +1530,7 @@ fun CommentPreviewSection(
             LazyColumn(
                 modifier = Modifier.heightIn(max = 200.dp) // Set max height
             ) {
-                val comments= allComments.take(visibleCommentCount)
+                val comments = allComments.take(visibleCommentCount)
                 items(comments.size) {
                     val comment = comments[it]
                     CommentItem(
@@ -1543,19 +1569,19 @@ fun CommentPreviewSection(
                     }
                 }
             }
-        } else {
-            Text(
-                text = "No comments yet",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
         }
+//        else {
+//            Text(
+//                text = "No comments yet",
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                modifier = Modifier.padding(vertical = 8.dp)
+//            )
+//        }
     }
 }
 
 // Update the AnimatedVisibility in ProjectCard
-
 
 
 // Updated CommentInputField with better styling
@@ -1573,7 +1599,9 @@ fun CommentInputField(
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f)
+                .clip(RoundedCornerShape(24.dp)),
+            shape = RoundedCornerShape(24.dp),
             placeholder = { Text("Add a comment...") },
             singleLine = false,
             maxLines = 3,
@@ -1583,6 +1611,27 @@ fun CommentInputField(
                 disabledContainerColor = MaterialTheme.colorScheme.surface,
             )
         )
+
+//        TextField(
+//            value = text,
+//            onValueChange = { text = it },
+//            placeholder = { Text("Add a comment…") },
+//            modifier = Modifier
+//                .weight(1f)
+//                .height(45.dp)
+//                .clip(RoundedCornerShape(24.dp)),
+//                //.background(MaterialTheme.colorScheme.primary.copy(.1f)),
+//            shape = RoundedCornerShape(24.dp),
+//            singleLine = false,
+//            maxLines = 3,
+//            colors = TextFieldDefaults.colors(
+//                focusedContainerColor = MaterialTheme.colorScheme.surface,
+//                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+//                disabledContainerColor = MaterialTheme.colorScheme.surface,
+//            )
+//        )
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         IconButton(
             onClick = {
@@ -1862,7 +1911,7 @@ private fun UserCommentItem(
             }
         )
     }
-}
+}*/
 
 @Composable
 private fun PostTypeFilter(
@@ -1973,6 +2022,7 @@ private fun ImageCarousel(images: List<String>) {
 @Composable
 fun LikeButton(
     isLiked: Boolean,
+    likes : Int,
     onLike: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1999,6 +2049,14 @@ fun LikeButton(
         label = "scale"
     )
 
+//    Box(
+//        modifier = Modifier
+//            .padding(horizontal = 4.dp)
+//            .clip(RoundedCornerShape(10.dp))
+//            .background(MaterialTheme.colorScheme.primary.copy(.1f)), // Light Grey ,
+//        contentAlignment = Alignment.Center
+//    ) {
+
     Box(
         modifier = modifier
             .clickable(
@@ -2008,11 +2066,13 @@ fun LikeButton(
                     color = MaterialTheme.colorScheme.primary
                 )
             ) { onLike() }
-            .padding(8.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(if(!isLiked)MaterialTheme.colorScheme.primary.copy(.1f) else MaterialTheme.colorScheme.error.copy(.1f))
+        //.padding(8.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             // Animated icon
             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
@@ -2026,6 +2086,8 @@ fun LikeButton(
                 )
             }
 
+            Spacer(modifier = Modifier.width(6.dp))
+
             // Animated text
             AnimatedContent(
                 targetState = isLiked,
@@ -2035,10 +2097,12 @@ fun LikeButton(
                 }
             ) { liked ->
                 Text(
-                    text = if (liked) "Liked" else "Like",
-                    style = MaterialTheme.typography.labelSmall,
+                    //text = if (liked) "Liked" else "Like",
+                    //style = MaterialTheme.typography.labelSmall,
+                    text = if(liked)"($likes)" else "($likes)",
                     color = textColor,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -2127,6 +2191,34 @@ fun ProjectCardNonEditablePreview() {
             onAuthorProfileClick = {},
             onToggleLike = {},
             onCommentEvent = {}
+        )
+    }
+}
+
+@Composable
+fun ActionButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
         )
     }
 }

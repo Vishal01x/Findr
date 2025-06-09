@@ -63,6 +63,31 @@ fun sendRequestUpdate(context: Context, receiverToken: String?,project : Project
 }
 
 
+fun sendComment(context: Context, receiverToken: String?,project : Project,profile: profileUser, comment : String){
+
+    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
+
+    val projectNotification = NotificationContent(
+        type = NotificationType.PROFILE,
+        title = "${profile.name} has commented on your post", // project title
+        body = comment,
+        imageUrl = imageUrl, // post or creator of project
+        targetId = project.id ?: "Not Found",
+        senderId = "", // the person enrolled in project
+//            metadata = mapOf(
+//                "messageId" to message.messageId,
+//                "isMedia" to (message.media != null).toString()
+//            )
+    )
+
+    NotificationSender(context).sendNotification(
+        deviceToken = receiverToken ?: "",
+        topics = Topics.NULL,
+        content = projectNotification
+    )
+}
+
+
 fun sendPostNotification(context: Context, topic:Topics, project: Project, profile : profileUser){
 
     val (title, body) = getPostNotificationText(profile.name,project.title,project.type)

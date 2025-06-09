@@ -32,7 +32,7 @@ sealed class ProjectListEvent {
     object ClearError : ProjectListEvent()
     data class SelectPostType(val type: PostType?) : ProjectListEvent()
     data class ToggleLike(val projectId: String) : ProjectListEvent()
-    data class AddComment(val projectId: String, val text: String) : ProjectListEvent()
+    data class AddComment(val project : Project, val text: String) : ProjectListEvent()
     data class UpdateComment(val projectId: String, val commentId: String, val newText: String) : ProjectListEvent()
     data class DeleteComment(val projectId: String, val commentId: String) : ProjectListEvent()
 }

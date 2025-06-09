@@ -30,7 +30,7 @@ class ProjectRepositoryImpl @Inject constructor(
 ) : ProjectRepository {
 
     private companion object {
-        const val PROJECTS_COLLECTION = "post_test"
+        const val PROJECTS_COLLECTION = "projects"
         const val METADATA_DOCUMENT = "metadata"
         const val FILTERS_DOCUMENT = "projectFilters"
         const val ROLES_FIELD = "availableRoles"
@@ -382,12 +382,17 @@ class ProjectRepositoryImpl @Inject constructor(
 
         awaitClose { listener.remove() }
     }
-    override suspend fun addComment(projectId: String, comment: Comment): Result<Unit> {
+    override suspend fun addComment(project : Project,profile: profileUser, comment: Comment): Result<Unit> {
         return try {
             db.collection(PROJECTS_COLLECTION)
-                .document(projectId)
+                .document(project.id)
                 .update("comments", FieldValue.arrayUnion(comment))
                 .await()
+
+            userRepository.getUserFcm(project.createdBy)
+                ?.let {fcm->
+                    sendComment(context,fcm,project,profile, comment.text)}
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

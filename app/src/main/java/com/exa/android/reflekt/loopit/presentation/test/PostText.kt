@@ -32,6 +32,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.util.Response
+import com.exa.android.reflekt.loopit.util.model.PostType
 import com.exa.android.reflekt.loopit.util.model.User
 import dagger.Module
 import dagger.Provides
@@ -191,22 +192,25 @@ fun AppHeader(
             IconCircleBackground(
                 icon = Icons.Outlined.Notifications,
                 contentDescription = "Notifications",
+                size = 36,
                 onClick = onNotificationsClick
             )
             Spacer(modifier = Modifier.width(8.dp))
             if(curUserDetails is Response.Success && !curUserDetails.data?.profilePicture.isNullOrEmpty()){
                 ImageUsingCoil(context,curUserDetails.data?.profilePicture, modifier = Modifier
                     .size(32.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(10.dp))
                    // .border(1.dp, Color.Black, CircleShape)
                     .clickable { onProfileClick() })
             }else {
                 IconCircleBackground(
                     icon = Icons.Default.Person,
                     contentDescription = "Profile",
+                    size = 36,
                     onClick = onProfileClick
                 )
             }
+            Spacer(modifier = Modifier.width(8.dp))
         }
     )
 }
@@ -215,12 +219,13 @@ fun AppHeader(
 fun IconCircleBackground(
     icon: ImageVector,
     contentDescription: String,
+    size : Int,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .padding(horizontal = 4.dp)
-            .size(36.dp)
+            .size(size.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.primary.copy(.1f)) // Light Grey
             .clickable(onClick = onClick),
@@ -462,6 +467,8 @@ fun PostCard(post: Postt) {
 
 @Composable
 fun InfoTag(text: String, modifier: Modifier = Modifier) {
+
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(4.dp))

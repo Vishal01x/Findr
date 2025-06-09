@@ -32,7 +32,7 @@ interface ProjectRepository {
     ): Result<Unit>
     suspend fun rejectJoinRequest(project : Project,userId: String, value: profileUser): Result<Unit>
     fun getProjectUpdates(projectId: String): Flow<Result<Project>>
-    suspend fun addComment(projectId: String, comment: Comment): Result<Unit>
+    suspend fun addComment(project: Project, profile: profileUser,comment: Comment): Result<Unit>
     suspend fun updateComment(projectId: String, commentId: String, newText: String): Result<Unit>
     suspend fun deleteComment(projectId: String, commentId: String): Result<Unit>
     suspend fun toggleLike(projectId: String, userId: String): Result<Unit>
