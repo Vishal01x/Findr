@@ -2,26 +2,16 @@ package com.exa.android.reflekt.loopit.presentation.main.Home.Listing.screen
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,53 +20,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.outlined.Comment
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -89,34 +55,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.*
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavHostController
 import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.ProjectListViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.ProjectCard
 import com.exa.android.reflekt.loopit.presentation.main.Home.Listing.component.SearchFilterBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
+import com.exa.android.reflekt.loopit.presentation.test.AppHeader
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.model.Comment
-import com.exa.android.reflekt.loopit.util.model.PostType
+import com.exa.android.reflekt.loopit.util.showToast
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -126,7 +83,8 @@ import kotlinx.coroutines.delay
 fun ListedProjectsScreen(
     navController: NavHostController,
     onProjectClick: (String) -> Unit,
-    viewModel: ProjectListViewModel = hiltViewModel()
+    viewModel: ProjectListViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
@@ -142,6 +100,16 @@ fun ListedProjectsScreen(
         onRefresh = { viewModel.onEvent(ProjectListEvent.Refresh) }
     )
     val currentUserId = viewModel.currentUserId
+
+    val curUserDetailsMap by userViewModel.userDetail.collectAsState()
+    val curUserDetails = curUserDetailsMap[currentUserId]
+
+
+    LaunchedEffect(currentUserId) {
+        currentUserId?.let{
+            userViewModel.getUserDetail(it)
+        }
+    }
 
     LaunchedEffect(tooltipState) {
         if (!isTooltipShown) {
@@ -181,7 +149,7 @@ fun ListedProjectsScreen(
 
 
     Scaffold(
-        topBar = {
+        /*topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -291,8 +259,14 @@ fun ListedProjectsScreen(
 
                 }
             )
-        },
-        floatingActionButton = {
+        },*/
+        topBar = { AppHeader(state.showMyProjectsOnly, curUserDetails,onNotificationsClick = {
+            showToast(context, "No Notifications Yet")
+        }, onProfileClick = {
+            viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
+            tooltipState.dismiss()
+        }) },
+        /*floatingActionButton = {
             AnimatedVisibility(
                 visible = showFab,
                 enter = fadeIn() + slideInVertically { it },
@@ -318,7 +292,7 @@ fun ListedProjectsScreen(
                     modifier = Modifier.padding(16.dp)
                 )
             }
-        }
+        }*/
     ) { padding ->
         Box(
             modifier = Modifier
@@ -331,8 +305,8 @@ fun ListedProjectsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                //contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 item {
                     SearchFilterBar(
@@ -348,11 +322,15 @@ fun ListedProjectsScreen(
                         onTagDeselected = { viewModel.onEvent(ProjectListEvent.TagDeselected(it)) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 4.dp),
                         selectedPostType = state.selectedPostType,
                         onTypeSelected = { type ->
                             viewModel.onEvent(ProjectListEvent.SelectPostType(type))
+                        },
+                        onAddClick = {
+                            navController.navigate(ProjectRoute.CreateProject.route)
                         }
+
                     )
                 }
 

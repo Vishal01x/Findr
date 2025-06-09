@@ -343,7 +343,8 @@ class FirestoreService @Inject constructor(
         val messageRef =
             chatCollection.document(chatId).collection("messages").document(message.messageId)
         try {
-            batch.update(messageRef, mapOf("message" to newText))
+            val encryptedText = encrypt(newText,chatId)
+            batch.update(messageRef, mapOf("message" to encryptedText))
             batch.commit().await()
             // Log.d("FireStore Operation", "Messages Edited Successfully")
         } catch (e: Exception) {

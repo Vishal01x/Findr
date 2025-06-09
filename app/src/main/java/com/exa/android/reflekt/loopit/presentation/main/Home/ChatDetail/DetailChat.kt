@@ -89,7 +89,8 @@ fun DetailChat(
     val responseChatMessages by remember { chatViewModel.messages }.collectAsState() // all the chats of cur and other User
     val curUserId by chatViewModel.curUserId.collectAsState()  // cur User Id
     val chatMessages: MutableState<List<Message>> = remember { mutableStateOf(emptyList()) }
-    val responseOtherUserDetail by remember { userViewModel.userDetail }.collectAsState()
+    val responseOtherUserDetailMap by remember { userViewModel.userDetail }.collectAsState()
+    val responseOtherUserDetail = responseOtherUserDetailMap[otherUserId]
     val otherUserDetail: MutableState<User?> = remember { mutableStateOf(User()) }
     val userStatus by userViewModel.userStatus.observeAsState()
     val blockUsers by chatViewModel.blockDetails.collectAsState()

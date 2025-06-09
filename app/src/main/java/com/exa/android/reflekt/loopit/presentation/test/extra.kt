@@ -182,3 +182,165 @@ package com.exa.android.reflekt.loopit.presentation.test
                 })
         }
     }*/
+
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.google.accompanist.pager.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+
+@OptIn(ExperimentalPagerApi::class)
+@Composable
+fun Posttui() {
+    val pagerState = rememberPagerState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(2000)
+            val nextPage = (pagerState.currentPage + 1) % 1
+            pagerState.animateScrollToPage(nextPage)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Schedule, contentDescription = null)
+            Text(text = "2h • 456", fontSize = 14.sp)
+            Text(
+                text = "Urgent",
+                color = Color.Red,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .background(Color(0xFFFFCDD2), shape = RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "DSA Study Session with Vishal - Join at 7 PM! ",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Vishal is leading an intensive DSA discussion session tonight at 7 PM. We'll cover dynamic programming, graph algorithms, and solve some...",
+            fontSize = 14.sp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        HorizontalPager(count = 1, state = pagerState) { page ->
+            Box(modifier = Modifier.fillMaxWidth()) {
+                AsyncImage(
+                    model = "https://path_to_your_uploaded_image.jpg",
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .height(200.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = {
+                        val prev = (pagerState.currentPage - 1 + 1) % 1
+                        scope.launch { pagerState.animateScrollToPage(prev) }
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Previous")
+                    }
+                    IconButton(onClick = {
+                        val next = (pagerState.currentPage + 1) % 1
+                        scope.launch { pagerState.animateScrollToPage(next) }
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBackIos, contentDescription = "Next")
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Join DSA Study Session - Google Meet",
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF1A73E8),
+            fontSize = 16.sp,
+            modifier = Modifier
+                .background(Color(0xFFE8F0FE), RoundedCornerShape(8.dp))
+                .padding(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("#DSA", "#Study Group", "#Programming").forEach {
+                Text(
+                    text = it,
+                    fontSize = 12.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier
+                        .background(Color(0xFFF0F0F0), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+            listOf(89, 67, 34).forEach {
+                Text(text = it.toString(), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+
+@Preview
+@Composable
+private fun pre() {
+    Posttui()
+}

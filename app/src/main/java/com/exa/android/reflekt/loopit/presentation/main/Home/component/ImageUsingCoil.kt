@@ -37,9 +37,9 @@ import com.exa.android.reflekt.R
 
 @Composable
 fun ImageUsingCoil(
-    context: Context,
+    context: Context = LocalContext.current,
     imageUrl: String?,
-    placeholder: Int,
+    placeholder: Int = R.drawable.placeholder,
     modifier: Modifier = Modifier,
     errorImage: Int = R.drawable.placeholder
 ) {

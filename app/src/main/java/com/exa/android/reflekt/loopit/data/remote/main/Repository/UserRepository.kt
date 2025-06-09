@@ -301,7 +301,6 @@ class UserRepository @Inject constructor(
 
     }
 
-
     suspend fun getUserDetail(userId: String): Flow<Response<User?>> = callbackFlow {
         try {
             trySend(Response.Loading).isFailure // Emit loading state

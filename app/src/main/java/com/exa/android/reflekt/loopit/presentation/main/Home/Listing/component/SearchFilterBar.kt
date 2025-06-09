@@ -52,6 +52,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -94,20 +95,25 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonAddAlt1
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -118,12 +124,23 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
+import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.test.DarkGray
+import com.exa.android.reflekt.loopit.presentation.test.IconCircleBackground
+import com.exa.android.reflekt.loopit.presentation.test.InfoTag
+import com.exa.android.reflekt.loopit.presentation.test.LightGray
+import com.exa.android.reflekt.loopit.presentation.test.SearchFilter
+import com.exa.android.reflekt.loopit.util.Response
 import com.exa.android.reflekt.loopit.util.application.ProjectListEvent
 import com.exa.android.reflekt.loopit.util.model.Comment
 import com.exa.android.reflekt.loopit.util.model.PostType
@@ -148,6 +165,7 @@ fun SearchFilterBar(
     onTagDeselected: (String) -> Unit,
     selectedPostType: PostType?,
     onTypeSelected: (PostType?) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showRolesFilter by remember { mutableStateOf(false) }
@@ -158,60 +176,70 @@ fun SearchFilterBar(
 
     Column(
         modifier = modifier
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .graphicsLayer {
                 clip = false
             }
     ) {
         // Enhanced Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(
-                    elevation = 8.dp,  // Increased elevation
-                    shape = MaterialTheme.shapes.large,
-                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                    ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                )
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = MaterialTheme.shapes.large
-                )
-                .padding(1.dp),
-            placeholder = { Text("Search projects...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(35.dp)
-                )
-            },
-            singleLine = true,
-            shape = MaterialTheme.shapes.large,
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                cursorColor = MaterialTheme.colorScheme.primary,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface
-            ),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+//        OutlinedTextField(
+//            value = searchQuery,
+//            onValueChange = onSearchChange,
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .shadow(
+//                    elevation = 8.dp,  // Increased elevation
+//                    shape = MaterialTheme.shapes.large,
+//                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+//                    ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+//                )
+//                .background(
+//                    color = MaterialTheme.colorScheme.surface,
+//                    shape = MaterialTheme.shapes.large
+//                )
+//                .padding(1.dp),
+//            placeholder = { Text("Search projects...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+//            leadingIcon = {
+//                Icon(
+//                    Icons.Default.Search,
+//                    contentDescription = "Search",
+//                    tint = MaterialTheme.colorScheme.primary,
+//                    modifier = Modifier.size(35.dp)
+//                )
+//            },
+//            singleLine = true,
+//            shape = MaterialTheme.shapes.large,
+//            colors = OutlinedTextFieldDefaults.colors(
+//                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
+//                focusedBorderColor = MaterialTheme.colorScheme.primary,
+//                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+//                focusedContainerColor = MaterialTheme.colorScheme.surface,
+//                cursorColor = MaterialTheme.colorScheme.primary,
+//                focusedLabelColor = MaterialTheme.colorScheme.primary,
+//                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+//                focusedTextColor = MaterialTheme.colorScheme.onSurface
+//            ),
+//            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+//        )
+
+        var isFilter by remember { mutableStateOf(false) }
+
+        SearchFilter(
+            searchQuery,
+            onQueryChange = onSearchChange,
+            onFilterClick = { isFilter = !isFilter }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        PostTypeFilter(
-            selectedType = selectedPostType,
-            onTypeSelected = onTypeSelected
-        )
+        if (isFilter) {
+            PostTypeFilter(
+                selectedType = selectedPostType,
+                onTypeSelected = onTypeSelected
+            )
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Filter Chips Row
         FlowRow(
@@ -262,7 +290,7 @@ fun SearchFilterBar(
                         Icon(
                             imageVector = Icons.Default.Group,
                             contentDescription = null,
-                            tint = if(showRolesFilter) MaterialTheme.colorScheme.surfaceVariant
+                            tint = if (showRolesFilter) MaterialTheme.colorScheme.surfaceVariant
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -313,13 +341,35 @@ fun SearchFilterBar(
                         Icon(
                             imageVector = Icons.Default.Tag,
                             contentDescription = null,
-                            tint = if(showTagsFilter) MaterialTheme.colorScheme.surfaceVariant
+                            tint = if (showTagsFilter) MaterialTheme.colorScheme.surfaceVariant
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             )
+
+            Spacer(Modifier.weight(1f))
+
+            Button(
+                onClick = onAddClick,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+
+                ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Post",
+                    tint = Color.White
+                )
+
+                Spacer(Modifier.width(8.dp))
+
+                Text("Post", style = MaterialTheme.typography.bodyLarge)
+            }
+
         }
+
 
         // Animated Filter Sections
         AnimatedVisibility(
@@ -614,7 +664,7 @@ private fun FilterSectionCard(
                         ),
                         icon = {
                             Icon(
-                                imageVector =  when {
+                                imageVector = when {
                                     selectedItems.contains(item) -> Icons.Filled.Check
                                     title == "Select Tags" -> Icons.Filled.Label
                                     else -> Icons.Outlined.WorkOutline
@@ -706,6 +756,7 @@ private fun RoleChip(role: String) {
         }
     )
 }
+
 @Composable
 private fun TagChip(tag: String) {
     SuggestionChip(
@@ -769,10 +820,11 @@ fun ProjectCard(
     onAuthorProfileClick: (String) -> Unit,
     onToggleLike: (String) -> Unit, // Added like handler
     onCommentEvent: (ProjectListEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var expandedRoles by remember { mutableStateOf(false) }
+    var expandedRoles by remember { mutableStateOf(true) }
     var expandedTags by remember { mutableStateOf(false) }
     var expandedRequests by remember { mutableStateOf(false) }
     var expandedEnrolled by remember { mutableStateOf(false) }
@@ -793,6 +845,13 @@ fun ProjectCard(
 
     val postType = remember(project.type) {
         PostType.entries.find { it.displayName == project.type } ?: PostType.OTHER
+    }
+
+    val curUserDetailsMap by userViewModel.userDetail.collectAsState()
+    val curUserDetails = curUserDetailsMap[project.createdBy]
+
+    LaunchedEffect(project.createdBy) {
+        userViewModel.getUserDetail(project.createdBy)
     }
 
     if (showDeleteDialog) {
@@ -841,6 +900,65 @@ fun ProjectCard(
             modifier = Modifier
                 .padding(16.dp)
         ) {
+
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onAuthorProfileClick(project.createdBy)}) {
+                val data = (curUserDetails as? Response.Success)?.data
+                val imageUrl = data?.profilePicture
+
+                if (!imageUrl.isNullOrEmpty()) {
+                    ImageUsingCoil(
+                        context = context,
+                        imageUrl = imageUrl,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable { onAuthorProfileClick(project.createdBy)}
+                    )
+                } else {
+                    UserAvatar(
+                        name = project.createdByName,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = project.createdByName,
+                        style = typography.labelLarge,
+                        color = colors.onTertiary,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Schedule,
+                            contentDescription = "time posted",
+                            tint = DarkGray,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        project.createdAt?.toDate()?.let { date ->
+                            Text(
+                                text = date.formatAsTimeAgo(),
+                                style = typography.labelMedium,
+                                color = colors.outline
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                InfoTag(project.type)
+            }
+
+            Spacer(Modifier.height(4.dp))
+
             // Header Section
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -891,7 +1009,7 @@ fun ProjectCard(
 
             // Description
             var showFullDescription by remember { mutableStateOf(false) }
-            if(project.description.isNotEmpty()) {
+            if (project.description.isNotEmpty()) {
                 Column {
                     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
                     var maxLines by remember { mutableStateOf(3) }
@@ -919,7 +1037,7 @@ fun ProjectCard(
             if (project.imageUrls.isNotEmpty()) {
                 ImageCarousel(project.imageUrls)
             }
-            if(project.rolesNeeded.isNotEmpty()) {
+            if (project.rolesNeeded.isNotEmpty()) {
                 // Roles Section
                 ExpandableSection(
                     icon = Icons.Filled.Group,
@@ -940,7 +1058,7 @@ fun ProjectCard(
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            if(project.tags.isNotEmpty()) {
+            if (project.tags.isNotEmpty()) {
                 // Tags Section
                 ExpandableSection(
                     icon = Icons.Filled.Tag,
@@ -1004,7 +1122,8 @@ fun ProjectCard(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 6.dp).background(
+                                        .padding(vertical = 6.dp)
+                                        .background(
                                             color = MaterialTheme.colorScheme.primary.copy(0.2f),
                                             shape = RoundedCornerShape(16.dp)
                                         )
@@ -1140,7 +1259,8 @@ fun ProjectCard(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 6.dp).background(
+                                        .padding(vertical = 6.dp)
+                                        .background(
                                             color = MaterialTheme.colorScheme.primary.copy(0.2f),
                                             shape = RoundedCornerShape(16.dp)
                                         )
@@ -1189,36 +1309,46 @@ fun ProjectCard(
             // Footer Section
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .clickable {
                         onAuthorProfileClick(project.createdBy)
                     }
             ) {
                 // Author Info
-                UserAvatar(
-                    name = project.createdByName,
-                    modifier = Modifier.size(40.dp)
-                )
+//                UserAvatar(
+//                    name = project.createdByName,
+//                    modifier = Modifier.size(40.dp)
+//                )
+//
+//                Spacer(modifier = Modifier.width(12.dp))
+//
+//                Column(modifier = Modifier.weight(1f)) {
+//                    Text(
+//                        text = project.createdByName,
+//                        style = typography.labelLarge,
+//                        color = colors.onSurface
+//                    )
+//                    project.createdAt?.toDate()?.let { date ->
+//                        Text(
+//                            text = date.formatAsTimeAgo(),
+//                            style = typography.labelMedium,
+//                            color = colors.outline
+//                        )
+//                    }
+//                }
 
-                Spacer(modifier = Modifier.width(12.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = project.createdByName,
-                        style = typography.labelLarge,
-                        color = colors.onSurface
+                LikeButton(
+                        isLiked = project.likes.contains(currentUserId),
+                        onLike = { onToggleLike(project.id) },
+                        modifier = Modifier.padding(4.dp)
                     )
-                    project.createdAt?.toDate()?.let { date ->
-                        Text(
-                            text = date.formatAsTimeAgo(),
-                            style = typography.labelMedium,
-                            color = colors.outline
-                        )
-                    }
-                }
+
+
 
                 // Enroll/Withdraw Button
-                if (!isEditable && currentUserId != null && currentUserId != project.createdBy) {
+                if (!isEditable && currentUserId != null && currentUserId != project.createdBy && (project.type != PostType.POST.displayName && project.type != PostType.OTHER.displayName)) {
                     FilledTonalButton(
                         onClick = {
                             if (isEnrolled) {
@@ -1257,13 +1387,14 @@ fun ProjectCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(if (isEnrolled) "Withdraw" else "Enroll")
                     }
-                }else{
-                    LikeButton(
-                        isLiked = project.likes.contains(currentUserId),
-                        onLike = { onToggleLike(project.id) },
-                        modifier = Modifier.padding(4.dp)
-                    )
                 }
+//                else {
+//                    LikeButton(
+//                        isLiked = project.likes.contains(currentUserId),
+//                        onLike = { onToggleLike(project.id) },
+//                        modifier = Modifier.padding(4.dp)
+//                    )
+//                }
             }
         }
     }

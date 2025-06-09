@@ -18,6 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,8 +30,12 @@ class UserViewModel @Inject constructor(
     private val _userStatus = MutableLiveData<Status>(Status()) // Default status
     val userStatus: LiveData<Status> = _userStatus
 
-    private val _userDetail = MutableStateFlow<Response<User?>>(Response.Loading) // Default loading state
-    val userDetail: StateFlow<Response<User?>> = _userDetail
+//    private val _userDetail = MutableStateFlow<Response<User?>>(Response.Loading) // Default loading state
+//    val userDetail: StateFlow<Response<User?>> = _userDetail
+
+    private val _userDetails = MutableStateFlow<Map<String, Response<User?>>>(emptyMap())
+    val userDetail: StateFlow<Map<String, Response<User?>>> = _userDetails
+
 
     private val _userProfileData = MutableStateFlow<Response<ProfileData>>(Response.Loading)
     val userProfileData : StateFlow<Response<ProfileData>> = _userProfileData
@@ -81,17 +86,35 @@ class UserViewModel @Inject constructor(
     }
 
 
+//    fun getUserDetail(userId: String) {
+//        viewModelScope.launch {
+//            userRepository.getUserDetail(userId)
+//                .catch { exception ->
+//                    _userDetail.value = Response.Error(exception.localizedMessage ?: "Error fetching user")
+//                }
+//                .collect { response ->
+//                    _userDetail.value = response
+//                }
+//        }
+//    }
+
+
     fun getUserDetail(userId: String) {
         viewModelScope.launch {
             userRepository.getUserDetail(userId)
                 .catch { exception ->
-                    _userDetail.value = Response.Error(exception.localizedMessage ?: "Error fetching user")
+                    _userDetails.update { current ->
+                        current + (userId to Response.Error(exception.localizedMessage ?: "Error fetching user"))
+                    }
                 }
                 .collect { response ->
-                    _userDetail.value = response
+                    _userDetails.update { current ->
+                        current + (userId to response)
+                    }
                 }
         }
     }
+
 
     fun getProfileData(userId: String?) {
         viewModelScope.launch {
