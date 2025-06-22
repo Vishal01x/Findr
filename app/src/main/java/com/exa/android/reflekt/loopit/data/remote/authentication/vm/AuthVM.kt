@@ -385,11 +385,12 @@ class AuthVM @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             val userId = repository.getCurrentUser()?.uid ?: ""
-            preferenceHelper.clearUserId()
-            dataStore.edit { it.clear() }
+
             activeChatId = null
             repository.logout(){
                 loginState.value = LoginState() // Reset login state
+                // preferenceHelper.clearUserId()
+                // dataStore.edit { it.clear() }
             }
         }
     }

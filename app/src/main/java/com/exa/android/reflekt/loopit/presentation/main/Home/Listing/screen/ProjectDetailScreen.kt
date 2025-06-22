@@ -144,8 +144,6 @@ fun ProjectDetailScreen(
     viewModel: ProjectListViewModel = hiltViewModel()
 ) {
 
-    Log.d("project", "$projectId")
-
     val state by viewModel.state.collectAsState()
     val project = state.projects.find { it.id == projectId }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -385,14 +383,14 @@ private fun DynamicTopAppBar(
             IconButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.background(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = CircleShape
                 )
             ) {
                 Icon(
                     Icons.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },

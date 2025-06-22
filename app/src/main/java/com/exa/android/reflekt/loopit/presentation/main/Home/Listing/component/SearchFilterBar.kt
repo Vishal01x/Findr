@@ -1476,6 +1476,9 @@ fun ProjectCard(
                     project = project,
                     currentUserId = currentUserId,
                     onCommentEvent = onCommentEvent,
+                    onProfileClick = {Id->
+                        onAuthorProfileClick(Id)
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1489,6 +1492,7 @@ fun CommentPreviewSection(
     project: Project,
     currentUserId: String?,
     onCommentEvent: (ProjectListEvent) -> Unit,
+    onProfileClick : (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val allComments = remember(project.comments) { project.comments.reversed() }
@@ -1552,7 +1556,8 @@ fun CommentPreviewSection(
                                     comment.id
                                 )
                             )
-                        }
+                        },
+                        onProfileClick = onProfileClick
                     )
                     Divider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
                 }
@@ -1655,7 +1660,8 @@ fun CommentItem(
     comment: Comment,
     currentUserId: String?,
     onEdit: (String) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onProfileClick : (String) -> Unit
 ) {
     val isCurrentUser = comment.senderId == currentUserId
 
@@ -1668,6 +1674,7 @@ fun CommentItem(
         Box(
             modifier = Modifier
                 .size(32.dp)
+                .clickable{onProfileClick(comment.senderId)}
                 .background(
                     color = if (isCurrentUser) MaterialTheme.colorScheme.primaryContainer
                     else MaterialTheme.colorScheme.surfaceVariant,
@@ -1686,10 +1693,10 @@ fun CommentItem(
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable{onProfileClick(comment.senderId)}) {
                 Text(
                     text = comment.senderName,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -1704,7 +1711,8 @@ fun CommentItem(
             Text(
                 text = comment.text,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(top = 2.dp),
+                color = MaterialTheme.colorScheme.onTertiary.copy(.8f)
             )
         }
 

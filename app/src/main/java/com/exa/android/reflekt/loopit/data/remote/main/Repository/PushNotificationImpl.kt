@@ -68,7 +68,7 @@ fun sendComment(context: Context, receiverToken: String?,project : Project,profi
     val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
 
     val projectNotification = NotificationContent(
-        type = NotificationType.PROFILE,
+        type = NotificationType.POST,
         title = "${profile.name} has commented on your post", // project title
         body = comment,
         imageUrl = imageUrl, // post or creator of project
