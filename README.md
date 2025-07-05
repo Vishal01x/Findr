@@ -5,7 +5,7 @@
 ## 📱 Download APP - from Play store
 
 > [⬇️ Download Findr](https://play.google.com/store/apps/details?id=com.exa.android.reflekt)
-> ✅ 350+ downloads | ⏰ 65+ active projects tracked via Firebase
+> ✅ 450+ downloads | ⏰ 65+ active projects tracked via Firebase
 
 ---
 
