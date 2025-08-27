@@ -18,9 +18,9 @@ android {
     defaultConfig {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 4
-        versionName = "3.0.2"
+        targetSdk = 35
+        versionCode = 5
+        versionName = "3.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
