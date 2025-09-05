@@ -27,12 +27,37 @@
 ### ⛰️ Nearby Discovery & Filtering
 
 * Locate professionals nearby using **geofencing** and **live map view**.
-* Search & filter users by **role**, **skill**, **project interests**, or **radius**.
+* Search & filter users by **role**, **skill**, **project interests**, **location** or **radius**.
 
 ### 📄 Smart Posts
 
 * Users can post **Projects**, **Bugs**, or **Ideas** within their geofence.
-* Posts support: **title, description, skills needed, project links, and attachments**.
+* Posts support: **title, description, skills needed, project links, and attachments(media)**.
+* Users can **like**, **comment**, **share** post.
+
+### 💬 Real-Time Chat (Secure)
+
+* Fully encrypted real-time messaging using **Signal Protocol**
+* Features:
+
+  * **One-to-one & group chats**
+  * **Media sharing** (images, files)
+  * Preview for **links**.
+  * **Priority messages**, **typing indicator**, **online/last seen** and **read receipts**
+  * Secure message using **encryption/decryption** delivering confidentiality.
+
+### 📩 Push Notifications
+
+* Powered by **Firebase Cloud Messaging (FCM)**
+* Sent when:
+
+  * A new **chat message** arrives
+  * A user create a **new post**
+  * A user receives a **project request**
+  * A post is interacted with **(like/comment)**
+  * A user's profile gets **5 new views**
+  * A user profile is **rated/verified**
+* Handled with custom logic to show user-specific rich notifications with action buttons
 
 ### 👥 Profile Showcase
 
@@ -42,29 +67,10 @@
   * **Skills**, **Experience**, **Education**
   * Work history & open-to-collab status
 
-### 💬 Real-Time Chat (Secure)
-
-* Fully encrypted real-time messaging using **Signal Protocol**
-* Features:
-
-  * **One-to-one & group chats**
-  * **Media sharing** (images, files)
-  * **Message scheduling**
-  * **Priority messages**, **typing indicator**, and **read receipts**
-
-### 📩 Push Notifications
-
-* Powered by **Firebase Cloud Messaging (FCM)**
-* Sent when:
-
-  * A new message arrives
-  * A user receives a project request
-  * A post is interacted with (like/comment)
-* Handled with custom logic to show user-specific rich notifications with action buttons
-
 ### ❌ Block & Report System
 
 * Users can block/report others for spam or abuse
+* Once blocked stop showing profile photo, online/last seen, cannot send message.
 * Firebase functions handle moderation flow (flag, count, restrict)
 
 ### 🔍 Request to Join Project
@@ -82,11 +88,11 @@
 | Layer                | Technologies Used                              |
 | -------------------- | ---------------------------------------------- |
 | **Language**         | Kotlin                                         |
-| **UI**               | Jetpack Compose, Material Design 3             |
+| **UI**               | Jetpack Compose          |
 | **Architecture**     | MVVM + Clean Architecture + Repository Pattern |
 | **State Mgmt**       | StateFlow, LiveData                            |
 | **Network**          | Retrofit, REST APIs, Gson                      |
-| **DI**               | Dagger-Hilt, Koin                              |
+| **DI**               | Dagger-Hilt                             |
 | **Images/Media**     | Glide, Cloudinary (uploading media)            |
 | **Map & Location**   | Google Maps SDK, Geofencing APIs, GeoFire      |
 | **Database**         | Room (offline support), Firebase Firestore     |
@@ -94,9 +100,70 @@
 | **Notifications**    | Firebase Cloud Messaging (FCM)                 |
 | **Encryption**       | Signal Protocol (E2EE)                         |
 | **Background Tasks** | WorkManager, BroadcastReceiver, AlarmManager   |
-| **Hosting**          | Firebase, AWS Lambda (for APIs & moderation)   |
+| **Hosting**          | Firebase   |
 
 ---
+
+## ⚙️ Implementation Details  
+
+### ⛰️ Map System
+- **Tech:** Google Maps SDK + GeoFire, Work Manager, Foreground Service  
+- Used **geofencing** to detect students/professionals in real-time.  
+- Implemented **live map markers** synced with geo fire and Firestore within specified radius and location.  
+- Built **advanced filters** (role, skill, project interest, radius) with Firestore composite queries.
+- Utilized Work Manager and Foreground Service to track location in background for real time updates(user can off service when not required).
+  
+Refer - [Map DataSource](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/data/remote/main/MapDataSource), [Location Repository](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/data/remote/main/MapDataSource),
+[Map Screen](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/presentation/main/Home/Map)
+
+
+### 📄 Smart Posts  
+- **Tech:** Firebase Firestore, Room, Cloudinary
+- Posts stored under `posts/{postId}` with metadata.  
+- Media uploads handled via **Cloudinary**.  
+- Real-time listeners (`snapshotListener`) keep feed updated.  
+- Likes/comments stored as subcollections (`posts/{postId}/likes` & `posts/{postId}/comments`).  
+- Integrated **deep links** for sharing posts externally.
+- Can be stored in room using Firebase persistence for offline experience.\
+
+Refer - [Post Repository Impl](https://github.com/Vishal01x/Findr/blob/master/app/src/main/java/com/exa/android/reflekt/loopit/data/remote/main/Repository/ProjectRepository.kt), [Post Listing](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/presentation/main/Home/Listing)
+
+### 💬 Real-Time Chat (Secure)  
+- **Tech:** Firestore + Signal Protocol  
+- End-to-end encrypted chats.  
+- Supports **1-to-1 & group chats** under `chats/{chatId}/messages/{messageId}`.
+- Media stored in Cloudinary and seemless sharing of photo, video, docs.
+- Show Preview of links using metadata like domain, description, title extracted via Jsoup and stored in local cache using room database.
+- Features: typing indicators, online status, read receipts using real time firebase and android lifecycle for tracking user session.
+- User can be blocked and reported with screenshots of chat or etc. Once blocked can't message further, managed by keeping the block users map in chats and as per perform actions.
+
+Refer -[ Chat Repository](https://github.com/Vishal01x/Findr/blob/master/app/src/main/java/com/exa/android/reflekt/loopit/data/remote/main/Repository/FireStoreService.kt), [Chat Screen](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/presentation/main/Home/ChatDetail)
+
+### 📩 Push Notifications  
+- **Tech:** Firebase Cloud Messaging, Notification Manager  
+- Notification types: **Chat, Post, Project Request, Profile Events**.
+- Provide both topic and token based notification.
+- Send Payload to server through a retrofit with authorization token that will be recieved by notification manager.
+- Custom channels with unique icons & sounds.  
+- **Deep links** open directly to screens (chat, post, profile) provided in Pending Intent.  
+- Action buttons (Reply/Accept/Reject/Mark Read) via **BroadcastReceivers**.  
+- Unread states grouped via **SharedPreferences** for each notification like chat, post, profile, update.
+
+Refer - [Push Notification FCM](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/fcm), [Helper](https://github.com/Vishal01x/Findr/blob/master/app/src/main/java/com/exa/android/reflekt/loopit/data/remote/main/Repository/PushNotificationImpl.kt)
+
+### 👥 Profile Showcase  
+- **Tech:** Firestore + Jetpack Compose  
+- Schema: `name, bio, skills, education, experience, portfolioLinks`.  
+- Integrated deep links for external profiles (GitHub, LinkedIn, Portfolio).  
+- Profile view tracking under `profiles/{userId}/views/{viewerId}` with timestamps.  
+- Built **Compose UI** with reusable skill chips, experience cards, and status badges.
+- User can be verified(can check verifiers profile) and rated(takes the avg for rating).
+
+Refer  - [Profile Repo](https://github.com/Vishal01x/Findr/blob/master/app/src/main/java/com/exa/android/reflekt/loopit/data/remote/main/Repository/ProfileRepository.kt), [Profile UI](https://github.com/Vishal01x/Findr/tree/master/app/src/main/java/com/exa/android/reflekt/loopit/presentation/main/profile)
+
+- The whole dependacy injection is manager using **Hilt**.
+- Provided settings and help center for user action and customization.
+
 
 <p float="left">
   <img src="https://github.com/user-attachments/assets/e0190839-8d90-4a10-ba2e-53d479024ab4" width="200" />
@@ -112,6 +179,7 @@
 
 ## 🚀 Metrics
 
+* 👉 **450+ Play Store downloads** since deployed
 * 👉 **350+ APK downloads** since launch
 * 📊 **65+ active projects tracked** via Firebase
 * 💬 Dozens of connections and chats initiated daily
@@ -126,6 +194,7 @@
 * Kotlin 1.8+
 * Firebase Project
 * Google Maps API Key
+* Firebase admin sdk 
 * Cloudinary account
 
 ### 🔧 Firebase Setup
@@ -180,6 +249,16 @@ implementation 'com.google.firebase:firebase-storage'
 
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
+---
+
+## 👨‍💻 Contributors & Roles
+
+- **Vishal Dangi** – Android Development + UI/UX
+  - Implemented Posting, Real-time Chat, Profile, Notifications, Services
+  
+- **Kanhaiya kumar** – Android Development + UI/UX
+   - Created ui/ux design and user flow.
+   - Implemented authentication.
 ---
 
 ## 👤 Author
