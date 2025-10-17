@@ -40,7 +40,6 @@ import javax.inject.Inject
 
 // Android
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,13 +59,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.Repository.BrandfetchViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.Repository.UserRepository
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.MediaSharingViewModel
-import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
+import com.exa.android.reflekt.loopit.data.feature.main.link_data.icon.viewmodel.BrandftechViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.UserRepository
+import com.exa.android.reflekt.loopit.data.feature.main.media.viewmodel.MediaSharingViewModel
+import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
+import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
-import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -79,7 +78,7 @@ fun EditExtracurricularScreen(
     activity: ExtraActivity,
     navController: NavController,
     extracurricularViewModel: ExtracurricularViewModel = hiltViewModel(),
-    brandfetchViewModel: BrandfetchViewModel = hiltViewModel(),
+    brandfetchViewModel: BrandftechViewModel = hiltViewModel(),
     mediaSharingViewModel: MediaSharingViewModel = hiltViewModel()
 ) {
 

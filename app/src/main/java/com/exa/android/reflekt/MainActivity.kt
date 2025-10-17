@@ -16,7 +16,6 @@ import android.app.AlertDialog
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
@@ -26,7 +25,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
@@ -41,18 +39,18 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
-import com.exa.android.reflekt.loopit.util.application.MyLifecycleObserver
-import com.exa.android.reflekt.loopit.util.application.NetworkCallbackReceiver
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationForegroundService
-import com.exa.android.reflekt.loopit.data.remote.main.worker.LocationWorker
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
+import com.exa.android.reflekt.loopit.core.utils.application.MyLifecycleObserver
+import com.exa.android.reflekt.loopit.core.network.NetworkCallbackReceiver
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.map.data.worker.LocationForegroundService
+import com.exa.android.reflekt.loopit.data.feature.main.map.data.worker.LocationWorker
 import com.exa.android.reflekt.loopit.fcm.DeepLinkHelper
-import com.exa.android.reflekt.loopit.presentation.navigation.AppNavigation
+import com.exa.android.reflekt.loopit.presentation.navigation.nav_graph.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
-import com.exa.android.reflekt.loopit.util.clearAllNotifications
+import com.exa.android.reflekt.loopit.core.notification.clearAllNotifications
 import io.getstream.meeting.room.compose.ui.AppTheme
 import java.util.concurrent.TimeUnit
 

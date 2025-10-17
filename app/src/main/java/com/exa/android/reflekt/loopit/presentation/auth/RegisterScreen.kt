@@ -1,20 +1,14 @@
 package com.exa.android.reflekt.loopit.presentation.auth
 
-import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -25,8 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Business
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Email
@@ -45,10 +37,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -61,18 +50,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.SignUpEvent
-import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.showToast
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.SignUpEvent
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.SignUpState
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.SignUpState
 
 // auth/SignUpScreen.kt
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)

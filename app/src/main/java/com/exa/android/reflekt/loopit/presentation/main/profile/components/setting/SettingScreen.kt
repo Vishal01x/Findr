@@ -1,13 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.setting
 
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
@@ -18,20 +13,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.LocationViewModel
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.theme.Purple40
-import com.exa.android.reflekt.loopit.util.showToast
+import com.exa.android.reflekt.loopit.core.utils.showToast
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import android.Manifest

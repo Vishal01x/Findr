@@ -14,9 +14,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
+import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.*
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.EducationCard
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.education.ExperienceCard
@@ -26,8 +30,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.components.heade
 import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.ProfileFeedback
 import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.ProfileViews
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.model.Profile.*
+import com.exa.android.reflekt.loopit.core.network.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

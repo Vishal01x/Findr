@@ -6,10 +6,9 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
-import com.exa.android.reflekt.loopit.data.remote.main.Repository.LocationRepository
-import com.exa.android.reflekt.loopit.data.remote.main.Repository.MediaSharingRepository
-import com.exa.android.reflekt.loopit.data.remote.main.worker.MediaUploadWorker
-import com.exa.android.reflekt.loopit.data.remote.main.worker.PreferenceHelper
+import com.exa.android.reflekt.loopit.data.feature.main.media.repository.MediaSharingRepository
+import com.exa.android.reflekt.loopit.data.feature.main.media.worker.MediaUploadWorker
+import com.exa.android.reflekt.loopit.data.feature.main.map.data.worker.PreferenceHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -2,7 +2,6 @@ package com.exa.android.reflekt.loopit.presentation.main.profile.components.head
 
 import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,41 +13,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.CallToAction
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveRedEye
-import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
-import coil.decode.SvgDecoder
-import coil.request.ImageRequest
-import com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.image.openImageIntent
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
+import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
 
 @Composable
 fun ProfileHeader(

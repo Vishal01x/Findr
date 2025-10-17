@@ -16,8 +16,6 @@ import javax.inject.Inject
 
 class NotificationHelper @Inject constructor(@ApplicationContext private val context: Context) {
 
-
-
     fun showNotification(data: NotificationData) {
         Log.d("FireStore Operation", "notification received - $data")
         val notificationId = System.currentTimeMillis().toInt()

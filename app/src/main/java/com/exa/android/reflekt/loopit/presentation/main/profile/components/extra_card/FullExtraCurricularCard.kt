@@ -1,7 +1,5 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -27,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
-import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
+import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

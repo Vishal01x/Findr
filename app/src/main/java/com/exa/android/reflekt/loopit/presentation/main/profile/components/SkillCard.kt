@@ -30,9 +30,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.TrackableImage
-import com.exa.android.reflekt.loopit.util.Response
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.presentation.main.component.TrackableImage
+import com.exa.android.reflekt.loopit.core.network.Response
 
 
 
@@ -284,7 +284,8 @@ private fun EditableChip(skill: String, isEditing: Boolean, onRemove: () -> Unit
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(8.dp))
-                )}
+                )
+                }
 
                 if (isEditing) {
                     Box(

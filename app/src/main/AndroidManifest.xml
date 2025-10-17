@@ -97,13 +97,13 @@
         </provider>
 
         <service
-            android:name=".loopit.data.remote.main.worker.LocationForegroundService"
+            android:name=".loopit.data.feature.main.map.data.worker.LocationForegroundService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
 
         <receiver
-            android:name=".loopit.data.remote.main.worker.BootReceiver"
+            android:name=".loopit.data.feature.main.map.data.worker.BootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

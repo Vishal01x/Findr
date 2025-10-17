@@ -1,7 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.feedback
 
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
 
 
 @Composable
@@ -317,7 +316,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.data.remote.main.profile.data.viewmodel.EditProfileViewModel
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInVertically

@@ -6,7 +6,7 @@ import androidx.datastore.dataStoreFile
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
-import com.exa.android.reflekt.loopit.data.local.LinkMetadataDatabase
+import com.exa.android.reflekt.loopit.data.feature.main.link_data.metadata.local.LinkMetadataDatabase
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import dagger.Module

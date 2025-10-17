@@ -21,12 +21,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
-import com.exa.android.reflekt.loopit.util.showToast
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
+import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
+import com.exa.android.reflekt.loopit.core.utils.showToast
 
 
 @OptIn(ExperimentalMaterial3Api::class)

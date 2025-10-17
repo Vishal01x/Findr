@@ -1,15 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.header
 
 
-import android.app.Application
-import android.content.Context
 import android.net.Uri
-import android.os.Environment
-import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,45 +18,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import coil.compose.rememberImagePainter
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.MediaSharingViewModel
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.UserViewModel
-import com.exa.android.reflekt.loopit.presentation.main.Home.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageFromUri
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.showLoader
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.isNetworkAvailable
-import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
-import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
-import com.exa.android.reflekt.loopit.util.model.Profile.SocialLinks
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import javax.inject.Inject
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.media.viewmodel.MediaSharingViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
+import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
+import com.exa.android.reflekt.loopit.presentation.main.component.ImageFromUri
+import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
+import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

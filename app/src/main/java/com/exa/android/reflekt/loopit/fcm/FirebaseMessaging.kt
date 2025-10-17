@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
@@ -20,16 +19,12 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.IconCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
-import com.exa.android.reflekt.MyApp
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.remote.main.Repository.FirestoreService
-import com.exa.android.reflekt.loopit.util.Constants.FINDR_GROUP_KEY
-import com.exa.android.reflekt.loopit.util.CurChatManager.activeChatId
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.ChatRepository
+import com.exa.android.reflekt.loopit.core.utils.Constants.FINDR_GROUP_KEY
+import com.exa.android.reflekt.loopit.core.utils.CurChatManager.activeChatId
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -42,7 +37,7 @@ import javax.inject.Inject
 class FirebaseService : FirebaseMessagingService() {
 
     @Inject
-    lateinit var repository: FirestoreService
+    lateinit var repository: ChatRepository
 
     private val notificationHelper by lazy { NotificationHelperr(applicationContext) }
 
@@ -243,293 +238,6 @@ class FirebaseService : FirebaseMessagingService() {
         )
     }
 }
-
-
-
-class NotificationHelpe(private val context: Context) {
-
-    fun showNotification(data: NotificationData, category: String) {
-        val notificationId = data.groupKey?.hashCode() ?: UUID.randomUUID().hashCode()
-        val channelId = data.type.channelId
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.e("Post Notification", "Notification permission not granted!")
-                return
-            }
-        }
-
-
-        // Create notification channel if needed
-        //createNotificationChannel(channelId, data.type.channelId)
-
-        // Base intent setup
-        val intent = Intent(Intent.ACTION_VIEW, data.deepLink).apply {
-            setPackage(context.packageName)
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            notificationId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Build appropriate style
-        val builder = when (data.type) {
-            NotificationType.CHAT_MESSAGE -> buildChatStyle(data, pendingIntent)
-            NotificationType.PROFILE -> buildProfileStyle(data, pendingIntent)
-            NotificationType.POST -> buildPostStyle(data, pendingIntent)
-            NotificationType.PROJECT_UPDATE -> buildProjectStyle(data, pendingIntent)
-            else -> TODO()
-        }.apply {
-            setSmallIcon(R.drawable.findr_logo)
-            setCategory(category)
-            setPriority(NotificationCompat.PRIORITY_HIGH)
-            setAutoCancel(true)
-            setContentIntent(pendingIntent)
-            setGroup(FINDR_GROUP_KEY)  // Set group key
-            setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
-        }
-
-        // Add actions with proper PendingIntent flags
-        addNotificationActions(builder, data)
-
-        // Load and set large icon
-        loadAndSetLargeIcon(data, builder, notificationId)
-
-
-        val notificationManager = NotificationManagerCompat.from(context)
-        notificationManager.notify(notificationId, builder.build())
-
-    }
-
-    private fun buildChatStyle(
-        data: NotificationData,
-        pendingIntent: PendingIntent
-    ): NotificationCompat.Builder {
-        val person = Person.Builder()
-            .setName(data.title)
-            /*.apply {
-                data.largeIcon?.let { uri ->
-                    try {
-                        val bitmap = Glide.with(context)
-                            .asBitmap()
-                            .load(uri)
-                            .submit(128, 128)
-                            .get()
-                        setIcon(IconCompat.createWithBitmap(bitmap))
-                    } catch (e: Exception) {
-                        Log.e("Notification", "Error loading avatar", e)
-                    }
-                }
-            }*/
-            .build()
-
-        val sharedPreferences =
-            context.getSharedPreferences("chat_notifications", Context.MODE_PRIVATE)
-        val messagesSet =
-            sharedPreferences.getStringSet(data.groupKey, mutableSetOf())!!.toMutableSet()
-        messagesSet.add(data.body)
-        sharedPreferences.edit().putStringSet(data.groupKey, messagesSet).apply()
-
-
-        val messagingStyle = NotificationCompat.MessagingStyle(person)
-            .setConversationTitle(data.title)
-
-        messagesSet.forEach { msg ->
-            messagingStyle.addMessage(msg, System.currentTimeMillis(), person)
-        }
-
-        return NotificationCompat.Builder(context, NotificationType.CHAT_MESSAGE.channelId)
-            .setStyle(
-                messagingStyle
-            )
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-    }
-
-    private fun buildPostStyle(
-        data: NotificationData,
-        pendingIntent: PendingIntent
-    ): NotificationCompat.Builder {
-        val bitmap = getLargeBitmap(data.mediaUri)
-
-        return NotificationCompat.Builder(context, NotificationType.POST.channelId)
-            .setContentTitle(data.title)
-            .setContentText(data.body)
-            .apply {
-                if (bitmap != null) {
-                    setStyle(
-                        NotificationCompat.BigPictureStyle()
-                            .bigPicture(bitmap)
-                            .setBigContentTitle(data.title)
-                            .setSummaryText(data.body)
-                    )
-                    setLargeIcon(bitmap) // Show thumbnail in collapsed state
-                } else {
-                    setStyle(
-                        NotificationCompat.BigTextStyle()
-                            .bigText(data.body)
-                            .setBigContentTitle(data.title)
-                    )
-                }
-            }
-    }
-
-
-    private fun getLargeBitmap(uri: Uri?): Bitmap? {
-        if (uri == null) return null
-
-        return try {
-            // Using Glide for better image handling
-            Glide.with(context)
-                .asBitmap()
-                .load(uri)
-                .submit(512, 512) // Max dimensions for notification images
-                .get() // Blocking call - should be called on background thread
-        } catch (e: Exception) {
-            Log.e("Notification", "Error loading large bitmap", e)
-            null
-        }
-    }
-
-    private fun buildProfileStyle(
-        data: NotificationData,
-        pendingIntent: PendingIntent
-    ): NotificationCompat.Builder {
-        return NotificationCompat.Builder(context, NotificationType.PROFILE.channelId)
-            .setContentTitle(data.title)
-            .setContentText(data.body)
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(data.body)
-                    .setBigContentTitle(data.title)
-            )
-    }
-
-    private fun buildProjectStyle(
-        data: NotificationData,
-        pendingIntent: PendingIntent
-    ): NotificationCompat.Builder {
-        return NotificationCompat.Builder(context, NotificationType.PROJECT_UPDATE.channelId)
-            .setContentTitle(data.title)
-            .setContentText(data.body)
-            .setStyle(
-                NotificationCompat.InboxStyle()
-                    .addLine(data.body)
-                    .setBigContentTitle(data.title)
-                    .setSummaryText("Project update")
-            )
-    }
-
-    private fun addNotificationActions(
-        builder: NotificationCompat.Builder,
-        data: NotificationData
-    ) {
-        data.actions.forEach { action ->
-            val intent = Intent(action.actionId.actionId).apply {
-                putExtra("groupKey", data.groupKey)
-                putExtra("receiverFcm", data.fcm)
-                putExtra("otherUser", data.senderId)
-                `package` = context.packageName
-            }
-
-            val flags = if (action.requiresInput) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                } else {
-                    PendingIntent.FLAG_UPDATE_CURRENT
-                }
-            } else {
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            }
-
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                UUID.randomUUID().hashCode(),
-                intent,
-                flags
-            )
-
-            NotificationCompat.Action.Builder(
-                action.iconResId,
-                action.title,
-                pendingIntent
-            ).apply {
-                if (action.requiresInput) {
-                    addRemoteInput(
-                        RemoteInput.Builder("key_text_reply")
-                            .setLabel(action.title)
-                            .build()
-                    )
-                }
-            }.build().let { builder.addAction(it) }
-        }
-    }
-
-    private fun createNotificationChannel(channelId: String, channelName: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                channelName,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for $channelName"
-                enableLights(true)
-                lightColor = ContextCompat.getColor(context, R.color.notification_color)
-            }
-
-            context.getSystemService(NotificationManager::class.java)
-                ?.createNotificationChannel(channel)
-        }
-    }
-
-    private fun loadAndSetLargeIcon(
-        data: NotificationData,
-        builder: NotificationCompat.Builder,
-        notificationId: Int
-    ) {
-        data.largeIcon?.let { uri ->
-            Glide.with(context)
-                .asBitmap()
-                .load(uri)
-                .transform(CircleCrop())
-                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
-                    override fun onResourceReady(
-                        resource: Bitmap,
-                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
-                    ) {
-                        builder.setLargeIcon(resource)
-                        if (ActivityCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            // TODO: Consider calling
-                            //    ActivityCompat#requestPermissions
-                            // here to request the missing permissions, and then overriding
-                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                            //                                          int[] grantResults)
-                            // to handle the case where the user grants the permission. See the documentation
-                            // for ActivityCompat#requestPermissions for more details.
-                            return
-                        }
-
-                        val notificationManager = NotificationManagerCompat.from(context)
-                        notificationManager.notify(notificationId, builder.build())
-                    }
-
-                    override fun onLoadCleared(placeholder: Drawable?) {}
-                })
-        }
-    }
-
-
-}
-
 
 class NotificationHelperr(private val context: Context) {
 
@@ -956,6 +664,7 @@ class NotificationHelperr(private val context: Context) {
     // endregion
 
     // region Helper Methods
+    // for loading user profile pic
     private fun getLargeBitmap(uri: Uri?): Bitmap? {
         if (uri == null) return null
         return try {
@@ -970,6 +679,7 @@ class NotificationHelperr(private val context: Context) {
         }
     }
 
+    //adding actions in notifications
     private fun addNotificationActions(
         builder: NotificationCompat.Builder,
         data: NotificationData,
@@ -1018,6 +728,7 @@ class NotificationHelperr(private val context: Context) {
         }
     }
 
+    // for showing image in notification if post contains
     private fun loadAndSetLargeIcon(
         data: NotificationData,
         builder: NotificationCompat.Builder,
@@ -1058,6 +769,292 @@ class NotificationHelperr(private val context: Context) {
         }
     }
     // endregion
+}
+
+
+
+class NotificationHelpe(private val context: Context) {
+
+    fun showNotification(data: NotificationData, category: String) {
+        val notificationId = data.groupKey?.hashCode() ?: UUID.randomUUID().hashCode()
+        val channelId = data.type.channelId
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.e("Post Notification", "Notification permission not granted!")
+                return
+            }
+        }
+
+
+        // Create notification channel if needed
+        //createNotificationChannel(channelId, data.type.channelId)
+
+        // Base intent setup
+        val intent = Intent(Intent.ACTION_VIEW, data.deepLink).apply {
+            setPackage(context.packageName)
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Build appropriate style
+        val builder = when (data.type) {
+            NotificationType.CHAT_MESSAGE -> buildChatStyle(data, pendingIntent)
+            NotificationType.PROFILE -> buildProfileStyle(data, pendingIntent)
+            NotificationType.POST -> buildPostStyle(data, pendingIntent)
+            NotificationType.PROJECT_UPDATE -> buildProjectStyle(data, pendingIntent)
+            else -> TODO()
+        }.apply {
+            setSmallIcon(R.drawable.findr_logo)
+            setCategory(category)
+            setPriority(NotificationCompat.PRIORITY_HIGH)
+            setAutoCancel(true)
+            setContentIntent(pendingIntent)
+            setGroup(FINDR_GROUP_KEY)  // Set group key
+            setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
+        }
+
+        // Add actions with proper PendingIntent flags
+        addNotificationActions(builder, data)
+
+        // Load and set large icon
+        loadAndSetLargeIcon(data, builder, notificationId)
+
+
+        val notificationManager = NotificationManagerCompat.from(context)
+        notificationManager.notify(notificationId, builder.build())
+
+    }
+
+    private fun buildChatStyle(
+        data: NotificationData,
+        pendingIntent: PendingIntent
+    ): NotificationCompat.Builder {
+        val person = Person.Builder()
+            .setName(data.title)
+            /*.apply {
+                data.largeIcon?.let { uri ->
+                    try {
+                        val bitmap = Glide.with(context)
+                            .asBitmap()
+                            .load(uri)
+                            .submit(128, 128)
+                            .get()
+                        setIcon(IconCompat.createWithBitmap(bitmap))
+                    } catch (e: Exception) {
+                        Log.e("Notification", "Error loading avatar", e)
+                    }
+                }
+            }*/
+            .build()
+
+        val sharedPreferences =
+            context.getSharedPreferences("chat_notifications", Context.MODE_PRIVATE)
+        val messagesSet =
+            sharedPreferences.getStringSet(data.groupKey, mutableSetOf())!!.toMutableSet()
+        messagesSet.add(data.body)
+        sharedPreferences.edit().putStringSet(data.groupKey, messagesSet).apply()
+
+
+        val messagingStyle = NotificationCompat.MessagingStyle(person)
+            .setConversationTitle(data.title)
+
+        messagesSet.forEach { msg ->
+            messagingStyle.addMessage(msg, System.currentTimeMillis(), person)
+        }
+
+        return NotificationCompat.Builder(context, NotificationType.CHAT_MESSAGE.channelId)
+            .setStyle(
+                messagingStyle
+            )
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+    }
+
+    private fun buildPostStyle(
+        data: NotificationData,
+        pendingIntent: PendingIntent
+    ): NotificationCompat.Builder {
+        val bitmap = getLargeBitmap(data.mediaUri)
+
+        return NotificationCompat.Builder(context, NotificationType.POST.channelId)
+            .setContentTitle(data.title)
+            .setContentText(data.body)
+            .apply {
+                if (bitmap != null) {
+                    setStyle(
+                        NotificationCompat.BigPictureStyle()
+                            .bigPicture(bitmap)
+                            .setBigContentTitle(data.title)
+                            .setSummaryText(data.body)
+                    )
+                    setLargeIcon(bitmap) // Show thumbnail in collapsed state
+                } else {
+                    setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .bigText(data.body)
+                            .setBigContentTitle(data.title)
+                    )
+                }
+            }
+    }
+
+
+    private fun getLargeBitmap(uri: Uri?): Bitmap? {
+        if (uri == null) return null
+
+        return try {
+            // Using Glide for better image handling
+            Glide.with(context)
+                .asBitmap()
+                .load(uri)
+                .submit(512, 512) // Max dimensions for notification images
+                .get() // Blocking call - should be called on background thread
+        } catch (e: Exception) {
+            Log.e("Notification", "Error loading large bitmap", e)
+            null
+        }
+    }
+
+    private fun buildProfileStyle(
+        data: NotificationData,
+        pendingIntent: PendingIntent
+    ): NotificationCompat.Builder {
+        return NotificationCompat.Builder(context, NotificationType.PROFILE.channelId)
+            .setContentTitle(data.title)
+            .setContentText(data.body)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(data.body)
+                    .setBigContentTitle(data.title)
+            )
+    }
+
+    private fun buildProjectStyle(
+        data: NotificationData,
+        pendingIntent: PendingIntent
+    ): NotificationCompat.Builder {
+        return NotificationCompat.Builder(context, NotificationType.PROJECT_UPDATE.channelId)
+            .setContentTitle(data.title)
+            .setContentText(data.body)
+            .setStyle(
+                NotificationCompat.InboxStyle()
+                    .addLine(data.body)
+                    .setBigContentTitle(data.title)
+                    .setSummaryText("Project update")
+            )
+    }
+
+    private fun addNotificationActions(
+        builder: NotificationCompat.Builder,
+        data: NotificationData
+    ) {
+        data.actions.forEach { action ->
+            val intent = Intent(action.actionId.actionId).apply {
+                putExtra("groupKey", data.groupKey)
+                putExtra("receiverFcm", data.fcm)
+                putExtra("otherUser", data.senderId)
+                `package` = context.packageName
+            }
+
+            val flags = if (action.requiresInput) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                UUID.randomUUID().hashCode(),
+                intent,
+                flags
+            )
+
+            NotificationCompat.Action.Builder(
+                action.iconResId,
+                action.title,
+                pendingIntent
+            ).apply {
+                if (action.requiresInput) {
+                    addRemoteInput(
+                        RemoteInput.Builder("key_text_reply")
+                            .setLabel(action.title)
+                            .build()
+                    )
+                }
+            }.build().let { builder.addAction(it) }
+        }
+    }
+
+    private fun createNotificationChannel(channelId: String, channelName: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                channelName,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for $channelName"
+                enableLights(true)
+                lightColor = ContextCompat.getColor(context, R.color.notification_color)
+            }
+
+            context.getSystemService(NotificationManager::class.java)
+                ?.createNotificationChannel(channel)
+        }
+    }
+
+    private fun loadAndSetLargeIcon(
+        data: NotificationData,
+        builder: NotificationCompat.Builder,
+        notificationId: Int
+    ) {
+        data.largeIcon?.let { uri ->
+            Glide.with(context)
+                .asBitmap()
+                .load(uri)
+                .transform(CircleCrop())
+                .into(object : com.bumptech.glide.request.target.CustomTarget<Bitmap>() {
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
+                    ) {
+                        builder.setLargeIcon(resource)
+                        if (ActivityCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            // TODO: Consider calling
+                            //    ActivityCompat#requestPermissions
+                            // here to request the missing permissions, and then overriding
+                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                            //                                          int[] grantResults)
+                            // to handle the case where the user grants the permission. See the documentation
+                            // for ActivityCompat#requestPermissions for more details.
+                            return
+                        }
+
+                        val notificationManager = NotificationManagerCompat.from(context)
+                        notificationManager.notify(notificationId, builder.build())
+                    }
+
+                    override fun onLoadCleared(placeholder: Drawable?) {}
+                })
+        }
+    }
+
+
 }
 
 // Add these to res/values/strings.xml

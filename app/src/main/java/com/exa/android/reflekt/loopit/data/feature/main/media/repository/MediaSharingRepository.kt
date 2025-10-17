@@ -1,0 +1,56 @@
+package com.exa.android.reflekt.loopit.data.feature.main.media.repository
+
+import android.content.Context
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.ChatRepository
+import com.exa.android.reflekt.loopit.data.feature.main.media.api.CloudinaryApi
+import com.exa.android.reflekt.loopit.core.permission.isNetworkAvailable
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import java.io.IOException
+import javax.inject.Inject
+
+class MediaSharingRepository @Inject constructor(
+    private val db: ChatRepository,
+    private val cloudinaryApi: CloudinaryApi,
+    @ApplicationContext private val context : Context
+) {
+
+
+    suspend fun uploadFileToCloudinary(file: File): String? = withContext(Dispatchers.IO) {
+        //Log.d("Storage Cloudinary", "Preparing file for upload: ${file.name}")
+
+//        val retrofit = Retrofit.Builder()
+//            .baseUrl("https://api.cloudinary.com/")
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//
+//        val api = retrofit.create(CloudinaryApi::class.java)
+
+        if(!isNetworkAvailable(context)){
+            throw IOException("No Internet Available")
+        }
+        if (file.length() > 10 * 1024 * 1024) { // 10MB limit
+            throw IOException("File size exceeds 10MB limit")
+        }
+
+        val requestFile = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
+        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+        val uploadPreset = "media_uploads".toRequestBody("text/plain".toMediaTypeOrNull())
+
+        return@withContext try {
+            val response = cloudinaryApi.uploadFile(body, uploadPreset)
+            //Log.d("Storage Cloudinary", "Upload successful: ${response.secure_url}")
+            response.secure_url
+        } catch (e: Exception) {
+            //Log.d("Storage Cloudinary", "Upload failed")
+            // Log.e("Storage Cloudinary", "Upload failed", e)
+            throw e
+        }
+    }
+}

@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -26,8 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
-import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
 
 @Composable
 fun ExperienceCard(

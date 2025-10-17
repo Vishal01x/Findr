@@ -30,10 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.exa.android.reflekt.loopit.presentation.main.Home.component.ImageUsingCoil
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.model.PostType
-import com.exa.android.reflekt.loopit.util.model.User
+import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -236,88 +235,6 @@ fun IconCircleBackground(
             contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.primary
         )
-    }
-}
-
-@Composable
-fun SearchFilter(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onFilterClick: () -> Unit
-) {
-    val primary = Color(0xFF4875E1)
-    val backgroundColor = Color(0x1A4875E1) // 10% opacity → 0x1A
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(45.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(.1f)),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                val focusManager = LocalFocusManager.current
-
-                CompositionLocalProvider(
-                    LocalTextSelectionColors provides TextSelectionColors(
-                        handleColor = MaterialTheme.colorScheme.primary,
-                        backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    )
-                ) {
-                    BasicTextField(
-                        value = query,
-                        onValueChange = onQueryChange,
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onTertiary),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        singleLine = true,
-                        decorationBox = { innerTextField ->
-                            if (query.isEmpty()) {
-                                Text(
-                                    text = "Search project,post, discuss",
-                                    color = Color.Gray,
-                                    fontSize = 14.sp
-                                )
-                            }
-                            innerTextField()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-
-                        )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Box(
-            modifier = Modifier
-                .size(45.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(primary.copy(alpha = 0.1f))
-                .clickable { onFilterClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.FilterAlt,
-                contentDescription = "Filter",
-                tint = primary
-            )
-        }
     }
 }
 

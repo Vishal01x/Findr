@@ -1,10 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.auth
 
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.AuthVM
-import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.showToast
-import android.util.Patterns
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,23 +20,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.data.remote.authentication.vm.LoginEvent
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.LoginEvent
 import com.exa.android.reflekt.R
 import io.getstream.meeting.room.compose.ui.AppColors
 

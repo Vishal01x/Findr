@@ -2,12 +2,11 @@ package com.exa.android.reflekt.loopit.presentation.navigation.component
 
 import android.net.Uri
 import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.util.model.Profile.CollegeInfo
-import com.exa.android.reflekt.loopit.util.model.Profile.ExperienceInfo
-import com.exa.android.reflekt.loopit.util.model.Profile.ExtraActivity
-import com.exa.android.reflekt.loopit.util.model.Profile.ProfileData
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
 import com.google.gson.Gson
-import java.net.URLEncoder
 
 sealed class AuthRoute(val route : String){
     object Login : AuthRoute("login")
@@ -156,7 +155,6 @@ sealed class MeetingRoute(val route: String) {
 
 
 sealed class ChatInfo(val route: String) {
-    object ProfileScreen : ChatInfo("profilee")
     object ChatMedia : ChatInfo("media")
     object ProfileImage : ChatInfo("photo")
     object StarredMessage : ChatInfo("starred")

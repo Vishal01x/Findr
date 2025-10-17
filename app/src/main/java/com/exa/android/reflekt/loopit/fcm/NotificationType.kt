@@ -3,39 +3,6 @@ import android.net.Uri
 import com.exa.android.reflekt.MyApp
 import com.exa.android.reflekt.R
 
-//enum class NotificationType(val channelId: String) {
-//    CHAT_MESSAGE(MyApp.CHANNEL_CHAT),
-//    PROJECT_UPDATE(MyApp.CHANNEL_PROJECTS),
-//    COMMENT(MyApp.CHANNEL_SOCIAL),
-//    PROFILE_VIEW(MyApp.CHANNEL_SOCIAL),
-//    APP_UPDATE(MyApp.CHANNEL_SYSTEM);
-//
-//    companion object {
-//        fun fromString(value: String) = entries.first { it.name == value }
-//    }
-//}
-
-//// NotificationType.kt
-//sealed class NotificationType(val typeName: String) {
-//    object ChatMessage : NotificationType("CHAT_MESSAGE")
-//    object ProjectUpdate : NotificationType("PROJECT_INVITE")
-//    object Comment : NotificationType("COMMENT")
-//    object ProfileView : NotificationType("PROFILE_VIEW")
-//    object AppUpdate : NotificationType("APP_UPDATE")
-//
-//    companion object {
-//        fun fromString(value: String) = when(value) {
-//            "CHAT_MESSAGE" -> ChatMessage
-//            "PROJECT_INVITE" -> ProjectUpdate
-//            "COMMENT" -> Comment
-//            "PROFILE_VIEW" -> ProfileView
-//            "APP_UPDATE" -> AppUpdate
-//            else -> throw IllegalArgumentException("Unknown notification type")
-//        }
-//    }
-//}
-//
-
 enum class NotificationType(
     val channelId: String,
     val defaultTitle: String,

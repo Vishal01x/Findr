@@ -42,10 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.exa.android.reflekt.loopit.data.remote.main.ViewModel.EditProfileViewModel
-import com.exa.android.reflekt.loopit.util.Response
-import com.exa.android.reflekt.loopit.util.model.Profile.ProfileHeaderData
-import com.exa.android.reflekt.loopit.util.showToast
+import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
+import com.exa.android.reflekt.loopit.core.utils.showToast
 import androidx.compose.runtime.derivedStateOf
 
 
