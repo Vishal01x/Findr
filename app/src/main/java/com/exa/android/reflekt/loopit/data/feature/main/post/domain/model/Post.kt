@@ -47,13 +47,26 @@ enum class PostType(
 }
 
 data class Comment(
-    val id: String = "",
-    val text: String = "",
+    @DocumentId val id: String = "",
+    val postId: String = "",
     val senderId: String = "",
     val senderName: String = "",
-    val timestamp: Timestamp = Timestamp.now()
+    val text: String = "",
+    val likesCount : Long = 0,
+    val replyCount: Long = 0,
+    val embeddedReply: Reply? = null, // used for "single reply per comment" approach
+    @ServerTimestamp val timestamp: Timestamp? = null
 )
 
-enum class ReplyType{
-    YOU, OTHER, NEWMESSAGE
-}
+
+// Reply data model that can be used as embedded reply or as a document in a replies subcollection.
+data class Reply(
+    @DocumentId val replyId: String = "",
+    val postId : String = "",
+    val commentId: String = "",
+    val parentReplyId: String? = null, // null for top-level replies; used when enabling nesting
+    val userId: String = "",
+    val userName: String = "",
+    val text: String = "",
+    @ServerTimestamp val timestamp: Timestamp? = null
+)

@@ -967,7 +967,7 @@ private fun MediaAttachmentsSection(
                             ImageThumbnail(
                                 uri = uri,
                                 onRemove = onRemoveImage,
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -991,7 +991,7 @@ private fun MediaAttachmentsSection(
                             UrlChip(
                                 url = url,
                                 onRemove = onRemoveUrl,
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }

@@ -2,7 +2,7 @@ package com.exa.android.reflekt.loopit.fcm
 
 import android.content.Context
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Postt
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.fcm.api.NotificationContent
 import com.exa.android.reflekt.loopit.fcm.api.NotificationSender
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
@@ -36,7 +36,7 @@ fun sendProjectNotification(
     )
 }
 
-fun sendRequestUpdate(context: Context, receiverToken: String?, project : Postt, profile: profileUser, action : String){
+fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, profile: profileUser, action : String){
 
     val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
 
@@ -61,7 +61,7 @@ fun sendRequestUpdate(context: Context, receiverToken: String?, project : Postt,
 }
 
 
-fun sendComment(context: Context, receiverToken: String?, project : Postt, profile: profileUser, comment : String){
+fun sendComment(context: Context, receiverToken: String?, project : Post, profile: profileUser, comment : String){
 
     val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
 
@@ -86,7 +86,7 @@ fun sendComment(context: Context, receiverToken: String?, project : Postt, profi
 }
 
 
-fun sendPostNotification(context: Context, topic:Topics, project: Postt, profile : profileUser){
+fun sendPostNotification(context: Context, topic:Topics, project: Post, profile : profileUser){
 
     val (title, body) = getPostNotificationText(profile.name,project.title,project.type)
 

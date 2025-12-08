@@ -25,7 +25,7 @@ import com.exa.android.reflekt.loopit.presentation.main.post.screen.PostDetailSc
 import com.exa.android.reflekt.loopit.presentation.main.Map.RequestedPersonMapScreen
 import com.exa.android.reflekt.loopit.presentation.main.Map.MapSearchScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
-import com.exa.android.reflekt.loopit.core.network.ProjectListEvent
+import com.exa.android.reflekt.loopit.core.network.PostListEvent
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.ChatMediaScreen
 
 
@@ -137,11 +137,11 @@ fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
             CreatePostScreen(
                 onBack = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                    projectViewModel.onEvent(PostListEvent.Refresh)
                 },
                 onProjectCreated = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                    projectViewModel.onEvent(PostListEvent.Refresh)
                 },
                 viewModel = hiltViewModel(),
                 navController = navController
@@ -154,11 +154,11 @@ fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
                 projectId = projectId,
                 onBack = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                    projectViewModel.onEvent(PostListEvent.Refresh)
                 },
                 onProjectUpdated = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(ProjectListEvent.Refresh)
+                    projectViewModel.onEvent(PostListEvent.Refresh)
                 },
                 viewModel = hiltViewModel(),
                 navController = navController

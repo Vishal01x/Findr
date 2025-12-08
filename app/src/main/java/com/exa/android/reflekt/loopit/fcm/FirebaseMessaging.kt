@@ -23,8 +23,8 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.ChatRepository
-import com.exa.android.reflekt.loopit.core.utils.Constants.FINDR_GROUP_KEY
 import com.exa.android.reflekt.loopit.core.utils.CurChatManager.activeChatId
+import com.exa.android.reflekt.loopit.util.Constants.FINDR_GROUP_KEY
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.messaging.FirebaseMessagingService

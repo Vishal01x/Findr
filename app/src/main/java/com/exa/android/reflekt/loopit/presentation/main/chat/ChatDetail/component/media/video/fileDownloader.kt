@@ -1,7 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.video
 
 import android.content.Context
-import com.exa.android.reflekt.loopit.core.utils.Constants.APP_NAME
+import com.exa.android.reflekt.loopit.util.Constants.APP_NAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

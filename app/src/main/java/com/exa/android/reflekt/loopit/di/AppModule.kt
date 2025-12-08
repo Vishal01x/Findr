@@ -6,8 +6,8 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.Cha
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.feature.main.link_data.icon.api.BrandftechAPI
 import com.exa.android.reflekt.loopit.data.feature.main.media.api.CloudinaryApi
-import com.exa.android.reflekt.loopit.core.utils.Constants.BRANDFTECH_BASE_URL
-import com.exa.android.reflekt.loopit.core.utils.Constants.CLOUDINARY_BASE_URL
+import com.exa.android.reflekt.loopit.util.Constants.BRANDFTECH_BASE_URL
+import com.exa.android.reflekt.loopit.util.Constants.CLOUDINARY_BASE_URL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore

@@ -68,7 +68,7 @@ import com.exa.android.reflekt.loopit.core.utils.formatTimestamp
 import com.exa.android.reflekt.loopit.core.utils.getVibrator
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
-import com.exa.android.reflekt.loopit.util.model.ReplyType
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ReplyType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.UploadStatus
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
 import kotlinx.coroutines.delay
@@ -336,7 +336,7 @@ fun MessageBubble(
                                 curUser = curUserId,
                                 replyTo = it,
                                 members = members,
-                                replyType = if (curUserId == message.senderId)ReplyType.YOU else ReplyType.OTHER
+                                replyType = if (curUserId == message.senderId) ReplyType.YOU else ReplyType.OTHER
                             ) // show replied message inside box
                     }
                 }

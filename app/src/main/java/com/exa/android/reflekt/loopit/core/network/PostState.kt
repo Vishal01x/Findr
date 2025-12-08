@@ -1,11 +1,11 @@
 package com.exa.android.reflekt.loopit.core.network
 
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Postt
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 
 
 data class ProjectListState(
-    val projects: List<Postt> = emptyList(),
+    val projects: List<Post> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val searchQuery: String = "",
@@ -19,20 +19,20 @@ data class ProjectListState(
     val likedProjects: Set<String> = emptySet()
 )
 
-sealed class ProjectListEvent {
-    data class SearchQueryChanged(val query: String) : ProjectListEvent()
-    data class RoleSelected(val role: String) : ProjectListEvent()
-    data class RoleDeselected(val role: String) : ProjectListEvent()
-    data class TagSelected(val tag: String) : ProjectListEvent()
-    data class TagDeselected(val tag: String) : ProjectListEvent()
-    data class DeleteProject(val projectId: String) : ProjectListEvent()
-    object Refresh : ProjectListEvent()
-    object ToggleMyProjects : ProjectListEvent()
-    object ClearFilters : ProjectListEvent()
-    object ClearError : ProjectListEvent()
-    data class SelectPostType(val type: PostType?) : ProjectListEvent()
-    data class ToggleLike(val projectId: String) : ProjectListEvent()
-    data class AddComment(val project : Postt, val text: String) : ProjectListEvent()
-    data class UpdateComment(val projectId: String, val commentId: String, val newText: String) : ProjectListEvent()
-    data class DeleteComment(val projectId: String, val commentId: String) : ProjectListEvent()
+sealed class PostListEvent {
+    data class SearchQueryChanged(val query: String) : PostListEvent()
+    data class RoleSelected(val role: String) : PostListEvent()
+    data class RoleDeselected(val role: String) : PostListEvent()
+    data class TagSelected(val tag: String) : PostListEvent()
+    data class TagDeselected(val tag: String) : PostListEvent()
+    data class DeleteProject(val projectId: String) : PostListEvent()
+    object Refresh : PostListEvent()
+    object ToggleMyProjects : PostListEvent()
+    object ClearFilters : PostListEvent()
+    object ClearError : PostListEvent()
+    data class SelectPostType(val type: PostType?) : PostListEvent()
+    data class ToggleLike(val projectId: String) : PostListEvent()
+    data class AddComment(val project : Post, val text: String) : PostListEvent()
+    data class UpdateComment(val projectId: String, val commentId: String, val newText: String) : PostListEvent()
+    data class DeleteComment(val projectId: String, val commentId: String) : PostListEvent()
 }

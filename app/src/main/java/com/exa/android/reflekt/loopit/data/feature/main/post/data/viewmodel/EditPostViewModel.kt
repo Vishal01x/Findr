@@ -8,7 +8,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.media.repository.MediaSh
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Postt
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.repository.PostRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -79,7 +79,7 @@ class EditProjectViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
-            val result = repository.getProjectById(projectId)
+            val result = repository.getPostById(projectId)
             result.fold(
                 onSuccess = { project ->
                     _state.update {
@@ -142,7 +142,7 @@ class EditProjectViewModel @Inject constructor(
             }
             val finalImageUrls = state.value.existingImageUrls + newUploadedUrls
 
-            val project = Postt(
+            val project = Post(
                 id = currentState.projectId,
                 title = currentState.title,
                 description = currentState.description,

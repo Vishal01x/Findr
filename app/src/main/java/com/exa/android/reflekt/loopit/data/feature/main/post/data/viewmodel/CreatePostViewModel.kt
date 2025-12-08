@@ -10,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.feature.main.media.repository.MediaSharingRepository
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Postt
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.repository.PostRepository
 import com.exa.android.reflekt.loopit.core.network.getOrThrow
 import com.google.firebase.Timestamp
@@ -136,7 +136,7 @@ class CreateProjectViewModel @Inject constructor(
             Timber.d("project", "profile urls: ${_state.value.urls}")
             // Log.d("project", "profile full name: $fullName")
 
-            val project = Postt(
+            val post = Post(
                 id = UUID.randomUUID().toString(),
                 title = _state.value.title.trim(),
                 description = _state.value.description.trim(),
@@ -149,9 +149,9 @@ class CreateProjectViewModel @Inject constructor(
                 imageUrls = imageUrls.filterNotNull(),
                 links = _state.value.urls,
             )
-            Log.d("project", "createProject: $project")
+            Log.d("project", "createProject: $post")
             try {
-                repository.createProject(project, profileResult)
+                repository.createPost(post, profileResult)
                 _state.value = _state.value.copy(
                     isLoading = false,
                     isSuccess = true

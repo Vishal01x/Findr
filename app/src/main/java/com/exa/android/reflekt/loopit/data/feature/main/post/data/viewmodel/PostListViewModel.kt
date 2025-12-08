@@ -1,17 +1,19 @@
 package com.exa.android.reflekt.loopit.data.feature.main.post.data.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.repository.ProfileRepository
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Postt
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.repository.PostRepository
-import com.exa.android.reflekt.loopit.core.network.ProjectListEvent
-import com.exa.android.reflekt.loopit.core.network.ProjectListEvent.SelectPostType
+import com.exa.android.reflekt.loopit.core.network.PostListEvent
+import com.exa.android.reflekt.loopit.core.network.PostListEvent.SelectPostType
 import com.exa.android.reflekt.loopit.core.network.ProjectListState
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -19,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -53,37 +54,37 @@ class PostListViewModel @Inject constructor(
     }
 
 
-    fun onEvent(event: ProjectListEvent) {
+    fun onEvent(event: PostListEvent) {
         when (event) {
-            is ProjectListEvent.SearchQueryChanged -> {
+            is PostListEvent.SearchQueryChanged -> {
                 _state.update { it.copy(searchQuery = event.query) }
                 loadProjects()
             }
-            is ProjectListEvent.RoleSelected -> {
+            is PostListEvent.RoleSelected -> {
                 _state.update { it.copy(
                     selectedRoles = it.selectedRoles + event.role
                 )}
                 loadProjects()
             }
-            is ProjectListEvent.RoleDeselected -> {
+            is PostListEvent.RoleDeselected -> {
                 _state.update { it.copy(
                     selectedRoles = it.selectedRoles - event.role
                 )}
                 loadProjects()
             }
-            is ProjectListEvent.TagSelected -> {
+            is PostListEvent.TagSelected -> {
                 _state.update { it.copy(
                     selectedTags = it.selectedTags + event.tag
                 )}
                 loadProjects()
             }
-            is ProjectListEvent.TagDeselected -> {
+            is PostListEvent.TagDeselected -> {
                 _state.update { it.copy(
                     selectedTags = it.selectedTags - event.tag
                 )}
                 loadProjects()
             }
-            is ProjectListEvent.DeleteProject -> {
+            is PostListEvent.DeleteProject -> {
                 viewModelScope.launch {
                     repository.deleteProject(event.projectId)
                     loadProjects() // Refresh the list after deletion
@@ -93,13 +94,20 @@ class PostListViewModel @Inject constructor(
                 _state.update { it.copy(selectedPostType = event.type) }
                 loadProjects()
             }
-            is ProjectListEvent.AddComment -> {
+
+//            is PostListEvent.GetComment -> {
+//                viewModelScope.launch {
+//                    repository.getComments(event.projectId)
+//                }
+//            }
+
+            is PostListEvent.AddComment -> {
                 viewModelScope.launch {
                     //repository.addComment(event.projectId, comment)
                     addComment(event.project, event.text)
                 }
             }
-            is ProjectListEvent.UpdateComment -> {
+            is PostListEvent.UpdateComment -> {
                 viewModelScope.launch {
                     repository.updateComment(
                         event.projectId,
@@ -108,21 +116,21 @@ class PostListViewModel @Inject constructor(
                     )
                 }
             }
-            is ProjectListEvent.DeleteComment -> {
+            is PostListEvent.DeleteComment -> {
                 viewModelScope.launch {
                     repository.deleteComment(event.projectId, event.commentId)
                 }
             }
-            is ProjectListEvent.ToggleLike -> toggleLike(event.projectId)
-            ProjectListEvent.ToggleMyProjects -> {
+            is PostListEvent.ToggleLike -> toggleLike(event.projectId)
+            PostListEvent.ToggleMyProjects -> {
                 _state.update { it.copy(showMyProjectsOnly = !it.showMyProjectsOnly) }
                 loadProjects()
             }
-            ProjectListEvent.Refresh -> {
+            PostListEvent.Refresh -> {
                 _state.update { it.copy(isRefreshing = true) }
                 loadProjects(forceRefresh = true)
             }
-            ProjectListEvent.ClearFilters -> {
+            PostListEvent.ClearFilters -> {
                 _state.update {
                     it.copy(
                         searchQuery = "",
@@ -132,7 +140,7 @@ class PostListViewModel @Inject constructor(
                 }
                 loadProjects()
             }
-            ProjectListEvent.ClearError -> {
+            PostListEvent.ClearError -> {
                 _state.update { it.copy(error = null) }
             }
         }
@@ -150,7 +158,7 @@ class PostListViewModel @Inject constructor(
 
         projectsJob?.cancel() // Cancel previous listener if exists
         projectsJob = viewModelScope.launch {
-            repository.getProjectsStream(
+            repository.getPostsStream(
                 searchQuery = _state.value.searchQuery,
                 rolesFilter = _state.value.selectedRoles.toList(),
                 tagsFilter = _state.value.selectedTags.toList(),
@@ -217,7 +225,7 @@ class PostListViewModel @Inject constructor(
         }
     }
 
-    fun enrollInProject(project: Postt) {
+    fun enrollInProject(project: Post) {
         auth.currentUser?.uid?.let { userId ->
             _state.update { it.copy(isLoading = true, error = null) }
             viewModelScope.launch {
@@ -247,7 +255,7 @@ class PostListViewModel @Inject constructor(
             }
         }
     }
-    fun acceptJoinRequest(project : Postt, userId: String, userName: String) {
+    fun acceptJoinRequest(project : Post, userId: String, userName: String) {
         _state.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
@@ -262,7 +270,7 @@ class PostListViewModel @Inject constructor(
     }
 
 
-    fun rejectJoinRequest(project: Postt, userId: String) {
+    fun rejectJoinRequest(project: Post, userId: String) {
         _state.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
@@ -275,7 +283,7 @@ class PostListViewModel @Inject constructor(
         }
     }
     // In ProjectListViewModel
-    suspend fun addComment(project : Postt, text: String) {
+    suspend fun addComment(post : Post, text: String) {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             // Fetch user profile to get name
@@ -283,13 +291,14 @@ class PostListViewModel @Inject constructor(
             val userName = profile?.name ?: "Unknown"
 
             val comment = Comment(
-                id = UUID.randomUUID().toString(),
+                postId = post.id,
                 text = text,
                 senderId = currentUser.uid,
-                senderName = userName
+                senderName = userName,
+                timestamp = Timestamp.now()
             )
 
-            repository.addComment(project, curUserProfile.value, comment)
+            repository.addComment(post, curUserProfile.value, comment)
         }
     }
 

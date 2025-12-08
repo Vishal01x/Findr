@@ -68,3 +68,7 @@ data class Status(
     val typingTo: String = ""
 )
 
+
+enum class ReplyType{
+    YOU, OTHER, NEWMESSAGE
+}

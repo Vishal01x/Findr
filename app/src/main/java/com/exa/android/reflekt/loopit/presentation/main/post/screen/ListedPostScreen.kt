@@ -71,7 +71,7 @@ import com.exa.android.reflekt.loopit.presentation.main.post.component.SearchFil
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
 import com.exa.android.reflekt.loopit.presentation.test.AppHeader
-import com.exa.android.reflekt.loopit.core.network.ProjectListEvent
+import com.exa.android.reflekt.loopit.core.network.PostListEvent
 import com.exa.android.reflekt.loopit.core.utils.showToast
 import kotlinx.coroutines.delay
 
@@ -96,7 +96,7 @@ fun ListedPostsScreen(
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = state.isRefreshing,
-        onRefresh = { viewModel.onEvent(ProjectListEvent.Refresh) }
+        onRefresh = { viewModel.onEvent(PostListEvent.Refresh) }
     )
     val currentUserId = viewModel.currentUserId
 
@@ -130,7 +130,7 @@ fun ListedPostsScreen(
     }
 
     BackHandler(enabled = state.showMyProjectsOnly) {
-        viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
+        viewModel.onEvent(PostListEvent.ToggleMyProjects)
     }
 
     Scaffold(
@@ -249,7 +249,7 @@ fun ListedPostsScreen(
         topBar = { AppHeader(state.showMyProjectsOnly, curUserDetails,onNotificationsClick = {
             showToast(context, "No Notifications Yet")
         }, onProfileClick = {
-            viewModel.onEvent(ProjectListEvent.ToggleMyProjects)
+            viewModel.onEvent(PostListEvent.ToggleMyProjects)
             tooltipState.dismiss()
         }) },
         // fab at bottom right
@@ -298,21 +298,21 @@ fun ListedPostsScreen(
                 item {
                     SearchFilterBar(
                         searchQuery = state.searchQuery,
-                        onSearchChange = { viewModel.onEvent(ProjectListEvent.SearchQueryChanged(it)) },
+                        onSearchChange = { viewModel.onEvent(PostListEvent.SearchQueryChanged(it)) },
                         selectedRoles = state.selectedRoles,
                         availableRoles = state.availableRoles,
-                        onRoleSelected = { viewModel.onEvent(ProjectListEvent.RoleSelected(it)) },
-                        onRoleDeselected = { viewModel.onEvent(ProjectListEvent.RoleDeselected(it)) },
+                        onRoleSelected = { viewModel.onEvent(PostListEvent.RoleSelected(it)) },
+                        onRoleDeselected = { viewModel.onEvent(PostListEvent.RoleDeselected(it)) },
                         selectedTags = state.selectedTags,
                         availableTags = state.availableTags,
-                        onTagSelected = { viewModel.onEvent(ProjectListEvent.TagSelected(it)) },
-                        onTagDeselected = { viewModel.onEvent(ProjectListEvent.TagDeselected(it)) },
+                        onTagSelected = { viewModel.onEvent(PostListEvent.TagSelected(it)) },
+                        onTagDeselected = { viewModel.onEvent(PostListEvent.TagDeselected(it)) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
                         selectedPostType = state.selectedPostType,
                         onTypeSelected = { type ->
-                            viewModel.onEvent(ProjectListEvent.SelectPostType(type))
+                            viewModel.onEvent(PostListEvent.SelectPostType(type))
                         },
                         onAddClick = {
                             navController.navigate(ProjectRoute.CreateProject.route)
@@ -371,7 +371,7 @@ fun ListedPostsScreen(
                                 hasFilters = state.searchQuery.isNotBlank() ||
                                         state.selectedRoles.isNotEmpty() ||
                                         state.selectedTags.isNotEmpty(),
-                                onClearFilters = { viewModel.onEvent(ProjectListEvent.ClearFilters) }
+                                onClearFilters = { viewModel.onEvent(PostListEvent.ClearFilters) }
                             )
                         }
                     }
@@ -385,12 +385,12 @@ fun ListedPostsScreen(
                             if( state.showMyProjectsOnly  || currentUserId != project.createdBy) {
 
                                 PostCard(
-                                    project = project,
+                                    post = project,
                                     onClick = { navController.navigate("project_detail/${project.id}") },
                                     isEditable = state.showMyProjectsOnly,
                                     onDelete = {
                                         viewModel.onEvent(
-                                            ProjectListEvent.DeleteProject(
+                                            PostListEvent.DeleteProject(
                                                 project.id
                                             )
                                         )
@@ -409,7 +409,7 @@ fun ListedPostsScreen(
                                     },
                                     currentUserId = FirebaseAuth.getInstance().currentUser?.uid,
                                     modifier = Modifier
-                                        .animateItemPlacement()
+                                        .animateItem()
                                         .fillMaxWidth()
                                         .clipToBounds(),
                                     onAuthorProfileClick = { autherId ->
@@ -420,7 +420,7 @@ fun ListedPostsScreen(
                                         )
                                     },
                                     onToggleLike = { projectId ->
-                                        viewModel.onEvent(ProjectListEvent.ToggleLike(projectId))
+                                        viewModel.onEvent(PostListEvent.ToggleLike(projectId))
                                     },
                                     onCommentEvent = { event ->
                                         viewModel.onEvent(event)
@@ -606,11 +606,13 @@ private fun UserCommentPreview(
                     Icon(Icons.Filled.Delete, "Delete")
                 }
             }
-            Text(
-                text = comment.timestamp.toDate().formatAsTimeAgo(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            comment.timestamp?.toDate()?.let {
+                Text(
+                    text = it.formatAsTimeAgo(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

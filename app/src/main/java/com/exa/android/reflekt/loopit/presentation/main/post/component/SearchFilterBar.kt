@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -102,6 +103,7 @@ import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.SuggestionChip
@@ -131,12 +133,13 @@ import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Postt
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.presentation.test.DarkGray
 import com.exa.android.reflekt.loopit.presentation.test.InfoTag
 import com.exa.android.reflekt.loopit.core.network.Response
-import com.exa.android.reflekt.loopit.core.network.ProjectListEvent
+import com.exa.android.reflekt.loopit.core.network.PostListEvent
+import com.exa.android.reflekt.loopit.data.feature.main.post.data.viewmodel.CommentsViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
@@ -799,7 +802,7 @@ private fun UserAvatar(name: String, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PostCard(
-    project: Postt,
+    post: Post,
     onClick: () -> Unit,
     isEditable: Boolean = false,
     onDelete: (() -> Unit)? = null,
@@ -812,7 +815,7 @@ fun PostCard(
     currentUserId: String?,
     onAuthorProfileClick: (String) -> Unit,
     onToggleLike: (String) -> Unit, // Added like handler
-    onCommentEvent: (ProjectListEvent) -> Unit,
+    onCommentEvent: (PostListEvent) -> Unit,
     modifier: Modifier = Modifier,
     userViewModel: UserViewModel = hiltViewModel()
 ) {
@@ -823,8 +826,8 @@ fun PostCard(
     var expandedEnrolled by remember { mutableStateOf(false) }
     var expandedComments by remember { mutableStateOf(false) }
 
-    var isEnrolled by remember(project) {
-        mutableStateOf(currentUserId?.let { project.requestedPersons.containsKey(it) } ?: false)
+    var isEnrolled by remember(post) {
+        mutableStateOf(currentUserId?.let { post.requestedPersons.containsKey(it) } ?: false)
     }
     val interactionSource = remember { MutableInteractionSource() }
     val cardElevation by animateDpAsState(
@@ -837,18 +840,18 @@ fun PostCard(
     val typography = MaterialTheme.typography
     val colors = MaterialTheme.colorScheme
 
-    val postType = remember(project.type) {
-        PostType.entries.find { it.displayName == project.type } ?: PostType.OTHER
+    val postType = remember(post.type) {
+        PostType.entries.find { it.displayName == post.type } ?: PostType.OTHER
     }
 
     val showEnroll =
-        !isEditable && currentUserId != null && currentUserId != project.createdBy && project.type != PostType.OTHER.displayName && project.type != PostType.POST.displayName
+        !isEditable && currentUserId != null && currentUserId != post.createdBy && post.type != PostType.OTHER.displayName && post.type != PostType.POST.displayName
 
     val curUserDetailsMap by userViewModel.userDetail.collectAsState()
-    val curUserDetails = curUserDetailsMap[project.createdBy]
+    val curUserDetails = curUserDetailsMap[post.createdBy]
 
-    LaunchedEffect(project.createdBy) {
-        userViewModel.getUserDetail(project.createdBy)
+    LaunchedEffect(post.createdBy) {
+        userViewModel.getUserDetail(post.createdBy)
     }
 
     if (showDeleteDialog) {
@@ -900,7 +903,7 @@ fun PostCard(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { onAuthorProfileClick(project.createdBy) }) {
+                modifier = Modifier.clickable { onAuthorProfileClick(post.createdBy) }) {
                 val data = (curUserDetails as? Response.Success)?.data
                 val imageUrl = data?.profilePicture
 
@@ -911,11 +914,11 @@ fun PostCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .clickable { onAuthorProfileClick(project.createdBy) }
+                            .clickable { onAuthorProfileClick(post.createdBy) }
                     )
                 } else {
                     UserAvatar(
-                        name = project.createdByName,
+                        name = post.createdByName,
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -924,7 +927,7 @@ fun PostCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = project.createdByName,
+                        text = post.createdByName,
                         style = typography.labelLarge,
                         color = colors.onTertiary,
                         fontWeight = FontWeight.Medium
@@ -941,7 +944,7 @@ fun PostCard(
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        project.createdAt?.toDate()?.let { date ->
+                        post.createdAt?.toDate()?.let { date ->
                             Text(
                                 text = date.formatAsTimeAgo(),
                                 style = typography.labelMedium,
@@ -953,7 +956,7 @@ fun PostCard(
 
                 Spacer(Modifier.weight(1f))
 
-                InfoTag(project.type)
+                InfoTag(post.type)
             }
 
             Spacer(Modifier.height(4.dp))
@@ -965,7 +968,7 @@ fun PostCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = project.title,
+                    text = post.title,
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-0.02).em
@@ -1008,13 +1011,13 @@ fun PostCard(
 
             // Description
             var showFullDescription by remember { mutableStateOf(false) }
-            if (project.description.isNotEmpty()) {
+            if (post.description.isNotEmpty()) {
                 Column {
                     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
                     var maxLines by remember { mutableStateOf(3) }
 
                     Text(
-                        text = project.description,
+                        text = post.description,
                         style = typography.bodyLarge,
                         color = colors.onSurface,
                         maxLines = maxLines,
@@ -1033,14 +1036,14 @@ fun PostCard(
                 }
                 Spacer(modifier = Modifier.height(20.dp))
             }
-            if (project.imageUrls.isNotEmpty()) {
-                ImageCarousel(project.imageUrls)
+            if (post.imageUrls.isNotEmpty()) {
+                ImageCarousel(post.imageUrls)
             }
-            if (project.rolesNeeded.isNotEmpty()) {
+            if (post.rolesNeeded.isNotEmpty()) {
                 // Roles Section
                 ExpandableSection(
                     icon = Icons.Filled.Group,
-                    title = "Roles Needed (${project.rolesNeeded.size})",
+                    title = "Roles Needed (${post.rolesNeeded.size})",
                     expanded = expandedRoles,
                     onExpandChange = { expandedRoles = it },
                     content = {
@@ -1048,7 +1051,7 @@ fun PostCard(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            project.rolesNeeded.forEach { role ->
+                            post.rolesNeeded.forEach { role ->
                                 RoleChip(role = role)
                             }
                         }
@@ -1057,11 +1060,11 @@ fun PostCard(
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            if (project.tags.isNotEmpty()) {
+            if (post.tags.isNotEmpty()) {
                 // Tags Section
                 ExpandableSection(
                     icon = Icons.Filled.Tag,
-                    title = "Tags (${project.tags.size})",
+                    title = "Tags (${post.tags.size})",
                     expanded = expandedTags,
                     onExpandChange = { expandedTags = it },
                     content = {
@@ -1069,7 +1072,7 @@ fun PostCard(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            project.tags.forEach { tag ->
+                            post.tags.forEach { tag ->
                                 TagChip(tag = tag)
                             }
                         }
@@ -1079,7 +1082,7 @@ fun PostCard(
             }
 
             // Requested Members Section
-            if (isEditable && project.requestedPersons.isNotEmpty()) {
+            if (isEditable && post.requestedPersons.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Column {
                     Row(
@@ -1096,7 +1099,7 @@ fun PostCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Join Requests (${project.requestedPersons.size})",
+                            text = "Join Requests (${post.requestedPersons.size})",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1117,7 +1120,7 @@ fun PostCard(
                         Column(
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            project.requestedPersons.forEach { (userId, userName) ->
+                            post.requestedPersons.forEach { (userId, userName) ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1177,8 +1180,8 @@ fun PostCard(
                             }
                             FilledTonalButton(
                                 onClick = {
-                                    if (project.requestedPersons.isNotEmpty()) {
-                                        onViewOnMap(project.requestedPersons.keys.toList())
+                                    if (post.requestedPersons.isNotEmpty()) {
+                                        onViewOnMap(post.requestedPersons.keys.toList())
                                     } else {
                                         Toast.makeText(
                                             context,
@@ -1187,7 +1190,7 @@ fun PostCard(
                                         ).show()
                                     }
                                 },
-                                enabled = project.requestedPersons.isNotEmpty(),
+                                enabled = post.requestedPersons.isNotEmpty(),
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1196,7 +1199,7 @@ fun PostCard(
                                 ),
                                 border = BorderStroke(
                                     1.dp,
-                                    if (project.requestedPersons.isNotEmpty())
+                                    if (post.requestedPersons.isNotEmpty())
                                         MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
                                     else
                                         MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
@@ -1216,7 +1219,7 @@ fun PostCard(
                 }
             }
 
-            if (isEditable && project.enrolledPersons.isNotEmpty()) {
+            if (isEditable && post.enrolledPersons.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Column {
                     Row(
@@ -1233,7 +1236,7 @@ fun PostCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Team Members (${project.enrolledPersons.size})",
+                            text = "Team Members (${post.enrolledPersons.size})",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1254,7 +1257,7 @@ fun PostCard(
                         Column(
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            project.enrolledPersons.forEach { (userId, userName) ->
+                            post.enrolledPersons.forEach { (userId, userName) ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1288,7 +1291,7 @@ fun PostCard(
                                             text = userName,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
-                                        if (userId == project.createdBy) {
+                                        if (userId == post.createdBy) {
                                             Text(
                                                 text = "Creator",
                                                 style = MaterialTheme.typography.labelSmall,
@@ -1352,9 +1355,9 @@ fun PostCard(
                     // Like Button
                     if(!showEnroll) {
                         LikeButton(
-                            isLiked = project.likes.contains(currentUserId),
-                            likes = project.likes.size,
-                            onLike = { onToggleLike(project.id) },
+                            isLiked = post.likes.contains(currentUserId),
+                            likes = post.likes.size,
+                            onLike = { onToggleLike(post.id) },
                             modifier = Modifier.padding(4.dp)
                         )
                     }
@@ -1456,7 +1459,7 @@ fun PostCard(
                     .fillMaxWidth()
             ) {
                 CommentPreviewSection(
-                    project = project,
+                    post = post,
                     currentUserId = currentUserId,
                     onCommentEvent = onCommentEvent,
                     onProfileClick = {Id->
@@ -1472,13 +1475,24 @@ fun PostCard(
 
 @Composable
 fun CommentPreviewSection(
-    project: Project,
+    post: Post,
     currentUserId: String?,
-    onCommentEvent: (ProjectListEvent) -> Unit,
+    onCommentEvent: (PostListEvent) -> Unit,
     onProfileClick : (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val allComments = remember(project.comments) { project.comments.reversed() }
+
+    val viewModel: CommentsViewModel = hiltViewModel()
+
+    val comments by viewModel.comments.collectAsState()
+    val loading by viewModel.loading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    LaunchedEffect (post.id){
+        viewModel.loadComments(post.id)
+    }
+
+    val allComments = remember(post.comments) { post.comments.reversed() }
     var visibleCommentCount by remember { mutableIntStateOf(3) }
 
     Column(
@@ -1495,8 +1509,8 @@ fun CommentPreviewSection(
             onSubmit = { text ->
                 if (text.isNotBlank()) {
                     onCommentEvent(
-                        ProjectListEvent.AddComment(
-                            project,
+                        PostListEvent.AddComment(
+                            post,
                             text
                         )
                     )
@@ -1505,7 +1519,7 @@ fun CommentPreviewSection(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        if (allComments.isNotEmpty()) {
+        if (comments.isNotEmpty()) {
             Text(
                 text = "Comments",
                 style = MaterialTheme.typography.labelLarge,
@@ -1513,7 +1527,7 @@ fun CommentPreviewSection(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Replace Column with LazyColumn for proper scrolling
+            /*// Replace Column with LazyColumn for proper scrolling
             LazyColumn(
                 modifier = Modifier.heightIn(max = 200.dp) // Set max height
             ) {
@@ -1525,8 +1539,8 @@ fun CommentPreviewSection(
                         currentUserId = currentUserId,
                         onEdit = { newText ->
                             onCommentEvent(
-                                ProjectListEvent.UpdateComment(
-                                    project.id,
+                                PostListEvent.UpdateComment(
+                                    post.id,
                                     comment.id,
                                     newText
                                 )
@@ -1534,8 +1548,8 @@ fun CommentPreviewSection(
                         },
                         onDelete = {
                             onCommentEvent(
-                                ProjectListEvent.DeleteComment(
-                                    project.id,
+                                PostListEvent.DeleteComment(
+                                    post.id,
                                     comment.id
                                 )
                             )
@@ -1556,7 +1570,60 @@ fun CommentPreviewSection(
                         }
                     }
                 }
+            }*/
+
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(comments) { index, comment ->
+                        CommentItem(
+                            comment = comment,
+                            currentUserId = currentUserId,
+                            onEdit = { newText ->
+                                onCommentEvent(
+                                    PostListEvent.UpdateComment(
+                                        post.id,
+                                        comment.id,
+                                        newText
+                                    )
+                                )
+                            },
+                            onDelete = {
+                                onCommentEvent(
+                                    PostListEvent.DeleteComment(
+                                        post.id,
+                                        comment.id
+                                    )
+                                )
+                            },
+                            onProfileClick = onProfileClick
+                        )
+                        Divider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            thickness = 0.5.dp
+                        )
+
+                        // Load next page automatically when near the end
+                        if (index >= comments.lastIndex - 3) {
+                            viewModel.loadNextPage(postId = post.id)
+                        }
+                    }
+                }
+
+                if (loading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                error?.let { msg ->
+                    Text(
+                        text = msg,
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
+
         }
 //        else {
 //            Text(
@@ -1684,11 +1751,13 @@ fun CommentItem(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = comment.timestamp.toDate().formatAsTimeAgo(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                comment.timestamp?.toDate()?.formatAsTimeAgo()?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Text(
@@ -2116,7 +2185,7 @@ private fun Date.formatAsTimeAgo(): String {
 @Preview(showBackground = true, device = Devices.PIXEL_4)
 @Composable
 fun ProjectCardPreview() {
-    val sampleProject = Project(
+    val sampleProject = Post(
         id = "1",
         title = "Sample Project Title",
         description = "This is a sample project description that should be long enough to demonstrate the read more functionality in the preview.",
@@ -2131,7 +2200,7 @@ fun ProjectCardPreview() {
 
     MaterialTheme {
         PostCard(
-            project = sampleProject,
+            post = sampleProject,
             onClick = {},
             isEditable = true,
             onDelete = {},
@@ -2154,7 +2223,7 @@ fun ProjectCardPreview() {
 @Preview(showBackground = true, device = Devices.PIXEL_4, name = "Non-Editable Preview")
 @Composable
 fun ProjectCardNonEditablePreview() {
-    val sampleProject = Project(
+    val sampleProject = Post(
         id = "2",
         title = "Another Project",
         description = "Shorter description for non-editable preview",
@@ -2169,7 +2238,7 @@ fun ProjectCardNonEditablePreview() {
 
     MaterialTheme {
         PostCard(
-            project = sampleProject,
+            post = sampleProject,
             onClick = {},
             isEditable = false,
             onEnroll = {},

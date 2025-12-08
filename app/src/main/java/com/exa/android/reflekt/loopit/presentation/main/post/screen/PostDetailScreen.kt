@@ -125,7 +125,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Commen
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
-import com.exa.android.reflekt.loopit.core.network.ProjectListEvent
+import com.exa.android.reflekt.loopit.core.network.PostListEvent
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -204,7 +204,7 @@ fun PostDetailScreen(
 
     LaunchedEffect(projectId) {
         if (state.projects.none { it.id == projectId }) {
-            viewModel.onEvent(ProjectListEvent.Refresh)
+            viewModel.onEvent(PostListEvent.Refresh)
         }
     }
 
@@ -571,7 +571,7 @@ private fun ProjectContentSection(
                 project = project,
                 onEdit = { navController.navigate("edit_project/${project.id}") },
                 onDelete = {
-                    viewModel.onEvent(ProjectListEvent.DeleteProject(project.id))
+                    viewModel.onEvent(PostListEvent.DeleteProject(project.id))
                     navController.popBackStack()
                 }
             )
@@ -1467,11 +1467,13 @@ private fun CommentItem(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            Text(
-                text = comment.timestamp.toDate().formatAsTimeAgo(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
+            comment.timestamp?.toDate()?.let {
+                Text(
+                    text = it.formatAsTimeAgo(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
         }
     }
 

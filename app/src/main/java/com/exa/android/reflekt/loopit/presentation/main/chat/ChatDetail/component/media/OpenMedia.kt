@@ -13,8 +13,8 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.exa.android.reflekt.loopit.core.utils.Constants.APP_NAME
-import com.exa.android.reflekt.loopit.core.utils.Constants.CAMERA_REQUEST_CODE
+import com.exa.android.reflekt.loopit.util.Constants.APP_NAME
+import com.exa.android.reflekt.loopit.util.Constants.CAMERA_REQUEST_CODE
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date

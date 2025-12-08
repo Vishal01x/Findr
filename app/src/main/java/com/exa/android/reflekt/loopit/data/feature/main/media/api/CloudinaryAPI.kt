@@ -1,6 +1,6 @@
 package com.exa.android.reflekt.loopit.data.feature.main.media.api
 
-import com.exa.android.reflekt.loopit.core.utils.Constants.CLOUDINARY_NAME
+import com.exa.android.reflekt.loopit.util.Constants.CLOUDINARY_NAME
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Multipart

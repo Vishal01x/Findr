@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.exa.android.reflekt"
-    compileSdk = 35
+    compileSdk = 36
     // Add this line to enable legacy Apache HTTP support
     //useLibrary("org.apache.http.legacy")
 
@@ -99,19 +99,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation ("androidx.compose.foundation:foundation:1.7.8")
-    implementation ("androidx.compose.material3:material3:1.3.2")
+    implementation (libs.androidx.compose.foundation)
+    implementation (libs.androidx.compose.material3)
 
-    implementation ("androidx.compose.material:material:1.7.8")
+    implementation (libs.androidx.compose.material)
 
     // system ui
-    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
-    implementation ("com.google.accompanist:accompanist-pager:0.28.0")
-    implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
+    implementation (libs.accompanist.systemuicontroller)
+    implementation (libs.accompanist.pager)
+    implementation (libs.accompanist.pager.indicators)
 
     //datastore
-    implementation("androidx.datastore:datastore-preferences:1.1.5")
-    implementation("androidx.datastore:datastore-preferences-core:1.1.6")
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
 
     // Stream Video SDK
 //    implementation(libs.stream.video.ui.compose)
@@ -123,24 +123,24 @@ dependencies {
     //coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     //Hilt
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
 
     // hilt Navigation
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation(libs.androidx.hilt.navigation.compose)
 
     //coil
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("io.coil-kt:coil-svg:2.4.0")
+    implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
 
     // HTML parsing
-    implementation("org.jsoup:jsoup:1.17.2")
+    implementation(libs.jsoup)
 
-    implementation("androidx.room:room-runtime:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.gson)
 
     // map
     implementation("com.google.maps.android:maps-compose:6.4.1")
@@ -153,7 +153,7 @@ dependencies {
     // image
     implementation(libs.glide)
     implementation(libs.landscapist.glide)
-    kapt("com.github.bumptech.glide:compiler:4.16.0")
+    kapt("com.github.bumptech.glide:compiler:5.0.5")
 
 
     implementation("com.google.android.libraries.places:places:3.4.0")

@@ -64,7 +64,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.User
 import com.exa.android.reflekt.loopit.core.utils.AudioWaveForm
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
-import com.exa.android.reflekt.loopit.util.model.ReplyType
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ReplyType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
