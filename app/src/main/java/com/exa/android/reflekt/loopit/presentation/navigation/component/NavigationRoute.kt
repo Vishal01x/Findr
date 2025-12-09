@@ -27,6 +27,7 @@ sealed class MainRoute(val route : String){
     object Setting : MainRoute("setting")
     object Map : MainRoute("map_graph")
     object Project : MainRoute("project_graph")
+    object Placement : MainRoute("placement_graph")
     object Photo : MainRoute("photo")
     companion object{
         const val ROOT="main_app"
@@ -139,6 +140,17 @@ sealed class ProjectRoute(val route: String) {
                 append("/$arg")
             }
         }
+    }
+}
+
+sealed class PlacementRoute(val route: String) {
+    object Timeline : PlacementRoute("placement_timeline")
+    object ReviewDetail : PlacementRoute("review_detail/{reviewId}") {
+        fun createRoute(reviewId: String): String = "review_detail/$reviewId"
+    }
+    object SubmitReview : PlacementRoute("submit_review")
+    object CompanyDetail : PlacementRoute("company_detail/{companyName}") {
+        fun createRoute(companyName: String): String = "company_detail/$companyName"
     }
 }
 

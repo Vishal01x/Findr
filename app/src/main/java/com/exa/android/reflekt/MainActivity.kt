@@ -162,7 +162,7 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.FOREGROUND_SERVICE
         )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             requiredPermissions.add(Manifest.permission.FOREGROUND_SERVICE_LOCATION)
         }
 
@@ -202,7 +202,7 @@ class MainActivity : ComponentActivity() {
             .setTitle("Location Permission Needed")
             .setMessage("This app needs location permissions to provide location-based services")
             .setPositiveButton("OK") { _, _ ->
-                val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.FOREGROUND_SERVICE,

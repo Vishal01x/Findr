@@ -40,6 +40,7 @@ fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostContr
         homeNavGraph(navController)
         mapNavGraph(navController, locationViewModel)
         projectNavGraph(navController)
+        placementNavGraph(navController)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
     }

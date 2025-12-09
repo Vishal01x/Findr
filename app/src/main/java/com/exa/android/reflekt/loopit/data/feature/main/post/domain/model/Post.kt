@@ -47,7 +47,7 @@ enum class PostType(
 }
 
 data class Comment(
-    @DocumentId val id: String = "",
+    val id: String = "",
     val postId: String = "",
     val senderId: String = "",
     val senderName: String = "",

@@ -50,7 +50,9 @@ fun AppNavigation(
             if (currentDestination == HomeRoute.ChatList.route ||
                 currentDestination == ProfileRoute.UserProfile.route ||
                 currentDestination == MapInfo.MapScreen.route ||
-                currentDestination == ProjectRoute.ProjectList.route
+                currentDestination == ProjectRoute.ProjectList.route ||
+                currentDestination == "placement_timeline" ||
+                currentDestination == "submit_review"
             ) {
 
                 val chatViewModel : ChatViewModel = hiltViewModel()

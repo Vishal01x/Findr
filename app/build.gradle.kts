@@ -99,19 +99,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation (libs.androidx.compose.foundation)
-    implementation (libs.androidx.compose.material3)
+    implementation ("androidx.compose.foundation:foundation:1.7.8")
+    implementation ("androidx.compose.material3:material3:1.3.2")
 
-    implementation (libs.androidx.compose.material)
+    implementation ("androidx.compose.material:material:1.7.8")
 
     // system ui
-    implementation (libs.accompanist.systemuicontroller)
-    implementation (libs.accompanist.pager)
-    implementation (libs.accompanist.pager.indicators)
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation ("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
     //datastore
-    implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.datastore.preferences.core)
+    implementation("androidx.datastore:datastore-preferences:1.1.5")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.6")
 
     // Stream Video SDK
 //    implementation(libs.stream.video.ui.compose)
@@ -123,24 +123,25 @@ dependencies {
     //coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     //Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+
 
     // hilt Navigation
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     //coil
-    implementation(libs.coil.compose)
-    implementation(libs.coil.svg)
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-svg:2.4.0")
 
     // HTML parsing
-    implementation(libs.jsoup)
+    implementation("org.jsoup:jsoup:1.17.2")
 
-    implementation(libs.androidx.room.runtime)
-    kapt(libs.androidx.room.compiler)
-    implementation(libs.androidx.room.ktx)
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
 
-    implementation(libs.gson)
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // map
     implementation("com.google.maps.android:maps-compose:6.4.1")

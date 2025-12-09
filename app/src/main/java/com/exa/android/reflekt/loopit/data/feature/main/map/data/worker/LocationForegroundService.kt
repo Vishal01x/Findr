@@ -50,6 +50,14 @@ class LocationForegroundService : Service() {
 
     @SuppressLint("ForegroundServiceType")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check permissions BEFORE calling startForeground to prevent SecurityException on Android 15
+        if (!hasRequiredPermissions()) {
+            Timber.tag("LocationService").e("Missing required permissions, cannot start foreground service")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        userId = intent?.getStringExtra(EXTRA_USER_ID)
 
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -57,26 +65,27 @@ class LocationForegroundService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
-        userId = intent?.getStringExtra(EXTRA_USER_ID)
-
-        if (!hasRequiredPermissions()) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
 
         startLocationUpdates()
-
 
         return START_STICKY
     }
     private fun hasRequiredPermissions(): Boolean {
-        return ContextCompat.checkSelfPermission(
+        val hasLocationPermission = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.FOREGROUND_SERVICE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+        
+        val hasForegroundServicePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.FOREGROUND_SERVICE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Not required on older versions
+        }
+        
+        return hasLocationPermission && hasForegroundServicePermission
     }
 
     private fun createNotificationChannel() {
@@ -145,6 +154,26 @@ class LocationForegroundService : Service() {
         const val EXTRA_USER_ID = "extra_user_id"
 
         fun startService(context: Context, userId: String) {
+            // Validate permissions before starting service
+            val hasLocationPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            
+            val hasForegroundServicePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.FOREGROUND_SERVICE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+            
+            if (!hasLocationPermission || !hasForegroundServicePermission) {
+                Timber.tag("LocationService").w("Cannot start service: missing required permissions")
+                return
+            }
+            
             val intent = Intent(context, LocationForegroundService::class.java).apply {
                 putExtra(EXTRA_USER_ID, userId)
             }

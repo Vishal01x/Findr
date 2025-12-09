@@ -38,6 +38,8 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.NavigationBar
@@ -71,6 +73,12 @@ fun CustomBottomNavigationBar(
             iconSelected = Icons.Filled.MyLocation,
             iconUnselected = Icons.Outlined.MyLocation,
             label = "Map"
+        ),
+        BottomNavItem(
+            route = MainRoute.Placement.route,
+            iconSelected = Icons.Filled.Work,
+            iconUnselected = Icons.Outlined.Work,
+            label = "Placements"
         ),
         BottomNavItem(
             route = HomeRoute.ChatList.route,
@@ -229,6 +237,12 @@ fun BottomBar(navController: NavController, viewModel: ChatViewModel) {
             iconSelected = Icons.Filled.MyLocation,
             iconUnselected = Icons.Outlined.MyLocation,
             label = "Map"
+        ),
+        BottomNavItem(
+            route = MainRoute.Placement.route,
+            iconSelected = Icons.Filled.Work,
+            iconUnselected = Icons.Outlined.Work,
+            label = "Placements"
         ),
         BottomNavItem(
             route = HomeRoute.ChatList.route,

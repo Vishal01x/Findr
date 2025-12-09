@@ -18,13 +18,41 @@ class PreferenceHelper @Inject constructor(context: Context) {
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
 
-        sharedPreferences = EncryptedSharedPreferences.create(
-            context,
-            "secure_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        sharedPreferences = try {
+            EncryptedSharedPreferences.create(
+                context,
+                "secure_prefs",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            // Handle corrupted encrypted preferences (common after app reinstall or keystore reset)
+            // Delete the corrupted file and recreate
+            when (e) {
+                is java.security.GeneralSecurityException,
+                is javax.crypto.AEADBadTagException -> {
+                    // Delete corrupted preferences file
+                    context.getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .clear()
+                        .commit()
+                    
+                    // Delete the actual encrypted file
+                    context.deleteSharedPreferences("secure_prefs")
+                    
+                    // Recreate with fresh encryption
+                    EncryptedSharedPreferences.create(
+                        context,
+                        "secure_prefs",
+                        masterKey,
+                        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                    )
+                }
+                else -> throw e
+            }
+        }
     }
 
     fun saveUserId(userId: String) {
