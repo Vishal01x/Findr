@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Findr</string>
+    <!-- TODO: Replace with your OAuth 2.0 Web Client ID from Firebase Console -->
+    <!-- Go to Firebase Console > Authentication > Sign-in method > Google > Web Client ID -->
+    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID_HERE</string>
 
     <string name="stream_video">Stream Video</string>
     <string name="PLACE_API_KEY">"AIzaSyAG71oZoh5EI4bfro8Kct2wySMflLwOR6k"</string>

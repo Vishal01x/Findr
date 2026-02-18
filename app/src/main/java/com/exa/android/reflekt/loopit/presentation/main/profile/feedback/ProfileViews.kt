@@ -42,7 +42,7 @@ fun ProfileViews(userId: String?, viewModel: EditProfileViewModel) {
             elevation = CardDefaults.cardElevation(4.dp),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
+            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
         ) {
             Column(Modifier.padding(16.dp)) {
                 // Title + Edit Icon
@@ -54,7 +54,7 @@ fun ProfileViews(userId: String?, viewModel: EditProfileViewModel) {
                         text = "Profile Views",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onTertiary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
 

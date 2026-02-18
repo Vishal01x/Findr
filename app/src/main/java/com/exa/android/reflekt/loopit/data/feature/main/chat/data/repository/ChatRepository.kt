@@ -106,7 +106,7 @@ class ChatRepository @Inject constructor(
     ): String? {
         val userId1 = auth.currentUser?.uid ?: return null
         val chatId = generateChatId(userId1, userId2)
-       // val curUserFcm = userRepository.getUserFcm(currentUser!!)
+        // val curUserFcm = userRepository.getUserFcm(currentUser!!)
         val finalMessageId = messageId ?: UUID.randomUUID().toString()
 
         val members = if (isCurUserBlocked) listOf(userId1) else listOf(userId1, userId2)
@@ -348,7 +348,7 @@ class ChatRepository @Inject constructor(
         }
     }
 
-     fun updateUnreadMessages(chatId: String) {
+    fun updateUnreadMessages(chatId: String) {
         chatCollection.document(chatId).update("unreadMessages.$currentUser", 0)
     }
 
@@ -828,4 +828,3 @@ class ChatRepository @Inject constructor(
         }
     }
 }
-

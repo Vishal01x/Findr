@@ -1,6 +1,5 @@
 package com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail
 
-import android.app.Activity
 import android.content.Context
 import android.net.Uri
 //import android.util.Log
@@ -31,17 +30,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
-import androidx.core.graphics.ColorUtils
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -241,36 +235,6 @@ fun DetailChat(
     }
 
 
-    val view = LocalView.current
-    val window = (view.context as Activity).window
-    val insetsController = WindowCompat.getInsetsController(window, view)
-
-    // Remember original colors to restore later
-    val originalStatusBarColor = remember { window.statusBarColor }
-    val originalNavigationBarColor = remember { window.navigationBarColor }
-
-    val statusBarColor = MaterialTheme.colorScheme.tertiary.toArgb()
-    val navigationBarColor = MaterialTheme.colorScheme.onTertiary.toArgb()
-    val contentColor = MaterialTheme.colorScheme.onTertiary.toArgb()
-
-    DisposableEffect(Unit) {
-        // Set custom colors when entering
-        window.statusBarColor = statusBarColor
-        window.navigationBarColor = navigationBarColor
-        insetsController.isAppearanceLightStatusBars = true // Dark icons for light color
-        insetsController.isAppearanceLightNavigationBars = true // Light icons for dark background
-
-        onDispose {
-            // Restore original colors when leaving
-            window.statusBarColor = originalStatusBarColor
-            window.navigationBarColor = originalNavigationBarColor
-            insetsController.isAppearanceLightStatusBars =
-                ColorUtils.calculateLuminance(originalStatusBarColor) > 0.5
-
-            insetsController.isAppearanceLightNavigationBars =
-                ColorUtils.calculateLuminance(originalNavigationBarColor) > 0.5
-        }
-    }
 
     //if (showMediaPickerSheet) {
     MediaPickerHandler(
@@ -294,6 +258,7 @@ fun DetailChat(
 
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             ChatHeader(
                 otherUserDetail.value, userStatus, curUserId, selectedMessages,
@@ -416,7 +381,7 @@ fun DetailChat(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
             val otherUser = otherUserDetail.value

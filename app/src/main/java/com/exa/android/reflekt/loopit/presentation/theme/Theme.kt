@@ -20,54 +20,138 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
-// Light Color Scheme (Updated)
+//// Light Color Scheme (Updated)
+//private val LightColorScheme = lightColorScheme(
+//  primary = Color(0xFF4875E1),
+//  onPrimary = Color.White,
+//  secondary = Color.White,
+//  onSecondary = Color(0xFF4875E1),
+//  tertiary = Color.White,
+//  onTertiary = Color.Black,
+//  background = Color(0xFFF8F8F8),          // White clean UI background
+//  surface = Color(0xFFF8F8F8),       // Light gray for chat backgrounds
+//  //onSurface = Color(0xFF212121),     // Dark gray for text
+//  onSurface = Color.Black,
+//  error = Color(0xFFE57373),         // Soft Red (for errors)
+//  primaryContainer = Color(0xFF4875E1),
+//  onPrimaryContainer = Color.White,
+//  surfaceVariant = Color(0xFFF8F8F8),
+//  onSurfaceVariant = Color(0xFF4875E1),
+//  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
+//  onSecondaryContainer = Color(0xFF4875E1),
+//)
+//
+//// Dark Color Scheme (Updated)
+//private val DarkColorScheme = darkColorScheme(
+//  primary = Color(0xFF4875E1),
+//  onPrimary = Color.White,
+//  secondary = Color.White,
+//  onSecondary = Color.Black,
+//  tertiary = Color.Black,
+//  onTertiary = Color.White,
+//  background = Color(0xFF121212),
+//  surface = Color(0xFF242424),
+//  onSurface = Color.White,
+//  onBackground = Color(0xFFE0E0E0),
+//  error = Color(0xFFEF5350),
+//  primaryContainer = Color(0xFF242424),
+//  onPrimaryContainer = Color.White,
+//  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
+//  onSecondaryContainer = Color(0xFF4875E1),
+//)
+//
+//// Extended Colors
+//object AppColors {
+//  val NotificationBadge = Color(0xFFFFD700) // Gold for notification bubbles
+//  val DividerColor = Color(0xFFE0E0E0) // Light gray for dividers
+//  val cardButtonColor1 = Color.White
+//  val cardButtonColor2 = Color.Black
+//  val whiteBlue = Color(0xFFF8F8F8)
+//}
+
 private val LightColorScheme = lightColorScheme(
-  primary = Color(0xFF4875E1),
-  onPrimary = Color.White,
-  secondary = Color.White,
-  onSecondary = Color(0xFF4875E1),
-  tertiary = Color.White,
-  onTertiary = Color.Black,
-  background = Color(0xFFF8F8F8),          // White clean UI background
-  surface = Color(0xFFF8F8F8),       // Light gray for chat backgrounds
-  //onSurface = Color(0xFF212121),     // Dark gray for text
-  onSurface = Color.Black,
-  error = Color(0xFFE57373),         // Soft Red (for errors)
-  primaryContainer = Color(0xFF4875E1),
-  onPrimaryContainer = Color.White,
-  surfaceVariant = Color(0xFFF8F8F8),
-  onSurfaceVariant = Color(0xFF4875E1),
-  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
-  onSecondaryContainer = Color(0xFF4875E1),
+
+    primary = Color(0xFF1FB6FF),
+    onPrimary = Color.White,
+
+    background = Color(0xFFF3F6F8),
+    onBackground = Color(0xFF0F172A),
+
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF0F172A),
+
+    surfaceVariant = Color(0xFFE9EEF2),
+    onSurfaceVariant = Color(0xFF64748B),
+
+    secondary = Color(0xFFE9EEF2),
+    onSecondary = Color(0xFF0F172A),
+
+    primaryContainer = Color(0xFF0EA5E9),
+    onPrimaryContainer = Color.White,
+
+    secondaryContainer = Color(0xFF1FB6FF).copy(alpha = 0.1f),
+    onSecondaryContainer = Color(0xFF1FB6FF),
+
+    error = Color(0xFFDC2626),
+    onError = Color.White,
 )
 
-// Dark Color Scheme (Updated)
+
 private val DarkColorScheme = darkColorScheme(
-  primary = Color(0xFF4875E1),
-  onPrimary = Color.White,
-  secondary = Color.White,
-  onSecondary = Color.Black,
-  tertiary = Color.Black,
-  onTertiary = Color.White,
-  background = Color(0xFF121212),
-  surface = Color(0xFF242424),
-  onSurface = Color.White,
-  onBackground = Color(0xFFE0E0E0),
-  error = Color(0xFFEF5350),
-  primaryContainer = Color(0xFF242424),
-  onPrimaryContainer = Color.White,
-  secondaryContainer = Color(0xFF4875E1).copy(alpha = 0.2f), // Container for secondary
-  onSecondaryContainer = Color(0xFF4875E1),
+
+    primary = Color(0xFF1FB6FF),
+    onPrimary = Color.White,
+
+    background = Color(0xFF0B1E24),
+    onBackground = Color(0xFFE6F1F5),
+
+    surface = Color(0xFF102A33),
+    onSurface = Color(0xFFE6F1F5),
+
+    surfaceVariant = Color(0xFF143642),
+    onSurfaceVariant = Color(0xFF8FA3AD),
+
+    secondary = Color(0xFF143642),
+    onSecondary = Color.White,
+
+    primaryContainer = Color(0xFF0EA5E9),
+    onPrimaryContainer = Color.White,
+
+    secondaryContainer = Color(0xFF1E4A57),
+    onSecondaryContainer = Color.White,
+
+    error = Color(0xFFEF4444),
+    onError = Color.White,
 )
 
-// Extended Colors
 object AppColors {
-  val NotificationBadge = Color(0xFFFFD700) // Gold for notification bubbles
-  val DividerColor = Color(0xFFE0E0E0) // Light gray for dividers
-  val cardButtonColor1 = Color.White
-  val cardButtonColor2 = Color.Black
-  val whiteBlue = Color(0xFFF8F8F8)
+
+    // Accent Variants
+    val PrimaryDark = Color(0xFF0EA5E9)
+    val PrimaryLight = Color(0xFF38BDF8)
+
+    // Semantic
+    val Success = Color(0xFF22C55E)
+    val Warning = Color(0xFFFACC15)
+    val ErrorRed = Color(0xFFEF4444)
+    val EventPurple = Color(0xFFA855F7)
+    val BugRed = Color(0xFFDC2626)
+
+    // Notification
+    val NotificationBadge = Color(0xFFFACC15)
+
+    // Dividers
+    val DividerLight = Color(0xFFD8E1E8)
+    val DividerDark = Color(0xFF1E4A57)
+
+    // Dark Cards
+    val DarkCard = Color(0xFF102A33)
+    val DarkElevatedCard = Color(0xFF143642)
+
+    // Light Containers
+    val LightSoftContainer = Color(0xFFE9EEF2)
 }
+
 
 // Typography Setup
 private val AppTypography = Typography(
@@ -114,22 +198,22 @@ fun AppTheme(
     }
 
      */
-    darkTheme -> LightColorScheme
+    darkTheme -> DarkColorScheme
     else -> LightColorScheme
   }
 
   // Remember System UI Controller
   val systemUiController = rememberSystemUiController()
 
-  val useDarkIcons = true // dark icons = black icons
-  val statusBarColor = AppColors.whiteBlue
+//  val useDarkIcons = true // dark icons = black icons
+//  val statusBarColor = AppColors.whiteBlue
 
-  SideEffect {
-    systemUiController.setStatusBarColor(
-      color = statusBarColor,
-      darkIcons = useDarkIcons
-    )
-  }
+//  SideEffect {
+//    systemUiController.setStatusBarColor(
+//      color = statusBarColor,
+//      darkIcons = useDarkIcons
+//    )
+//  }
 
   MaterialTheme(
     colorScheme = colorScheme,

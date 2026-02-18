@@ -119,7 +119,7 @@ fun TrustedBySection(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiary,
+            containerColor = MaterialTheme.colorScheme.surface,
             //contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     ) {
@@ -139,7 +139,7 @@ fun TrustedBySection(
                             withStyle(
                                 style = SpanStyle(
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             ) {
                                 append("Trusted by ")
@@ -211,7 +211,7 @@ fun VerifyAndRating(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(16.dp)) {
             // Verify Button
@@ -247,7 +247,7 @@ fun VerifyAndRating(
                     modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onTertiary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 var currentRating by remember(rating) { mutableIntStateOf(rating) }
                 StarRatingBar(rating = rating) { // 0 means not rated yet

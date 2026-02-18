@@ -5,6 +5,7 @@ import java.util.UUID
 
 data class User(
     var userId : String = "",
+    val bio : String = "",
     val name : String = "",
     val phone : String = "",
     val profilePicture : String? = "",
@@ -19,6 +20,7 @@ data class Message(
     val senderId: String = "",
     val receiverId: String = "",
     val message: String = "",
+    val messageType: Int = 3, // 2 = PreKeySignalMessage, 3 = SignalMessage (default)
     val media : Media? = null,
     val timestamp: Timestamp = Timestamp.now(),
     val status: String = "sent", // Status could be "sent", "delivered", or "read"

@@ -31,6 +31,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Reply
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -71,6 +73,19 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ReplyType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.UploadStatus
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.theme.Spacing
+import com.exa.android.reflekt.loopit.theme.SuccessColor
+import com.exa.android.reflekt.loopit.theme.chatSentBubbleStart
+import com.exa.android.reflekt.loopit.theme.chatSentBubbleEnd
+import com.exa.android.reflekt.loopit.theme.chatSentBubbleGradient
+import com.exa.android.reflekt.loopit.theme.chatReceivedBubble
+import com.exa.android.reflekt.loopit.theme.chatSentText
+import com.exa.android.reflekt.loopit.theme.chatReceivedText
+import com.exa.android.reflekt.loopit.theme.chatTimestamp
+import com.exa.android.reflekt.loopit.theme.chatMessageSent
+import com.exa.android.reflekt.loopit.theme.chatMessageRead
+import com.exa.android.reflekt.loopit.theme.chatDateSeparatorBackground
+import com.exa.android.reflekt.loopit.theme.chatDateSeparatorText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -97,67 +112,141 @@ fun MessageList(
     var lastOtherUserMessageIdx = -1
     Log.d("Chat Messages1234", "Messages - ${messages.toString()}")
 
+    // Group messages by date
+    val groupedMessages = remember(messages) {
+        messages.groupBy { message ->
+            getDateLabel(message.timestamp.seconds * 1000L)
+        }
+    }
+
     LazyColumn(
         state = listState,
         reverseLayout = true
     ) {
-        itemsIndexed(messages.reversed()) { index, message ->
-            renderedIndex[message.messageId] = index
-            val isSentByCurrentUser = message.senderId == curUser
-            if(!isSentByCurrentUser && lastOtherUserMessageIdx == -1)lastOtherUserMessageIdx = index
-            val hasUnfinishedMedia =
-                (message.media != null && message.media.uploadStatus != UploadStatus.SUCCESS)
+        // Render messages grouped by date (in reverse for reverse layout)
+        groupedMessages.entries.reversed().forEach { (dateLabel, messagesForDate) ->
+            // Messages for this date
+            itemsIndexed(messagesForDate.reversed()) { index, message ->
+                renderedIndex[message.messageId] = index
+                val isSentByCurrentUser = message.senderId == curUser
+                if(!isSentByCurrentUser && lastOtherUserMessageIdx == -1)lastOtherUserMessageIdx = index
+                val hasUnfinishedMedia =
+                    (message.media != null && message.media.uploadStatus != UploadStatus.SUCCESS)
 
-            if (message.members.contains(curUser)) {
-                // Skip rendering if message has media that is not successfully uploaded and it's a received message
-                if (!hasUnfinishedMedia || (hasUnfinishedMedia && isSentByCurrentUser)) {
-                    MessageBubble(
-                        message = message,
-                        curUserId = curUser,
-                        members = members,
-                        isSelected = selectedMessages.contains(message),
-                        selectedMessagesSize = selectedMessages.size,
-                        isHighlighted = highlightedIndex == index,
-                        isSeen = (isSentByCurrentUser && lastOtherUserMessageIdx != -1 && lastOtherUserMessageIdx < index),
-                        onTapOrLongPress = {
-                            onMessageLongPress(
-                                message,
-                                selectedMessages,
-                                onSelect = { updatedSelection ->
-                                    updateMessages(updatedSelection, isLastMessageSelected)
-                                })
-                        },
-                        onReply = { message ->
-                            onReply(message)
-                        },
-                        onReplyClick = { id ->
-                            coroutineScope.launch {// since using launched effect i was not able to re-scroll to the same message again and again
-                                // and if we try to maintain any variable so we need to update it that causes re-composition that leads it to scroll till mid and before reaching
-                                // re-scroll to end
-                                scrollToMessage(id, renderedIndex, listState)
-                                renderedIndex[id]?.let { index ->
-                                    highlightedIndex = index
-                                    delay(1000)
-                                    highlightedIndex = null
+                if (message.members.contains(curUser)) {
+                    // Skip rendering if message has media that is not successfully uploaded and it's a received message
+                    if (!hasUnfinishedMedia || (hasUnfinishedMedia && isSentByCurrentUser)) {
+                        MessageBubble(
+                            message = message,
+                            curUserId = curUser,
+                            members = members,
+                            isSelected = selectedMessages.contains(message),
+                            selectedMessagesSize = selectedMessages.size,
+                            isHighlighted = highlightedIndex == index,
+                            isSeen = (isSentByCurrentUser && lastOtherUserMessageIdx != -1 && lastOtherUserMessageIdx < index),
+                            onTapOrLongPress = {
+                                onMessageLongPress(
+                                    message,
+                                    selectedMessages,
+                                    onSelect = { updatedSelection ->
+                                        updateMessages(updatedSelection, isLastMessageSelected)
+                                    })
+                            },
+                            onReply = { message ->
+                                onReply(message)
+                            },
+                            onReplyClick = { id ->
+                                coroutineScope.launch {// since using launched effect i was not able to re-scroll to the same message again and again
+                                    // and if we try to maintain any variable so we need to update it that causes re-composition that leads it to scroll till mid and before reaching
+                                    // re-scroll to end
+                                    scrollToMessage(id, renderedIndex, listState)
+                                    renderedIndex[id]?.let { index ->
+                                        highlightedIndex = index
+                                        delay(1000)
+                                        highlightedIndex = null
+                                    }
                                 }
-                            }
-                        },
-                        onRetry = {
-                            onRetry(message)
-                        },
-                        openImage = openImage
+                            },
+                            onRetry = {
+                                onRetry(message)
+                            },
+                            openImage = openImage
 
 
-                    )
+                        )
+                    }
                 }
             }
+            
+            // Date separator
+            item(key = "date_$dateLabel") {
+                DateSeparator(dateLabel = dateLabel)
+            }
         }
+        
         item {
             Spacer(Modifier.height(4.dp))
         }
     }
 
 
+}
+
+/**
+ * Date separator component for chat messages
+ */
+@Composable
+fun DateSeparator(
+    dateLabel: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.material3.Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.chatDateSeparatorBackground,
+            shadowElevation = 0.dp
+        ) {
+            Text(
+                text = dateLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.chatDateSeparatorText,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+/**
+ * Helper function to get date label for messages
+ */
+fun getDateLabel(timestampMillis: Long): String {
+    val messageDate = java.util.Calendar.getInstance().apply {
+        timeInMillis = timestampMillis
+    }
+    val today = java.util.Calendar.getInstance()
+    val yesterday = java.util.Calendar.getInstance().apply {
+        add(java.util.Calendar.DAY_OF_YEAR, -1)
+    }
+
+    return when {
+        isSameDay(messageDate, today) -> "Today"
+        isSameDay(messageDate, yesterday) -> "Yesterday"
+        else -> {
+            val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+            dateFormat.format(java.util.Date(timestampMillis))
+        }
+    }
+}
+
+fun isSameDay(cal1: java.util.Calendar, cal2: java.util.Calendar): Boolean {
+    return cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR) &&
+            cal1.get(java.util.Calendar.DAY_OF_YEAR) == cal2.get(java.util.Calendar.DAY_OF_YEAR)
 }
 
 
@@ -188,10 +277,8 @@ fun MessageBubble(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isSelected || isHighlighted) Color(
-                    0xFF007AFF
-                ).copy(alpha = .2f) else Color.Transparent
-                //if(isSelected)MaterialTheme.colorScheme.primary.copy(.2f) else Color.Transparent
+                if (isSelected || isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                else Color.Transparent
             )
             .pointerInput(selectedMessagesSize) { // selectedMessagesSize is used for Key as it change it enables to call
                 detectTapGestures(
@@ -262,206 +349,238 @@ fun MessageBubble(
                 Arrangement.Start
             }
         ) {
+            // Modern bubble colors and design
             val bubbleColor = if (curUserId == message.senderId)
-                Color(0xFF007AFF).copy(alpha = .6f)
-            // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
-            else Color(0xFFf6f6f6)
+                MaterialTheme.colorScheme.chatSentBubbleStart
+            else
+                MaterialTheme.colorScheme.chatReceivedBubble
 
-            val reverseBubbleColor = if (curUserId != message.senderId)
-                Color(0xFF007AFF).copy(alpha = .2f)
-            // MaterialTheme.colorScheme.primary.copy(alpha = .8f)
-            else Color(0xFF007AFF).copy(alpha = .4f)
+            // Modern asymmetric rounded corners (no tail design)
+            val bubbleShape = if (curUserId == message.senderId) {
+                // Sent message: sharp bottom-right corner
+                RoundedCornerShape(
+                    topStart = 20.dp,
+                    topEnd = 20.dp,
+                    bottomStart = 20.dp,
+                    bottomEnd = 4.dp
+                )
+            } else {
+                // Received message: sharp bottom-left corner
+                RoundedCornerShape(
+                    topStart = 20.dp,
+                    topEnd = 20.dp,
+                    bottomStart = 4.dp,
+                    bottomEnd = 20.dp
+                )
+            }
 
-            Column(
+            Card(
                 modifier = Modifier
-                    .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp) // occupy 70% of screen only
-                    .background(
-                        color = /*if (isHighlighted) reverseBubbleColor else */ bubbleColor,
-                        shape = RoundedCornerShape(12.dp)
-                    ).pointerInput(selectedMessagesSize <= 0) {
-                        if (message.message != "deleted") {
-                            detectHorizontalDragGestures(
-                                onDragEnd = {
-                                    coroutineScope.launch {
-                                        offsetX.animateTo(
-                                            targetValue = 0f,
-                                            animationSpec = tween(durationMillis = 600)
-                                        )
-                                    }
-                                },
-                                onHorizontalDrag = { change, dragAmount ->
-                                    if (kotlin.math.abs(dragAmount) > kotlin.math.abs(change.positionChange().y)) {
-                                        if (dragAmount > 0) {
-                                            coroutineScope.launch {
-                                                offsetX.snapTo(offsetX.value + dragAmount)
-                                            }
-                                            if (offsetX.value > 180) {
-                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                    vibrator?.vibrate(
-                                                        VibrationEffect.createOneShot(
-                                                            50,
-                                                            VibrationEffect.DEFAULT_AMPLITUDE
-                                                        )
-                                                    )
-                                                }
-                                                onReply(message)
+                    .widthIn(max = (0.75 * LocalConfiguration.current.screenWidthDp).dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = bubbleColor
+                ),
+                shape = bubbleShape,
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = if (curUserId == message.senderId) 2.dp else 1.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .pointerInput(selectedMessagesSize <= 0) {
+                            if (message.message != "deleted") {
+                                detectHorizontalDragGestures(
+                                    onDragEnd = {
+                                        coroutineScope.launch {
+                                            offsetX.animateTo(
+                                                targetValue = 0f,
+                                                animationSpec = tween(durationMillis = 600)
+                                            )
+                                        }
+                                    },
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        if (kotlin.math.abs(dragAmount) > kotlin.math.abs(change.positionChange().y)) {
+                                            if (dragAmount > 0) {
                                                 coroutineScope.launch {
-                                                    offsetX.animateTo(
-                                                        0f,
-                                                        animationSpec = tween(durationMillis = 600)
-                                                    )
+                                                    offsetX.snapTo(offsetX.value + dragAmount)
                                                 }
+                                                if (offsetX.value > 180) {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                        vibrator?.vibrate(
+                                                            VibrationEffect.createOneShot(
+                                                                50,
+                                                                VibrationEffect.DEFAULT_AMPLITUDE
+                                                            )
+                                                        )
+                                                    }
+                                                    onReply(message)
+                                                    coroutineScope.launch {
+                                                        offsetX.animateTo(
+                                                            0f,
+                                                            animationSpec = tween(durationMillis = 600)
+                                                        )
+                                                    }
+                                                }
+                                                change.consume()
                                             }
-                                            change.consume()
                                         }
                                     }
+                                )
+                            }
+                        }
+                        .padding(Spacing.medium)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            //.fillMaxWidth()
+                            .clickable(enabled = selectedMessagesSize <= 0 && message.message != "deleted") {
+                                message.replyTo?.let {
+                                    onReplyClick(
+                                        it.messageId
+                                    )
                                 }
-                            )
-                        }
-                    }
-                    .padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
-            ) {
-                Box(modifier = Modifier
-                    //.fillMaxWidth()
-                    .clickable(enabled = selectedMessagesSize <= 0 && message.message != "deleted") {
+                            }) {
                         message.replyTo?.let {
-                            onReplyClick(
-                                it.messageId
-                            )
+                            if (message.message != "deleted")
+                                ReplyUi(
+                                    curUser = curUserId,
+                                    replyTo = it,
+                                    members = members,
+                                    replyType = if (curUserId == message.senderId) ReplyType.YOU else ReplyType.OTHER
+                                ) // show replied message inside box
                         }
-                    }) {
-                    message.replyTo?.let {
-                        if (message.message != "deleted")
-                            ReplyUi(
-                                curUser = curUserId,
-                                replyTo = it,
-                                members = members,
-                                replyType = if (curUserId == message.senderId) ReplyType.YOU else ReplyType.OTHER
-                            ) // show replied message inside box
                     }
-                }
 
-                if (message.message == "deleted") {
-                    Text(
-                        text = if (message.senderId == curUserId) "You deleted this message" else "This message was deleted",
-                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                        color = if (message.senderId == curUserId) Color.White.copy(alpha = 0.8F) else Color.Black.copy(
-                            alpha = 0.8F
-                        ),
-                        fontWeight = FontWeight.Normal,
-                        fontStyle = FontStyle.Italic
-                    )
-                } else {
-                    if (LinkUtils.containsLink(text = message.message)) {
-                        LinkPreview(
-                            message.message,
-                            message.senderId == curUserId,
-                            selectedMessagesSize
+                    if (message.message == "deleted") {
+                        Text(
+                            text = if (message.senderId == curUserId) "You deleted this message" else "This message was deleted",
+                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                            color = if (message.senderId == curUserId)
+                                MaterialTheme.colorScheme.chatSentText.copy(alpha = 0.8f)
+                            else
+                                MaterialTheme.colorScheme.chatReceivedText.copy(alpha = 0.8f),
+                            fontWeight = FontWeight.Normal,
+                            fontStyle = FontStyle.Italic
                         )
                     } else {
-                        if (message.media == null) {
-                            Text(
-                                text = message.message,
-                                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                                color = if (curUserId == message.senderId) Color.White else Color.Black,
-                                fontWeight = FontWeight.Medium
+                        if (LinkUtils.containsLink(text = message.message)) {
+                            LinkPreview(
+                                message.message,
+                                message.senderId == curUserId,
+                                selectedMessagesSize
                             )
                         } else {
-                            val fileName = getFileNameFromUrl(message.media.mediaUrl)
-                            when (message.media.mediaType) {
-                                MediaType.IMAGE -> {
-                                    ImageMessageContent(
-                                        imageUrl = message.media.mediaUrl,
-                                        fileName = fileName,
-                                        message.senderId == curUserId,
-                                        message.media.uploadStatus,
-                                        onRetry = { onRetry() },
-                                        onDownloadClick = {
-                                            downloadMedia(
-                                                context, message.media.mediaUrl,
-                                                fileName = fileName
-                                            )
-                                            //openImageIntent(context,message.media.mediaUrl)
-                                        },
-                                        onImageClick = {
-                                            openImage(message.media.mediaUrl)
-                                            //openImageIntent(context, message.media.mediaUrl)
-                                        }
-                                    )
-                                }
+                            if (message.media == null) {
+                                Text(
+                                    text = message.message,
+                                    style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                                    color = if (curUserId == message.senderId)
+                                        MaterialTheme.colorScheme.chatSentText
+                                    else
+                                        MaterialTheme.colorScheme.chatReceivedText,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            } else {
+                                val fileName = getFileNameFromUrl(message.media.mediaUrl)
+                                when (message.media.mediaType) {
+                                    MediaType.IMAGE -> {
+                                        ImageMessageContent(
+                                            imageUrl = message.media.mediaUrl,
+                                            fileName = fileName,
+                                            message.senderId == curUserId,
+                                            message.media.uploadStatus,
+                                            onRetry = { onRetry() },
+                                            onDownloadClick = {
+                                                downloadMedia(
+                                                    context, message.media.mediaUrl,
+                                                    fileName = fileName
+                                                )
+                                                //openImageIntent(context,message.media.mediaUrl)
+                                            },
+                                            onImageClick = {
+                                                openImage(message.media.mediaUrl)
+                                                //openImageIntent(context, message.media.mediaUrl)
+                                            }
+                                        )
+                                    }
 
-                                MediaType.VIDEO -> {
-                                    VideoMessageItem(
-                                        message.media.mediaUrl,
-                                        fileName,
-                                        message.senderId == curUserId,
-                                        message.media.uploadStatus,
-                                        onRetry = { onRetry() })
-                                }
+                                    MediaType.VIDEO -> {
+                                        VideoMessageItem(
+                                            message.media.mediaUrl,
+                                            fileName,
+                                            message.senderId == curUserId,
+                                            message.media.uploadStatus,
+                                            onRetry = { onRetry() })
+                                    }
 
-                                MediaType.AUDIO -> TODO()
-                                MediaType.DOCUMENT -> {
-                                    DocumentMessageItem(
-                                        fileUrl = message.media.mediaUrl,
-                                        fileName = getFileNameFromUrl(message.media.mediaUrl),
-                                        message.senderId == curUserId, message.media.uploadStatus,
-                                        onRetry = { onRetry() }
-                                    )
+                                    MediaType.AUDIO -> TODO()
+                                    MediaType.DOCUMENT -> {
+                                        DocumentMessageItem(
+                                            fileUrl = message.media.mediaUrl,
+                                            fileName = getFileNameFromUrl(message.media.mediaUrl),
+                                            message.senderId == curUserId,
+                                            message.media.uploadStatus,
+                                            onRetry = { onRetry() }
+                                        )
 
-                                }
+                                    }
 
-                                MediaType.LOCATION -> {}
-                                MediaType.CONTACT -> {}
-                                else -> {
-                                    Text("Nothing")
+                                    MediaType.LOCATION -> {}
+                                    MediaType.CONTACT -> {}
+                                    else -> {
+                                        Text("Nothing")
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    val timestampInMillis = message.timestamp.seconds * 1000L
-                    Text(
-                        text = formatTimestamp(timestampInMillis), // generate timeStamp like hrs, yesterday
-                        style = MaterialTheme.typography.labelSmall,
-                        fontStyle = FontStyle.Italic,
-                        color = if (curUserId == message.senderId) Color.White else Color.Gray
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        val timestampInMillis = message.timestamp.seconds * 1000L
+                        Text(
+                            text = formatTimestamp(timestampInMillis), // generate timeStamp like hrs, yesterday
+                            style = MaterialTheme.typography.labelSmall,
+                            fontStyle = FontStyle.Italic,
+                            color = if (curUserId == message.senderId)
+                                MaterialTheme.colorScheme.chatSentText.copy(alpha = 0.7f)
+                            else
+                                MaterialTheme.colorScheme.chatTimestamp
+                        )
 
-                    val messageStatus = if(isSeen)"seen" else message.status
+                        val messageStatus = if (isSeen) "seen" else message.status
 
-                    Spacer(Modifier.width(1.dp))
+                        Spacer(Modifier.width(1.dp))
 
-                    if (curUserId == message.senderId && message.message != "deleted") {
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Log.d("Detail Chat", message.status)
+                        if (curUserId == message.senderId && message.message != "deleted") {
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Log.d("Detail Chat", message.status)
 
-                        if (messageStatus == "sent") {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Sent",
-                                tint = MaterialTheme.colorScheme.tertiary.copy(.9f),  // Gray color for sent
-                                modifier = Modifier.size(14.dp)
-                            )
-                        } else if (messageStatus == "delivered") {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_seen),
-                                contentDescription = "Delivered",
-                                tint = MaterialTheme.colorScheme.tertiary.copy(.9f),  // Gray color for delivered
-                                modifier = Modifier.size(14.dp)
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_seen),
-                                contentDescription = "Seen",
-                                tint = Color(0xFF59FFA0), // Soft purple with a modern feel
+                            if (messageStatus == "sent") {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Sent",
+                                    tint = MaterialTheme.colorScheme.chatMessageSent,  // Gray color for sent
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            } else if (messageStatus == "delivered") {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_seen),
+                                    contentDescription = "Delivered",
+                                    tint = MaterialTheme.colorScheme.chatMessageSent,  // Gray color for delivered
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_seen),
+                                    contentDescription = "Seen",
+                                    tint = MaterialTheme.colorScheme.chatMessageRead,
 
-                                modifier = Modifier.size(14.dp)
-                            )
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -476,15 +595,15 @@ fun SwipeHint(icon: ImageVector, alignment: Alignment) {
         modifier = Modifier
             .size(32.dp)
             .clip(CircleShape)
-            .border(1.dp, Color.White, CircleShape)
-            .background(Color.Black)
+            .border(1.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(2.dp),
         contentAlignment = alignment
     ) {
         Icon(
             imageVector = icon,
             contentDescription = "Reply Icon",
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp)
         )
     }
@@ -525,7 +644,10 @@ fun MessageBubble(message: Message, curUser: String) {
             modifier = Modifier
                 .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp)
                 .background(
-                    color = if (curUser == message.senderId) Color(0xFF007AFF) else Color(0xFFEAEAEA),
+                    color = if (curUser == message.senderId) 
+                        MaterialTheme.colorScheme.chatSentBubbleStart 
+                    else 
+                        MaterialTheme.colorScheme.chatReceivedBubble,
                     shape = RoundedCornerShape(12.dp)
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -534,7 +656,10 @@ fun MessageBubble(message: Message, curUser: String) {
             Text(
                 text = message.message,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (curUser == message.senderId) Color.White else Color.Black,
+                color = if (curUser == message.senderId) 
+                    MaterialTheme.colorScheme.chatSentText 
+                else 
+                    MaterialTheme.colorScheme.chatReceivedText,
                 fontWeight = FontWeight.Medium
             )
 
@@ -549,7 +674,10 @@ fun MessageBubble(message: Message, curUser: String) {
                 Text(
                     text = formatTimestamp(timestampInMillis), // A helper function to format timestamp
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (curUser == message.senderId) Color.White else Color.Gray
+                    color = if (curUser == message.senderId) 
+                        MaterialTheme.colorScheme.chatSentText.copy(alpha = 0.7f) 
+                    else 
+                        MaterialTheme.colorScheme.chatTimestamp
                 )
 
             }

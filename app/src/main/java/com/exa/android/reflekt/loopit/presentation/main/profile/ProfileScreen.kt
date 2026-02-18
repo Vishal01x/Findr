@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +32,7 @@ import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.Profile
 import com.exa.android.reflekt.loopit.presentation.main.profile.feedback.ProfileViews
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +62,7 @@ fun ProfileScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -68,7 +71,7 @@ fun ProfileScreen(
                             text = "Profile Screen",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
                     }
@@ -79,14 +82,19 @@ fun ProfileScreen(
                 ),
                 modifier = Modifier.shadow(elevation = 10.dp),
                 actions = {
+                    IconButton(onClick = { navController.navigate(PostRoute.MyPosts.route) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Article, "My Posts",
+                        ) // Assuming 'Article' or similar exists, or use 'List'
+                    }
                     IconButton(onClick = { navController.navigate(ProfileRoute.ProfileSetting.route) }) {
                         Icon(Icons.Default.Settings, "Settings")
                     }
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.secondary,
-        contentColor = MaterialTheme.colorScheme.secondary
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground
     ) { padding ->
 
         when (val response = profileData) {

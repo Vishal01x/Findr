@@ -6,7 +6,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -16,18 +15,12 @@ fun BlockUserDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-//            Text(
-//                text = "Block User",
-//                style = MaterialTheme.typography.titleLarge,
-//                color = Color.Black
-//            )
-        },
+        title = {},
         text = {
             Text(
                 text = "Are you sure you want to block this user?",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
         },
         confirmButton = {
@@ -43,13 +36,12 @@ fun BlockUserDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     text = "Cancel",
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge
                 )
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp)
     )
 }
-

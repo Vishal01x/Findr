@@ -10,15 +10,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -89,6 +93,7 @@ fun CustomBottomNavigationBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .shadow(8.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp
@@ -98,11 +103,47 @@ fun CustomBottomNavigationBar(
                 .fillMaxWidth()
                 .height(70.dp)
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEach { item ->
+            // First two items
+            items.take(2).forEach { item ->
+                NavigationItem(
+                    item = item,
+                    isSelected = currentDestination?.hierarchy?.any {
+                        it.route == item.route
+                    } == true,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    chatViewModel
+                )
+            }
+            
+            // Center Create Button
+            FloatingActionButton(
+                onClick = {
+                    navController.navigate(PostRoute.CreatePost.route) {
+                        launchSingleTop = true
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Create Post",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            
+            // Last two items
+            items.drop(2).forEach { item ->
                 NavigationItem(
                     item = item,
                     isSelected = currentDestination?.hierarchy?.any {
@@ -162,7 +203,7 @@ private fun NavigationItem(
                     imageVector = if (isSelected) item.iconSelected else item.iconUnselected,
                     contentDescription = item.label,
                     tint = if (isSelected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onTertiary,
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -171,7 +212,7 @@ private fun NavigationItem(
                 imageVector = if (isSelected) item.iconSelected else item.iconUnselected,
                 contentDescription = item.label,
                 tint = if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onTertiary,
+                else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -198,7 +239,7 @@ private fun NavigationItem(
             text = item.label,
             fontSize = 12.sp,
             color = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onTertiary,
+            else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
         )
     }

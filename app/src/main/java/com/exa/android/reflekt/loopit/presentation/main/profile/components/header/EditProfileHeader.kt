@@ -324,7 +324,7 @@ private fun ProfileInputGroup(
                 modifier = Modifier
                     .align(Alignment.End)
                     .padding(end = 8.dp, top = 2.dp),
-                color = if (headline.length == maxChars) Color.Red else Color.Gray
+                color = if (headline.length == maxChars) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 

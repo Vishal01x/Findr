@@ -1,72 +1,80 @@
 package com.exa.android.reflekt.loopit.data.feature.main.post.domain.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Article
-import androidx.compose.material.icons.outlined.Error
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.Work
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 
+/**
+ * Domain model for a Post
+ * Represents a post/project in the system with all its associated data
+ */
 data class Post(
     @DocumentId val id: String = "",
     val title: String = "",
     val description: String = "",
-    val rolesNeeded: List<String> = emptyList(),
-    val tags: List<String> = emptyList(),
     @ServerTimestamp val createdAt: Timestamp? = null,
     val createdBy: String = "", // User ID
     val createdByName: String = "",
+    val type: String = PostType.PROJECT.displayName,
+    val links: List<String> = emptyList(),
+    val imageUrls: List<String> = emptyList(),
+    val fileUrls: List<String> = emptyList(), // New: Document/file attachments
+    val videoUrl: String? = "",
+    val likesCount: Int = 0,
+    val commentsCount: Int = 0,
+    val sharesCount: Int = 0,
+    val viewsCount: Int = 0, // New: Track post views
+    val tags: List<String> = emptyList(),
+    val rolesNeeded: List<String> = emptyList(), // Deprecated: Use projectRoles instead
+    val projectRoles: List<ProjectRole> = emptyList(), // New: Detailed role requirements
+    val eventDetails: EventDetails? = null, // New: Event-specific details
+    val likes: List<String> = emptyList(),
+    val comments: List<Comment> = emptyList(),
     val enrolledPersons: Map<String, String> = emptyMap(),
     val requestedPersons: Map<String, String> = emptyMap(),
-    val type: String = PostType.PROJECT.displayName,
-    val imageUrls: List<String> = emptyList(),
-    val links: List<String> = emptyList(),
-    val likes: List<String> = emptyList(),
-    val comments: List<Comment> = emptyList()
+    
+    // UI-only field (not stored in Firestore) - enriched by repository
+    @Exclude val userInfo: PostUserInfo? = null
 ) {
-    companion object {
-        const val FIELD_TITLE = "title"
-        const val FIELD_CREATED_AT = "createdAt"
+    
+    /**
+     * Validates if the post has all required fields
+     */
+    fun isValid(): Boolean {
+        return title.isNotBlank() && 
+               title.length <= PostConstants.Limits.MAX_TITLE_LENGTH &&
+               description.length <= PostConstants.Limits.MAX_DESCRIPTION_LENGTH
+    }
+    
+    /**
+     * Checks if a user has liked this post
+     */
+    fun isLikedBy(userId: String): Boolean {
+        return likes.contains(userId)
+    }
+    
+    /**
+     * Checks if user is enrolled in this post/project
+     */
+    fun isUserEnrolled(userId: String): Boolean {
+        return enrolledPersons.containsKey(userId)
+    }
+    
+    /**
+     * Checks if user has requested enrollment
+     */
+    fun hasUserRequested(userId: String): Boolean {
+        return requestedPersons.containsKey(userId)
+    }
+    
+    /**
+     * Checks if user is the owner of this post
+     */
+    fun isOwnedBy(userId: String): Boolean {
+        return createdBy == userId
     }
 }
 
 
-enum class PostType(
-    val displayName: String,
-    val icon: ImageVector
-) {
-    PROJECT("Project", Icons.Outlined.Work),
-    BUG("Bug Fix", Icons.Outlined.Error),
-    COLLABORATION("Collab", Icons.Outlined.Group),
-    POST("Post", Icons.Outlined.Article),
-    OTHER("Other", Icons.Outlined.MoreHoriz)
-}
 
-data class Comment(
-    @DocumentId val id: String = "",
-    val postId: String = "",
-    val senderId: String = "",
-    val senderName: String = "",
-    val text: String = "",
-    val likesCount : Long = 0,
-    val replyCount: Long = 0,
-    val embeddedReply: Reply? = null, // used for "single reply per comment" approach
-    @ServerTimestamp val timestamp: Timestamp? = null
-)
-
-
-// Reply data model that can be used as embedded reply or as a document in a replies subcollection.
-data class Reply(
-    @DocumentId val replyId: String = "",
-    val postId : String = "",
-    val commentId: String = "",
-    val parentReplyId: String? = null, // null for top-level replies; used when enabling nesting
-    val userId: String = "",
-    val userName: String = "",
-    val text: String = "",
-    @ServerTimestamp val timestamp: Timestamp? = null
-)

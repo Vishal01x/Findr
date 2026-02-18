@@ -144,7 +144,7 @@ fun UserProfileItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onTertiary
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             // Headline
@@ -154,7 +154,7 @@ fun UserProfileItem(
                 maxLines = 1,
                 fontWeight = FontWeight.Medium,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onTertiary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

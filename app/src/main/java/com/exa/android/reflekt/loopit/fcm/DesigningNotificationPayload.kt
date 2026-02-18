@@ -3,9 +3,11 @@ package com.exa.android.reflekt.loopit.fcm
 import android.content.Context
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostUserInfo
 import com.exa.android.reflekt.loopit.fcm.api.NotificationContent
 import com.exa.android.reflekt.loopit.fcm.api.NotificationSender
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 
 fun sendProjectNotification(
     context: Context,
@@ -38,7 +40,7 @@ fun sendProjectNotification(
 
 fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, profile: profileUser, action : String){
 
-    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
+    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
 
         val projectNotification = NotificationContent(
             type = NotificationType.PROFILE,
@@ -61,16 +63,16 @@ fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, 
 }
 
 
-fun sendComment(context: Context, receiverToken: String?, project : Post, profile: profileUser, comment : String){
+fun sendComment(context: Context, receiverToken: String?, postId : String, profile: profileUser, comment : String){
 
-    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
+    val imageUrl =  profile.profilePicture //if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
 
     val projectNotification = NotificationContent(
         type = NotificationType.POST,
         title = "${profile.name} has commented on your post", // project title
         body = comment,
         imageUrl = imageUrl, // post or creator of project
-        targetId = project.id ?: "Not Found",
+        targetId = postId,
         senderId = "", // the person enrolled in project
 //            metadata = mapOf(
 //                "messageId" to message.messageId,
@@ -82,6 +84,30 @@ fun sendComment(context: Context, receiverToken: String?, project : Post, profil
         deviceToken = receiverToken ?: "",
         topics = Topics.NULL,
         content = projectNotification
+    )
+}
+
+fun sendReply(context: Context, receiverToken: String?, postId : String, profile: profileUser, reply : String){
+
+    val imageUrl =  profile.profilePicture //if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
+
+    val replyNotification = NotificationContent(
+        type = NotificationType.POST,
+        title = "${profile.name} has replied on your comment", // project title
+        body = reply,
+        imageUrl = imageUrl, // post or creator of project
+        targetId = postId ?: "Not Found",
+        senderId = "", // the person enrolled in project
+//            metadata = mapOf(
+//                "messageId" to message.messageId,
+//                "isMedia" to (message.media != null).toString()
+//            )
+    )
+
+    NotificationSender(context).sendNotification(
+        deviceToken = receiverToken ?: "",
+        topics = Topics.NULL,
+        content = replyNotification
     )
 }
 
@@ -101,13 +127,13 @@ fun sendPostNotification(context: Context, topic:Topics, project: Post, profile 
 //        body
 //    }
 
-    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.imageUrl
+    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
 
     val postNotification = NotificationContent(
         type = NotificationType.POST,
         title = title,  //"${profile.name} has posted ${project.type}",//type -> Post,Bug
         body = body,    //project.title,
-        imageUrl = profile.imageUrl, //user who post
+        imageUrl = profile.profilePicture, //user who post
         mediaUrl = if(project.imageUrls.isNotEmpty())project.imageUrls[0] else null,
         link = if(project.links.isNotEmpty())project.links[0] else null,
         targetId = project.id,
@@ -165,10 +191,11 @@ fun sendVerifyNotification(context: Context, fcm: String?, verifierUserId: Strin
 
     fun getPostNotificationText(type: PostType): Pair<String, String> = when (type) {
     PostType.PROJECT -> "A new project needs your skills!" to "Build, collaborate, and innovate—check out the latest project post."
-    PostType.BUG -> "Bug spotted in the system!" to "A bug is affecting project progress—see what’s up."
+    PostType.HELP -> "Bug spotted in the system!" to "A bug is affecting project progress—see what’s up."
     PostType.COLLABORATION -> "Let’s team up!" to "Help build something great—join this collaboration."
     PostType.POST -> "A new post is live!" to "Check out the latest community post—your input matters."
-    PostType.OTHER -> "Something new is happening." to "Explore the latest shared content from the community."
+    PostType.EVENT -> "New event announced!" to "Don't miss out—check out this upcoming event."
+        else -> "A new project needs your skills!" to "Build, collaborate, and innovate—check out the latest project post."
 }
 
 fun getPostNotificationText(userName: String, projectTitle: String, displayName: String): Pair<String, String> {

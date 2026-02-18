@@ -1,6 +1,7 @@
 package com.exa.android.reflekt.loopit.presentation.navigation.nav_graph
 
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -20,7 +21,7 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRout
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
-import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 
 @Composable
@@ -36,21 +37,14 @@ fun AppNavigation(
         }
     }
 
-
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
     Scaffold(
-
-        //modifier = Modifier
-            //.fillMaxSize(),
-            //.consumeWindowInsets(PaddingValues()), // Optional to manually control insets
-            //.padding(WindowInsets.systemBars.asPaddingValues()),
-
-
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (currentDestination == HomeRoute.ChatList.route ||
                 currentDestination == ProfileRoute.UserProfile.route ||
-                currentDestination == MapInfo.MapScreen.route ||
-                currentDestination == ProjectRoute.ProjectList.route
+                currentDestination == MapInfo.MapScreen2.route ||
+                currentDestination == PostRoute.PostList.route
             ) {
 
                 val chatViewModel : ChatViewModel = hiltViewModel()
@@ -58,18 +52,13 @@ fun AppNavigation(
                 CustomBottomNavigationBar(navController, chatViewModel) {
                     bottomSheet = true
                 }
-
-//                BottomBar(
-//                    navController = navController,
-//                    viewModel = chatViewModel
-//                )
             }
         }
     ) { paddingValues ->
         RootNavGraph(
             navController = navController,
             isLoggedIn = isLoggedIn,
-            modifier = Modifier.padding(paddingValues)//.navigationBarsPadding()
+            modifier = Modifier.padding(paddingValues)
         )
     }
 }
@@ -83,14 +72,16 @@ fun RootNavGraph(
 ) {
     val context = LocalContext.current
     val locationViewModel : LocationViewModel = hiltViewModel()
+
+    val startDestination = if (isLoggedIn) MainRoute.ROOT else AuthRoute.ROOT
+
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) MainRoute.ROOT else AuthRoute.ROOT,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         authNavGraph(navController)
-        mainAppNavGraph(context,navController, locationViewModel)
+        mainAppNavGraph(context, navController, locationViewModel)
     }
 }
-
 

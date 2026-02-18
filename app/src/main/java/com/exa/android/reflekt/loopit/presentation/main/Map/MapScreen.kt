@@ -311,7 +311,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                         if (user.uid != userId) {  // Skip the current user
                             CustomMapMarker(
                                 //imageUrl = "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg",
-                                imageUrl = user.imageUrl, //.ifBlank { R.drawable.placeholder },
+                                imageUrl = user.profilePicture, //.ifBlank { R.drawable.placeholder },
                                 fullName = user.name,
                                 location = LatLng(user.lat, user.lng),
                                 onClick = {
@@ -624,7 +624,7 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
 
 }
 
-private fun getZoomLevel(radiusInKm: Float): Float {
+fun getZoomLevel(radiusInKm: Float): Float {
     return when {
         radiusInKm <= 1 -> 15f
         radiusInKm <= 5 -> 13f
@@ -725,7 +725,7 @@ fun ProfileBottomSheet(
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable { openProfile() }) {
                 // Profile Image or Initials
-                if (user.imageUrl.isNullOrEmpty()) {
+                if (user.profilePicture.isNullOrEmpty()) {
                     Box(
                         modifier = Modifier
                             .size(64.dp)
@@ -745,7 +745,7 @@ fun ProfileBottomSheet(
                 } else {
                     ImageUsingCoil(
                         context,
-                        user.imageUrl,
+                        user.profilePicture,
                         R.drawable.placeholder,
                         Modifier
                             .size(64.dp)

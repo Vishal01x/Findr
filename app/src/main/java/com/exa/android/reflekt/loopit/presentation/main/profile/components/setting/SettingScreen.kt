@@ -21,13 +21,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
-import com.exa.android.reflekt.loopit.theme.Purple40
 import com.exa.android.reflekt.loopit.core.utils.showToast
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import android.Manifest
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import com.exa.android.reflekt.loopit.theme.GradientPurpleStart
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.firebase.auth.FirebaseAuth
@@ -102,6 +102,8 @@ fun SettingsScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         modifier = modifier
     ) { padding ->
         LazyColumn(
@@ -123,7 +125,7 @@ fun SettingsScreen(
                 Text(
                     text = "We’d love to hear your thoughts!",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onTertiary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -132,7 +134,7 @@ fun SettingsScreen(
                 Text(
                     text = "Tell us what you think about our app. Whether it's a suggestion, something you'd love to see, expectations we should meet, bugs or issues you've encountered — we're here to listen and improve!",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onTertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp
                 )
             }
@@ -595,7 +597,7 @@ enum class ThemeColor(
     val color: Color,
     val displayName: String
 ) {
-    DEFAULT(Purple40, "Default"),
+    DEFAULT(GradientPurpleStart, "Default"),
     BLUE(Color(0xFF0D47A1), "Blue"),
     GREEN(Color(0xFF3E6E4D), "Green"),
     PURPLE(Color(0xFFB94E41), "Orange");

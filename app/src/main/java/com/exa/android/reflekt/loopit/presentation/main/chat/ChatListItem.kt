@@ -24,7 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.exa.android.reflekt.loopit.theme.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -72,7 +74,7 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
                 .clip(CircleShape)
                 .clickable(!profilePic.isNullOrEmpty()) {
                     openImage(chat.profilePicture)
-                /*openImageIntent(context,chat.profilePicture!!)*/
+                    /*openImageIntent(context,chat.profilePicture!!)*/
                 })
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -83,7 +85,7 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
                 Text(
                     chat.name,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -92,7 +94,7 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
                 Text(
                     chat.lastMessage,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.DarkGray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -115,7 +117,9 @@ fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user :
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
+                            .background(
+                                MaterialTheme.colorScheme.primary
+                            )
                     ) {
                         Text(
                             "${chat.unreadMessages}",
@@ -145,7 +149,7 @@ fun StoryItem(image: Int, name: String) {
         Text(
             name,
             style = MaterialTheme.typography.titleSmall,
-            color = Color.DarkGray,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold
         )
     }
@@ -156,14 +160,14 @@ fun ZoomPhoto(modifier: Modifier = Modifier, imageId: Int, onBack: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .height(240.dp)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Icon(painter = painterResource(id = R.drawable.arrow_back),
             contentDescription = "to pop back stack",
-            tint = Color.Black,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .align(alignment = Alignment.TopStart)

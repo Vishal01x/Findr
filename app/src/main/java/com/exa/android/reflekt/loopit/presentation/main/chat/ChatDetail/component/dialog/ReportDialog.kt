@@ -148,6 +148,6 @@ fun ReportUserDialog(
                 )
             }
         },
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp)
     )
 }

@@ -83,8 +83,8 @@ fun FullExtraCardScreen(
                 ),
             )
         },
-        containerColor = MaterialTheme.colorScheme.tertiary,
-        contentColor = MaterialTheme.colorScheme.tertiary,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         content = { padding ->
 //            Box(
 //                modifier = Modifier
@@ -114,7 +114,7 @@ fun FullExtraCardScreen(
                         .padding(16.dp),
                     shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(Color.White)
+                    colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
                 ) {
                     Column(
                         modifier = Modifier

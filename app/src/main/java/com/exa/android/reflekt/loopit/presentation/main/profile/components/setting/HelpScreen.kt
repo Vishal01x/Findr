@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.presentation.main.profile.components.sett
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -103,6 +104,7 @@ fun HelpScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 16.dp)
         ) {
             item {

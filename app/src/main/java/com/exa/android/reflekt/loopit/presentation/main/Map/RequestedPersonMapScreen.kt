@@ -108,7 +108,7 @@ fun RequestedPersonMapScreen(
 
                 userLocations.forEach { user ->
                     CustomMapMarker(
-                        imageUrl = user.imageUrl, //.ifBlank {  "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg"},
+                        imageUrl = user.profilePicture, //.ifBlank {  "https://i.pinimg.com/originals/b8/5e/9d/b85e9df9e9b75bcce3a767eb894ef153.jpg"},
                         fullName = user.name,
                         location = LatLng(user.lat, user.lng),
                         onClick = {

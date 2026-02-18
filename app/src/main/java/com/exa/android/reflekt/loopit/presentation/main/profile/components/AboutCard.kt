@@ -63,7 +63,7 @@ fun AboutCard(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(16.dp)) {
             // Title + Edit Icon
@@ -76,7 +76,7 @@ fun AboutCard(
                     text = title,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onTertiary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if(isCurUser) {
                     Icon(
@@ -88,7 +88,7 @@ fun AboutCard(
                                 localText = content
                             }
                             .padding(start = 8.dp),
-                        tint = MaterialTheme.colorScheme.onTertiary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -175,14 +175,14 @@ fun AboutCard(
                     maxLines = if (expanded) Int.MAX_VALUE else 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onTertiary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
 
                 if (content.length > 100) {
                     Text(
                         text = if (expanded) "Show less" else "Show more",
-                        color = MaterialTheme.colorScheme.onTertiary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .padding(top = 4.dp)

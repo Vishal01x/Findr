@@ -13,19 +13,24 @@ import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
 import android.app.AlertDialog
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -51,8 +56,13 @@ import com.exa.android.reflekt.loopit.presentation.navigation.nav_graph.AppNavig
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
 import com.exa.android.reflekt.loopit.core.notification.clearAllNotifications
+import com.exa.android.reflekt.loopit.theme.FindrTheme
 import io.getstream.meeting.room.compose.ui.AppTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -63,6 +73,9 @@ class MainActivity : ComponentActivity() {
     val userViewModel: UserViewModel by viewModels()
     val locationViewModel: LocationViewModel by viewModels()
 
+//    @Inject
+//    lateinit var signalInitializer: SignalInitializer
+
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
     }
@@ -72,9 +85,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
+
         // WindowCompat.setDecorFitsSystemWindows(window, false)
         val curUser = userViewModel.curUser
         curUser?.let {
+            // Initialize Signal Protocol keys
+//            CoroutineScope(Dispatchers.IO).launch {
+//                try {
+//                    signalInitializer.initializeIfNeeded(it)
+//                    Log.d("MainActivity", "Signal Protocol initialized for user: $it")
+//                } catch (e: Exception) {
+//                    Log.e("MainActivity", "Failed to initialize Signal Protocol", e)
+//                }
+//            }
+//
             lifecycleObserver = MyLifecycleObserver(
                 viewModel = userViewModel,
                 userId = it,
@@ -120,13 +145,14 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            AppTheme(
-                darkTheme = false, // ✅ Force light theme
-                dynamicColor = false // ✅ Optional: prevent Material You theme changes
-            ) {
-                navController = rememberNavController()
-                App(currentIntent)
-                updateStatus(this)
+            FindrTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    navController = rememberNavController()
+                    App(currentIntent)
+                    updateStatus(this)
+                }
             }
         }
         clearAllNotifications(this)
@@ -290,19 +316,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun App(currentIntent: Intent?) {
         val viewModel: AuthVM = hiltViewModel()
-        val isLoggedIn = viewModel.loginState.value.loginSuccess
-        val navController = rememberNavController()  // Assign instance to class property
-        //val currentIntent = rememberUpdatedState(LocalActivity.current).value?.intent
-
-//        // Handle initial intent when app is cold-started
-//        LaunchedEffect(Unit) {
-//            navController.handleDeepLink(this@MainActivity.currentIntent)
-//        }
-//
-//        // Handle new intents when app is already running
-//        LaunchedEffect(currentIntent) {
-//            navController.handleDeepLink(currentIntent)
-//        }
+        val loginState = viewModel.loginState.value
+        val isLoggedIn = loginState.loginSuccess
+        val navController = rememberNavController()
 
         // Handle initial intent when app is cold-started
         LaunchedEffect(Unit) {
@@ -312,17 +328,17 @@ class MainActivity : ComponentActivity() {
         // Handle new intents when app is already running
         LaunchedEffect(currentIntent) {
             if (currentIntent != null) {
-                //handleDeepLink(navController, currentIntent)
-                handleDeepLink(navController,currentIntent)
+                handleDeepLink(navController, currentIntent)
             }
         }
 
         val senderId = currentIntent?.data?.lastPathSegment
-        //val intent = Intent()
-        //val senderId = intent?.data?.lastPathSegment
 
-
-        AppNavigation(navController, isLoggedIn, senderId)
+        AppNavigation(
+            navController = navController,
+            isLoggedIn = isLoggedIn,
+            otherUserId = senderId
+        )
     }
 
     private fun handleDeepLink(navController: NavController, intent: Intent) {

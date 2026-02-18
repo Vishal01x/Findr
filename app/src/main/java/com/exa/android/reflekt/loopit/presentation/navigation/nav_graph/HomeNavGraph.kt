@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.navigation.nav_graph
 
+import android.util.Log
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -10,7 +11,6 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.ChatViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
-import com.exa.android.reflekt.loopit.data.feature.main.post.data.viewmodel.PostListViewModel
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.DetailChat
 import com.exa.android.reflekt.loopit.presentation.main.chat.HomeScreen
 import com.exa.android.reflekt.loopit.presentation.main.Map.MapScreen
@@ -18,15 +18,20 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.ChatInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MeetingRoute
-import com.exa.android.reflekt.loopit.presentation.main.post.screen.CreatePostScreen
-import com.exa.android.reflekt.loopit.presentation.main.post.screen.EditPostScreen
-import com.exa.android.reflekt.loopit.presentation.main.post.screen.ListedPostsScreen
-import com.exa.android.reflekt.loopit.presentation.main.post.screen.PostDetailScreen
 import com.exa.android.reflekt.loopit.presentation.main.Map.RequestedPersonMapScreen
 import com.exa.android.reflekt.loopit.presentation.main.Map.MapSearchScreen
-import com.exa.android.reflekt.loopit.presentation.navigation.component.ProjectRoute
-import com.exa.android.reflekt.loopit.core.network.PostListEvent
+import com.exa.android.reflekt.loopit.presentation.main.Map.MapScreen2_0
+import com.exa.android.reflekt.loopit.presentation.main.Map.MapSearchScreen2_0
+import com.exa.android.reflekt.loopit.presentation.main.Map.UserListScreen
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.ChatMediaScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.create.CreatePostScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.AuthorManagementScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.EditPostScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.MyPostsScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.PostDetailScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.PostHomeScreen
+import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
@@ -76,9 +81,34 @@ fun NavGraphBuilder.chatInfoNavGraph(navController: NavHostController) {
 
 fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewModel: LocationViewModel) {
     navigation(
-        startDestination = MapInfo.MapScreen.route,
+        startDestination = MapInfo.MapScreen2.route, // Reverted to 2.0 version
         route = "map_graph"
     ) {
+        // New MapScreen 2.0 (default)
+        composable(MapInfo.MapScreen2.route) {
+            MapScreen2_0(
+                navController = navController,
+                viewModel = locationViewModel
+            )
+        }
+        
+        // New MapSearchScreen 2.0
+        composable(MapInfo.MapSearchScreen2.route) {
+            MapSearchScreen2_0(
+                navController = navController,
+                viewModel = locationViewModel
+            )
+        }
+        
+        // User List Screen
+        composable(MapInfo.UserListScreen.route) {
+            UserListScreen(
+                navController = navController,
+                viewModel = locationViewModel
+            )
+        }
+        
+        // Legacy MapScreen (for backward compatibility)
         composable(MapInfo.MapScreen.route) {
             MapScreen(
                 navController,
@@ -94,6 +124,7 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
             )
         }
 
+        // Legacy search screen (for backward compatibility)
         composable("searchScreen") {
             MapSearchScreen(
                 viewModel = locationViewModel,
@@ -102,69 +133,177 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
                 }
             )
         }
+        
+        // New search screen 2.0 - also accessible via old route for backward compatibility
+        composable("searchScreen2_0") {
+            MapSearchScreen2_0(
+                navController = navController,
+                viewModel = locationViewModel
+            )
+        }
+        
+        // User list screen - also accessible via simple route
+        composable("userListScreen") {
+            UserListScreen(
+                navController = navController,
+                viewModel = locationViewModel
+            )
+        }
+
+//        // New Bottom Sheet Map Screen (Experimental)
+//        composable(MapInfo.MapScreenBottomSheet.route) {
+//            MapScreenBottomSheet(
+//                navController = navController,
+//                viewModel = locationViewModel
+//            )
+//        }
+        
+        // User list screen - also accessible via simple route
+        composable("userListScreen") {
+            UserListScreen(
+                navController = navController,
+                viewModel = locationViewModel
+            )
+        }
     }
 }
 
 
-fun NavGraphBuilder.projectNavGraph(navController: NavHostController) {
-    //homeNavGraph(navController)
+fun NavGraphBuilder.postNavGraph(navController: NavHostController) {
     navigation(
-        startDestination = ProjectRoute.ProjectList.route,
-        route = "project_graph"
+        startDestination = PostRoute.PostList.route,
+        route = "post_graph"
     ) {
-        composable(ProjectRoute.ProjectList.route) {
-            val chatViewModel : ChatViewModel = hiltViewModel()
-            ListedPostsScreen(
-                navController = navController,
-                onProjectClick = { projectId ->
-                    navController.navigate(ProjectRoute.ProjectDetail.createRoute(projectId))
+        composable(PostRoute.PostList.route) {
+            // Use the new PostHomeScreen with Hilt-injected ViewModel
+            PostHomeScreen(
+                onPostClick = { postId ->
+                    navController.navigate(PostRoute.PostDetail.createRoute(postId))
+                },
+                onUserClick = { userId ->
+                    // Navigate to user profile when implemented
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
                 }
             )
         }
 
-        composable(ProjectRoute.ProjectDetail.route,
-                deepLinks = listOf(navDeepLink { uriPattern = "findr://project/{projectId}" })
+        // Post Detail Screen
+        composable(
+            PostRoute.PostDetail.route,
+            deepLinks = listOf(navDeepLink { uriPattern = "findr://project/{projectId}" })
         ) { backStackEntry ->
-            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val postId = backStackEntry.arguments?.getString("projectId") ?: ""
             PostDetailScreen(
-                projectId = projectId,
-                navController = navController
+                postId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onEditClick = { postId ->
+                    navController.navigate(PostRoute.EditPost.createRoute(postId))
+                },
+                onManageRequestsClick = { postId ->
+                    navController.navigate(PostRoute.AuthorManagement.createRoute(postId))
+                },
+                onUserClick = {userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                }
+
             )
         }
 
-        composable(ProjectRoute.CreateProject.route) {
-            val projectViewModel: PostListViewModel = hiltViewModel()
+        // Create Post Screen
+        composable(PostRoute.CreatePost.route) {
             CreatePostScreen(
                 onBack = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(PostListEvent.Refresh)
                 },
-                onProjectCreated = {
+                onPostCreated = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(PostListEvent.Refresh)
-                },
-                viewModel = hiltViewModel(),
-                navController = navController
+                }
             )
         }
-        composable(ProjectRoute.EditProject.route) { backStackEntry ->
-            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
-            val projectViewModel: PostListViewModel = hiltViewModel()
+        
+        // My Posts Screen
+        composable(PostRoute.MyPosts.route) {
+            MyPostsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onEditPost = { postId ->
+                    navController.navigate(PostRoute.EditPost.createRoute(postId))
+                },
+                onPostClick = {postId->
+                    navController.navigate(PostRoute.PostDetail.createRoute(postId))
+                },
+                onUserClick = { userId ->
+                    // Navigate to user profile when implemented
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                }
+            )
+        }
+        
+        // Enrollment Management Screen
+        composable(PostRoute.EnrollmentManagement.route) { backStackEntry ->
+            com.exa.android.reflekt.loopit.presentation.main.post.screen.EnrollmentManagementScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Manage Enrollments Screen
+        composable(PostRoute.ManageEnrollments.route) { backStackEntry ->
+            com.exa.android.reflekt.loopit.presentation.main.post.screen.ManageEnrollmentsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Manage Registrations Screen
+        composable(PostRoute.ManageRegistrations.route) { backStackEntry ->
+            com.exa.android.reflekt.loopit.presentation.main.post.screen.ManageRegistrationsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Author Management Screen (New comprehensive management panel)
+        composable(
+            route = PostRoute.AuthorManagement.route,
+            arguments = listOf(navArgument("postId") {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            AuthorManagementScreen(
+                postId = postId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onUserClick = {userId->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                }
+            )
+        }
+
+        
+        // Edit Post Screen
+        composable(PostRoute.EditPost.route) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
             EditPostScreen(
-                projectId = projectId,
-                onBack = {
+                postId = postId,
+                onBackClick = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(PostListEvent.Refresh)
                 },
-                onProjectUpdated = {
+                onPostUpdated = {
                     navController.popBackStack()
-                    projectViewModel.onEvent(PostListEvent.Refresh)
-                },
-                viewModel = hiltViewModel(),
-                navController = navController
+                }
             )
         }
-        // In your navigation graph:
+        
+        // Map Screen
         composable("map_screen/{userIds}") { backStackEntry ->
             val userIds = backStackEntry.arguments?.getString("userIds") ?: ""
             RequestedPersonMapScreen(

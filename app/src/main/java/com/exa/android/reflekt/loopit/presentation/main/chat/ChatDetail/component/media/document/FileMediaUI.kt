@@ -22,6 +22,7 @@ import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.componen
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.video.DownloadState
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.UploadStatus
 import com.exa.android.reflekt.loopit.core.utils.showToast
+import com.exa.android.reflekt.loopit.theme.SuccessColor
 
 @Composable
 fun DocumentMessageItem(
@@ -63,7 +64,7 @@ fun DocumentMessageItem(
     ) {
         Row(
             modifier = Modifier
-                .background(Color(0xFFF1F1F1))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -82,14 +83,14 @@ fun DocumentMessageItem(
                 when (uploadStatus) {
                     UploadStatus.FAILED -> Text(
                         text = "Upload Failed. Tap to Retry",
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp
                     )
 
                     UploadStatus.UPLOADING -> {
                         Text(
                             text = "Uploading...",
-                            color = Color.Blue,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 12.sp
                         )
                         LinearProgressIndicator(
@@ -108,7 +109,7 @@ fun DocumentMessageItem(
                         when (val state = downloadState) {
                             is DownloadState.NotStarted -> Text(
                                 text = "Tap to download",
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
 
@@ -121,13 +122,13 @@ fun DocumentMessageItem(
 
                             is DownloadState.Completed -> Text(
                                 text = "Downloaded",
-                                color = Color.Green,
+                                color = SuccessColor,
                                 fontSize = 12.sp
                             )
 
                             is DownloadState.Failed -> Text(
                                 text = "Download failed. Tap to Retry.",
-                                color = Color.Red,
+                                color = MaterialTheme.colorScheme.error,
                                 fontSize = 12.sp
                             )
                         }
@@ -152,7 +153,9 @@ fun DocumentMessageItem(
             Card(
                 elevation = CardDefaults.cardElevation(4.dp),
                 shape = CircleShape,
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
                 when {
                     uploadStatus == UploadStatus.FAILED -> {
@@ -160,7 +163,7 @@ fun DocumentMessageItem(
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Retry Upload",
-                                tint = Color.Red
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,7 +73,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-
+import com.exa.android.reflekt.loopit.theme.chatInputBackground
 
 @Composable
 fun NewMessageSection(
@@ -222,10 +223,12 @@ fun SendTFMessage(
 
 
     Card(
-        elevation = CardDefaults.cardElevation(8.dp),
-        colors = CardDefaults.cardColors(Color.White),
-        shape = RectangleShape,
-        //modifier = Modifier.padding(bottom = 8.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.chatInputBackground),
+        shape = RoundedCornerShape(26.dp),
+        modifier = Modifier
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp) // Floating margin
     ) {
 
         if (isOtherUserBlocked) {
@@ -306,14 +309,14 @@ fun SendTFMessage(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color(0xFFEFEFEF)) // Light grey background
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     if (textFieldValue.text.isEmpty()) {
                         Text(
                             text = "Type a Message",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -330,7 +333,9 @@ fun SendTFMessage(
                             .onFocusChanged { focusState ->
                                 onFocusChange(focusState)
                             },
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.Black),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
                         maxLines = 4,
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(
@@ -363,8 +368,8 @@ fun SendTFMessage(
                         //painter = painterResource(if (textFieldValue.text.isEmpty()) R.drawable.microphone else R.drawable.send),
                         painter = painterResource(R.drawable.send),
                         contentDescription = "Send or Mic",
-                        tint = if (textFieldValue.text.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
-                            .7f
+                        tint = if (textFieldValue.text.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            .5f
                         ),
                         modifier = Modifier.size(24.dp)
                     )
@@ -384,9 +389,9 @@ fun SendAudioMessage(
     onSendRecording: () -> Unit
 ) {
     Card(
-        elevation = CardDefaults.cardElevation(8.dp),
-        colors = CardDefaults.cardColors(Color.White),
-        shape = RectangleShape
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.chatInputBackground),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -399,14 +404,14 @@ fun SendAudioMessage(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete Recording",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
             // Timer
             Text(
                 text = recordingTime,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
@@ -424,7 +429,7 @@ fun SendAudioMessage(
                     modifier = Modifier
                         .weight(1f)
                         .height(2.dp)
-                        .background(Color.Gray)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant)
                 )
             }
             // Pause/Resume Button
@@ -432,7 +437,7 @@ fun SendAudioMessage(
                 Icon(
                     painter = painterResource(if (isPaused) R.drawable.play else R.drawable.pause),
                     contentDescription = "Pause/Resume Recording",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -441,7 +446,7 @@ fun SendAudioMessage(
                 Icon(
                     imageVector = Icons.Default.Send,
                     contentDescription = "Send Recording",
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -467,7 +472,7 @@ fun ReplyUi(
 
     val replyColor = when(replyType){
         ReplyType.YOU -> {MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)}
-        ReplyType.OTHER -> {Color.White.copy(.8f)}
+        ReplyType.OTHER -> MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
         ReplyType.NEWMESSAGE -> {MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)}
     }
 

@@ -41,6 +41,9 @@ class AuthVM @Inject constructor(
     // Verification State
     val verificationState = mutableStateOf(VerificationState())
 
+    // Google Profile Setup State
+    val googleProfileSetupState = mutableStateOf(GoogleProfileSetupState())
+
     // Role Suggestions
     val roleSuggestions = mutableStateListOf<String>()
 
@@ -59,10 +62,15 @@ class AuthVM @Inject constructor(
             val currentUser = repository.getCurrentUser()
             if (currentUser != null && currentUser.isEmailVerified) {
                 preferenceHelper.saveUserId(currentUser.uid)
+                val isComplete = repository.isProfileComplete(currentUser.uid)
                 loginState.value = loginState.value.copy(
-                    loginSuccess = true,
+                    isCheckingAuth = false,
+                    loginSuccess = isComplete,
+                    needsProfileSetup = !isComplete,
                     email = currentUser.email ?: ""
                 )
+            } else {
+                loginState.value = loginState.value.copy(isCheckingAuth = false)
             }
         }
     }
@@ -81,6 +89,7 @@ class AuthVM @Inject constructor(
                     loginState.value.copy(passwordVisible = !loginState.value.passwordVisible)
 
             is LoginEvent.Submit -> login()
+            is LoginEvent.GoogleSignIn -> signInWithGoogle(event.idToken)
             LoginEvent.ClearError -> {
                 loginState.value = loginState.value.copy(errorMessage = null)
             }
@@ -112,6 +121,12 @@ class AuthVM @Inject constructor(
 
             is SignUpEvent.CollegeNameChanged ->
                 signUpState.value = signUpState.value.copy(collegeName = event.collegeName)
+
+            is SignUpEvent.BranchChanged ->
+                signUpState.value = signUpState.value.copy(branch = event.branch)
+
+            is SignUpEvent.CourseChanged ->
+                signUpState.value = signUpState.value.copy(course = event.course)
 
             is SignUpEvent.YearChanged -> signUpState.value =
                 signUpState.value.copy(year = event.year)
@@ -237,6 +252,97 @@ class AuthVM @Inject constructor(
         }
     }
 
+    private fun signInWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            loginState.value = loginState.value.copy(isGoogleLoading = true)
+            val result = repository.signInWithGoogle(idToken)
+
+            when {
+                result.isSuccess -> {
+                    val user = result.getOrNull()!!
+                    repository.createOrUpdateGoogleUserProfile(user)
+                    preferenceHelper.saveUserId(user.uid)
+                    val isComplete = repository.isProfileComplete(user.uid)
+                    loginState.value = loginState.value.copy(
+                        isGoogleLoading = false,
+                        loginSuccess = isComplete,
+                        needsProfileSetup = !isComplete,
+                        errorMessage = null
+                    )
+                }
+                result.isFailure -> {
+                    loginState.value = loginState.value.copy(
+                        isGoogleLoading = false,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Google sign-in failed"
+                    )
+                }
+            }
+        }
+    }
+
+    fun saveGoogleUserProfile() {
+        val uid = auth.currentUser?.uid ?: return
+        val s = googleProfileSetupState.value
+        viewModelScope.launch {
+            googleProfileSetupState.value = s.copy(isLoading = true)
+            val result = repository.saveGoogleUserProfile(
+                uid = uid,
+                isStudent = s.isStudent,
+                collegeName = s.collegeName,
+                branch = s.branch,
+                course = s.course,
+                year = s.year,
+                location = s.location,
+                companyName = s.companyName,
+                ctc = s.ctc,
+                experience = s.experience,
+                selectedRoles = s.selectedRoles
+            )
+            when {
+                result.isSuccess -> {
+                    googleProfileSetupState.value = s.copy(isLoading = false)
+                    loginState.value = loginState.value.copy(
+                        loginSuccess = true,
+                        needsProfileSetup = false
+                    )
+                }
+                result.isFailure -> {
+                    googleProfileSetupState.value = s.copy(
+                        isLoading = false,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Failed to save profile"
+                    )
+                }
+            }
+        }
+    }
+
+    fun onGoogleProfileSetupEvent(event: GoogleProfileSetupEvent) {
+        val s = googleProfileSetupState.value
+        googleProfileSetupState.value = when (event) {
+            is GoogleProfileSetupEvent.ToggleStudentStatus -> s.copy(isStudent = !s.isStudent)
+            is GoogleProfileSetupEvent.CollegeNameChanged -> s.copy(collegeName = event.value)
+            is GoogleProfileSetupEvent.BranchChanged -> s.copy(branch = event.value)
+            is GoogleProfileSetupEvent.CourseChanged -> s.copy(course = event.value)
+            is GoogleProfileSetupEvent.YearChanged -> s.copy(year = event.value)
+            is GoogleProfileSetupEvent.LocationChanged -> s.copy(location = event.value)
+            is GoogleProfileSetupEvent.CompanyNameChanged -> s.copy(companyName = event.value)
+            is GoogleProfileSetupEvent.CtcChanged -> s.copy(ctc = event.value)
+            is GoogleProfileSetupEvent.ExperienceChanged -> s.copy(experience = event.value)
+            is GoogleProfileSetupEvent.RoleChanged -> {
+                s.copy(roleQuery = event.query).also {
+                    if (event.query.isNotEmpty()) fetchRoleSuggestions(event.query)
+                    else roleSuggestions.clear()
+                }
+            }
+            is GoogleProfileSetupEvent.SelectRole -> {
+                val current = s.selectedRoles.toMutableList()
+                if (current.contains(event.role)) current.remove(event.role) else current.add(event.role)
+                s.copy(selectedRoles = current, roleQuery = "").also { roleSuggestions.clear() }
+            }
+            is GoogleProfileSetupEvent.Submit -> s.also { saveGoogleUserProfile() }
+        }
+    }
+
     private fun signUp() {
         viewModelScope.launch {
             signUpState.value = signUpState.value.copy(isLoading = true)
@@ -251,6 +357,8 @@ class AuthVM @Inject constructor(
                 role = signUpState.value.selectedRoles.joinToString(", "),
                 isStudent = signUpState.value.isStudent,
                 collegeName = signUpState.value.collegeName,
+                branch = signUpState.value.branch,
+                course = signUpState.value.course,
                 year = signUpState.value.year,
                 location = signUpState.value.location,
                 companyName = signUpState.value.companyName,
@@ -405,9 +513,43 @@ data class LoginState(
     val password: String = "",
     val passwordVisible: Boolean = false,
     val isLoading: Boolean = false,
+    val isGoogleLoading: Boolean = false,
+    val isCheckingAuth: Boolean = true,
     val loginSuccess: Boolean = false,
+    val needsProfileSetup: Boolean = false,
     val errorMessage: String? = null
 )
+
+data class GoogleProfileSetupState(
+    val isStudent: Boolean = true,
+    val collegeName: String = "",
+    val branch: String = "",
+    val course: String = "",
+    val year: String = "",
+    val location: String = "",
+    val companyName: String = "",
+    val ctc: String = "",
+    val experience: String = "",
+    val roleQuery: String = "",
+    val selectedRoles: List<String> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
+sealed class GoogleProfileSetupEvent {
+    object ToggleStudentStatus : GoogleProfileSetupEvent()
+    data class CollegeNameChanged(val value: String) : GoogleProfileSetupEvent()
+    data class BranchChanged(val value: String) : GoogleProfileSetupEvent()
+    data class CourseChanged(val value: String) : GoogleProfileSetupEvent()
+    data class YearChanged(val value: String) : GoogleProfileSetupEvent()
+    data class LocationChanged(val value: String) : GoogleProfileSetupEvent()
+    data class CompanyNameChanged(val value: String) : GoogleProfileSetupEvent()
+    data class CtcChanged(val value: String) : GoogleProfileSetupEvent()
+    data class ExperienceChanged(val value: String) : GoogleProfileSetupEvent()
+    data class RoleChanged(val query: String) : GoogleProfileSetupEvent()
+    data class SelectRole(val role: String) : GoogleProfileSetupEvent()
+    object Submit : GoogleProfileSetupEvent()
+}
 
 sealed class LoginEvent {
     data class EmailChanged(val email: String) : LoginEvent()
@@ -415,6 +557,7 @@ sealed class LoginEvent {
     object TogglePasswordVisibility : LoginEvent()
     object Submit : LoginEvent()
     object ClearError : LoginEvent()
+    data class GoogleSignIn(val idToken: String) : LoginEvent()
 }
 
 data class SignUpState(
@@ -423,6 +566,8 @@ data class SignUpState(
     val fullName: String = "",
     val isStudent: Boolean = true,
     val collegeName: String = "",
+    val branch: String = "",
+    val course: String = "",
     val year: String = "",
     val location: String = "",
     val companyName: String = "",
@@ -449,6 +594,8 @@ sealed class SignUpEvent {
     data class RoleChanged(val query: String) : SignUpEvent()
     object ToggleStudentStatus : SignUpEvent()
     data class CollegeNameChanged(val collegeName: String) : SignUpEvent()
+    data class BranchChanged(val branch: String) : SignUpEvent()  // NEW
+    data class CourseChanged(val course: String) : SignUpEvent()  // NEW
     data class YearChanged(val year: String) : SignUpEvent()
     data class LocationChanged(val location: String) : SignUpEvent()
     data class CompanyNameChanged(val companyName: String) : SignUpEvent()
@@ -459,7 +606,6 @@ sealed class SignUpEvent {
     object TogglePasswordVisibility : SignUpEvent()  // Added for password visibility
     data class SelectRole(val role: String) : SignUpEvent()  // Keep this
     data class AccountTypeSelected(val type: String) : SignUpEvent()
-
 }
 
 data class VerificationState(
@@ -479,6 +625,8 @@ data class PersonalAccountData(
 data class ProfessionalAccountData(
     val isStudent: Boolean = true,
     val collegeName: String = "",
+    val branch: String = "",
+    val course: String = "",
     val year: String = "",
     val location: String = "",
     val companyName: String = "",

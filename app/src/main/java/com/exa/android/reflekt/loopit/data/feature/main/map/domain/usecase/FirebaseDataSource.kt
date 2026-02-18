@@ -45,7 +45,7 @@ class FirebaseDataSource @Inject constructor() {
                                 uid = data.uid,
                                 email = data.email,
                                 name = data.name,
-                                imageUrl = data.profileImageUrl,
+                                profilePicture = data.profileImageUrl,
                                 role = data.role,
                                 isStudent = data.isStudent,
                                 createdAt = data.createdAt,

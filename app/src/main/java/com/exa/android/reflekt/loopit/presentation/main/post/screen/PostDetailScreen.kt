@@ -1,1504 +1,1080 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.screen
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
-import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.PersonAddDisabled
-import androidx.compose.material.icons.filled.PersonOff
-import androidx.compose.material.icons.filled.QuestionAnswer
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedAssistChip
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.graphics.ColorUtils
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.exa.android.reflekt.loopit.data.feature.main.post.data.viewmodel.PostListViewModel
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
-import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
-import com.exa.android.reflekt.loopit.core.network.PostListEvent
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EnrollmentStatus
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
-import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole
+import com.exa.android.reflekt.loopit.presentation.main.post.components.*
+import com.exa.android.reflekt.loopit.theme.Spacing
+
+/**
+ * Modern social media-style Post Detail Screen
+ * - Compact header with user info
+ * - Text before images
+ * - Better image sizing
+ * - Tabs for Project/Event details
+ * - Comments section
+ */
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails
+import com.exa.android.reflekt.loopit.theme.CommentColor
+import com.exa.android.reflekt.loopit.theme.LikeColorActive
+import com.exa.android.reflekt.loopit.theme.ShareColor
+import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PostDetailScreen(
-    projectId: String,
-    navController: NavHostController,
-    viewModel: PostListViewModel = hiltViewModel()
+    postId: String,
+    onBackClick: () -> Unit,
+    onUserClick: (String) -> Unit = {},
+    onEditClick: (String) -> Unit = {},
+    onManageRequestsClick: (String) -> Unit = {},
+    postViewModel: PostDetailViewModel = hiltViewModel(),
+    commentViewModel : CommentViewModel = hiltViewModel()
 ) {
-
-    val state by viewModel.state.collectAsState()
-    val project = state.projects.find { it.id == projectId }
+    val postState by postViewModel.uiState.collectAsState()
+    val commentState by commentViewModel.state.collectAsState()
+    val currentUserId = postViewModel.currentUserId
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-    val scrollState = rememberScrollState()
-    val context = LocalContext.current
+    val listState = rememberLazyListState()
 
-    // Animation states
-    val headerHeight = 280.dp
-    val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
-    val scrollOffset = minOf(scrollState.value.toFloat(), headerHeightPx)
-    val dynamicElevation = animateDpAsState(
-        targetValue = if (scrollOffset > headerHeightPx - 50) 4.dp else 0.dp,
-        label = "elevation"
-    )
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    
+    var showDiscardDialog by remember { mutableStateOf(false) }
 
-    // Expanded states
-    var expandedRoles by rememberSaveable { mutableStateOf(true) }
-    var expandedTags by rememberSaveable { mutableStateOf(true) }
-    var expandedEnrolled by rememberSaveable { mutableStateOf(false) }
-    var expandedRequests by rememberSaveable { mutableStateOf(false) }
-
-    val isOwner = project?.createdBy == currentUserId
-    val isEnrolled = currentUserId?.let {
-        project?.enrolledPersons?.containsKey(it) == true ||
-                project?.requestedPersons?.containsKey(it) == true
-    } ?: false
-
-
-
-    Log.d("projectdetail", "project: ${project?.enrolledPersons}, $currentUserId, $isEnrolled")
-    val view = LocalView.current
-    val window = (view.context as Activity).window
-    val insetsController = WindowCompat.getInsetsController(window, view)
-
-    // Remember original colors to restore later
-    val originalStatusBarColor = remember { window.statusBarColor }
-    val originalNavigationBarColor = remember { window.navigationBarColor }
-
-    val statusBarColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
-    val navigationBarColor = MaterialTheme.colorScheme.background.toArgb()
-
-    DisposableEffect(Unit) {
-        // Set custom colors when entering
-        window.statusBarColor = statusBarColor
-        window.navigationBarColor = navigationBarColor
-        insetsController.isAppearanceLightStatusBars = false // Dark icons for light color
-        insetsController.isAppearanceLightNavigationBars = true // Light icons for dark background
-
-        onDispose {
-            // Restore original colors when leaving
-            window.statusBarColor = originalStatusBarColor
-            window.navigationBarColor = originalNavigationBarColor
-            insetsController.isAppearanceLightStatusBars =
-                ColorUtils.calculateLuminance(originalStatusBarColor) > 0.5
-
-            insetsController.isAppearanceLightNavigationBars =
-                ColorUtils.calculateLuminance(originalNavigationBarColor) > 0.5
+    val handleBack = {
+        if (commentViewModel.hasUnsavedChanges()) {
+            showDiscardDialog = true
+        } else {
+            onBackClick()
         }
     }
 
-    LaunchedEffect(projectId) {
-        if (state.projects.none { it.id == projectId }) {
-            viewModel.onEvent(PostListEvent.Refresh)
+    BackHandler(enabled = true) {
+        handleBack()
+    }
+
+    // Pager state for tabs (if PROJECT or EVENT)
+    //val pagerState = rememberPagerState(pageCount = { 2 })
+
+    var curTab by rememberSaveable { mutableIntStateOf(0) }
+    val showTabs = postState.post?.type == PostType.PROJECT.displayName ||
+            postState.post?.type == PostType.EVENT.displayName
+
+    // Show toast messages
+    LaunchedEffect(postState.toastMessage) {
+        postState.toastMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            postViewModel.clearToast()
         }
     }
 
-    LaunchedEffect(state.error) {
-        state.error?.let { error ->
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = error,
-                    actionLabel = "Dismiss"
-                )
+    LaunchedEffect(Unit) {
+        commentViewModel.uiEvents.collect {event ->
+            when(event){
+                is CommentUiEvent.FocusInput ->{
+                    focusRequester.requestFocus()
+                    keyboardController?.show()
+                }
+                else ->{}
             }
+
         }
     }
+
+    LaunchedEffect(postId) {
+        commentViewModel.onEvent(CommentEvent.LoadComments(postId))
+    }
+
+    // Handle post deletion - navigate back when deleted
+    LaunchedEffect(postState.postDeleted) {
+        if (postState.postDeleted) {
+            onBackClick()
+        }
+    }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisible ->
+                val total = listState.layoutInfo.totalItemsCount
+                if (
+                    lastVisible == total - 1 &&
+                    commentState.hasMoreComments &&
+                    !commentState.isLoadingMore
+                ) {
+                    commentViewModel.onEvent(CommentEvent.LoadMoreComments)
+                }
+            }
+    }
+
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        floatingActionButton = {
-            if (project != null && currentUserId != null && !isOwner) {
-                AnimatedVisibility(
-                    visible = !scrollState.canScrollForward,
-                    enter = fadeIn() + slideInVertically(),
-                    exit = fadeOut() + slideOutVertically()
-                ) {
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            if (isEnrolled) {
-                                viewModel.withdrawFromProject(project.id)
-                            } else {
-                                viewModel.enrollInProject(project)
-                            }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = when (postState.post?.type) {
+                            PostType.PROJECT.displayName -> "Project"
+                            PostType.EVENT.displayName -> "Event"
+                            else -> "Post"
                         },
-                        icon = {
-                            Icon(
-                                if (isEnrolled) Icons.Default.ExitToApp else Icons.Default.PersonAdd,
-                                contentDescription = if (isEnrolled) "Withdraw" else "Enroll"
-                            )
-                        },
-                        text = { Text(if (isEnrolled) "Withdraw" else "Enroll Now") },
-                        containerColor = if (isEnrolled) MaterialTheme.colorScheme.errorContainer
-                        else MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = if (isEnrolled) MaterialTheme.colorScheme.onErrorContainer
-                        else MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        style = MaterialTheme.typography.titleMedium
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { handleBack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    // Show Edit/Delete buttons if user is author
+                    if (postState.isAuthor && postState.post != null) {
+                        IconButton(onClick = { onEditClick(postState.post!!.id) }) {
+                            Icon(
+                                Icons.Rounded.Edit,
+                                contentDescription = "Edit Post",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = { postViewModel.showDeleteConfirmation() }) {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = "Delete Post",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(onClick = { onManageRequestsClick(postState.post!!.id) }) {
+                            Icon(
+                                Icons.Rounded.ManageAccounts,
+                                contentDescription = "Manage",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+
+        bottomBar = {
+            if(curTab == 0) {
+                Column(Modifier.fillMaxWidth()) {
+                    CommentInput(commentState, commentViewModel, focusRequester)
                 }
             }
-        }
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (project == null) {
-                LoadingErrorState(
-                    isLoading = state.isLoading,
-                    modifier = Modifier.padding(padding)
-                )
-            } else {
-                CustomScrollLayout(
-                    scrollState = scrollState,
-                    headerHeight = headerHeight,
-                    headerContent = {
-                        ProjectHeaderSection(
-                            project = project,
-                            scrollOffset = scrollOffset,
-                            headerHeightPx = headerHeightPx,
-                            onAuthorClick = { autherId->
-                                navController.navigate(ProfileRoute.UserProfile.createRoute(autherId))
-                            }
-                        )
-                    },
-                    content = {
-                        ProjectContentSection(
-                            project = project,
-                            isOwner = isOwner,
-                            expandedRoles = expandedRoles,
-                            expandedTags = expandedTags,
-                            expandedEnrolled = expandedEnrolled,
-                            expandedRequests = expandedRequests,
-                            onRoleClick = { expandedRoles = !expandedRoles },
-                            onTagClick = { expandedTags = !expandedTags },
-                            onEnrolledClick = { expandedEnrolled = !expandedEnrolled },
-                            onRequestClick = { expandedRequests = !expandedRequests },
-                            viewModel = viewModel,
-                            navController = navController,
-                            context = context,
-                            currentUserId = currentUserId,
-                            modifier = Modifier.padding(padding)
-                        )
-                    }
-                )
-            }
-
-            DynamicTopAppBar(
-                scrollState = scrollState,
-                headerHeight = headerHeight,
-                project = project,
-                navController = navController,
-                dynamicElevation = dynamicElevation.value
-            )
-        }
-    }
-}
-
-@Composable
-private fun LoadingErrorState(isLoading: Boolean, modifier: Modifier = Modifier) {
-    if (isLoading) {
-        // Show loading spinner
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-    } else {
-        // Show error message
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "Error loading project. Please try again.")
-        }
-    }
-}
-@SuppressLint("UnusedBoxWithConstraintsScope")
-@Composable
-private fun CustomScrollLayout(
-    scrollState: ScrollState,
-    headerHeight: Dp,
-    headerContent: @Composable () -> Unit,
-    content: @Composable () -> Unit
-) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        // Scrollable content
-        Column(modifier = Modifier.verticalScroll(scrollState)) {
-            // Header Content
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(headerHeight)
-            ) {
-                headerContent()
-            }
-
-            // Main Content
-            Box(modifier = Modifier.fillMaxSize()) {
-                content()
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DynamicTopAppBar(
-    scrollState: ScrollState,
-    headerHeight: Dp,
-    project: Post?,
-    navController: NavHostController,
-    dynamicElevation: Dp
-) {
-    val headerHeightPx = with(LocalDensity.current) { headerHeight.toPx() }
-    val scrollOffset = minOf(scrollState.value.toFloat(), headerHeightPx)
-    val titleOpacity = animateFloatAsState(
-        targetValue = if (scrollOffset > headerHeightPx - 50) 1f else 0f,
-        label = "titleOpacity"
-    )
-
-    TopAppBar(
-        title = {
-            if (project != null && titleOpacity.value > 0.1f) {
-                Text(
-                    project.title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.alpha(titleOpacity.value)
-                )
-            }
         },
-        navigationIcon = {
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.background(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = CircleShape
-                )
-            ) {
-                Icon(
-                    Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-            scrolledContainerColor = MaterialTheme.colorScheme.surface
-        ),
-        modifier = Modifier
-            .graphicsLayer {
-                translationY = -scrollOffset.toFloat() / 2
-                alpha = titleOpacity.value
-            }
-            .shadow(dynamicElevation),
-        windowInsets = WindowInsets(0.dp)
-    )
-}
 
-@Composable
-private fun ProjectHeaderSection(
-    project: Post,
-    scrollOffset: Float,
-    headerHeightPx: Float,
-    onAuthorClick: (String)->Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp)
-    ) {
-        // Parallax background
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
-                .graphicsLayer {
-                    translationY = scrollOffset * 0.5f
-                    alpha = 1 - (scrollOffset / headerHeightPx)
-                }
-                .background(
-                    brush = Brush.verticalGradient(
-                        0.0f to MaterialTheme.colorScheme.primaryContainer,
-                        1.0f to MaterialTheme.colorScheme.secondaryContainer
-                    )
-                )
-        )
-
-        // Content
-        Column(
-            modifier = Modifier
+                .padding(paddingValues)
                 .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Bottom
         ) {
-            Text(
-                project.title,
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                maxLines = 2,
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-                    .offset(y = (-scrollOffset * 0.2f).dp)
-            )
-
-            ProjectStatusChip(project = project)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AuthorSection(
-                project = project,
-                onAuthorClick = { autherId->
-                    onAuthorClick(autherId)
+            when {
+                postState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-            )
-        }
-    }
-}
 
-@Composable
-private fun ProjectContentSection(
-    project: Post,
-    isOwner: Boolean,
-    expandedRoles: Boolean,
-    expandedTags: Boolean,
-    expandedEnrolled: Boolean,
-    expandedRequests: Boolean,
-    onRoleClick: () -> Unit,
-    onTagClick: () -> Unit,
-    onEnrolledClick: () -> Unit,
-    onRequestClick: () -> Unit,
-    viewModel: PostListViewModel,
-    navController: NavHostController,
-    context: Context,
-    currentUserId: String?,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        DescriptionSection(project.description)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        if(project.imageUrls.isNotEmpty()) {
-            ImageGallery(images = project.imageUrls, navController= navController)
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        if(project.links.isNotEmpty()) {
-            ClickableLinks(links = project.links, context = context)
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        ProjectChipsSection(
-            roles = project.rolesNeeded,
-            tags = project.tags,
-            expandedRoles = expandedRoles,
-            expandedTags = expandedTags,
-            onRoleClick = onRoleClick,
-            onTagClick = onTagClick
-        )
-
-        if (isOwner) {
-            TeamMembersSection(
-                members = project.enrolledPersons,
-                creatorId = project.createdBy,
-                expanded = expandedEnrolled,
-                onHeaderClick = onEnrolledClick,
-                onMemberClick = { userId->
-                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                postState.error != null -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = postState.error ?: "Unknown error",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = { /* Retry */ },
+                            modifier = Modifier.padding(top = Spacing.medium)
+                        ) {
+                            Text("Retry")
+                        }
+                    }
                 }
-            )
 
-            JoinRequestsSection(
-                requests = project.requestedPersons,
-                expanded = expandedRequests,
-                onHeaderClick = onRequestClick,
-                onAccept = { userId, userName ->
-                    viewModel.acceptJoinRequest(project,userId, userName)
+                else -> {
+                    postState.post?.let { post ->
+                        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                            // COMPACT USER HEADER (Social media style)
+                            item {
+//                                CompactUserHeader(
+//                                    post = post,
+//                                    onUserClick = { /* Navigate to user profile */ }
+//                                )
+
+                                // User Info Header
+                                if (post.userInfo != null) {
+                                    UserInfoHeader(
+                                        userInfo = post.userInfo,
+                                        postViews = post.viewsCount,
+                                        timestamp = post.createdAt?.toDate()?.time
+                                            ?: System.currentTimeMillis(),
+                                        postType = post.type,
+                                        onClick = {onUserClick(post.createdBy)}
+                                    )
+                                } else {
+                                    // Fallback if user info not loaded
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(Spacing.medium),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Placeholder avatar
+                                        Box(
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    MaterialTheme.colorScheme.primary.copy(
+                                                        alpha = 0.2f
+                                                    )
+                                                )
+                                        )
+
+                                        Spacer(modifier = Modifier.width(Spacing.small))
+
+                                        Column {
+                                            Text(
+                                                text = post.createdByName.ifEmpty { "Unknown User" },
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = post.type,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+
+                            }
+
+//                            if (!showTabs) {
+//                                item {
+//                                    OverviewTab(post, currentUserId, onImageClick = {index->
+//                                        postViewModel.onImageClick(post.imageUrls, index, post.userInfo, post.description)
+//                                    })
+//                                }
+//                            }
+
+                            // TABS FOR PROJECT/EVENT (Overview + Details)
+                            if (showTabs) {
+                                item {
+                                    TabRow(
+                                        selectedTabIndex = curTab,
+                                        containerColor = MaterialTheme.colorScheme.surface
+                                    ) {
+                                        Tab(
+                                            selected = curTab == 0,
+                                            onClick = {
+                                                curTab = 0
+                                            },
+                                            text = { Text("Overview") }
+                                        )
+                                        Tab(
+                                            selected = curTab == 1,
+                                            onClick = {
+                                                curTab = 1
+                                            },
+                                            text = {
+                                                Text(
+                                                    if (post.type == PostType.PROJECT.displayName)
+                                                        "Roles"
+                                                    else
+                                                        "Event Info"
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+//                                item {
+//                                    HorizontalPager(
+//                                        state = pagerState,
+//                                        //modifier = Modifier.heightIn(min = 300.dp)
+//                                    ) { page ->
+//                                        when (page) {
+//                                            0 ->
+                                if (curTab == 0) {
+                                    item {
+                                        OverviewTab(
+                                            post = post, currentUserId, onImageClick = { index ->
+                                                postViewModel.onImageClick(
+                                                    post.imageUrls,
+                                                    index,
+                                                    post.userInfo,
+                                                    post.description
+                                                )
+                                            },
+                                            onLikeClick = { postViewModel.onLikeClick(post.id, post.likes.contains(currentUserId)) },
+                                            onCommentClick = { commentViewModel.onEvent(CommentEvent.FocusInput) },
+                                            onShareClick = { TODO() }
+                                        )
+                                    }
+                                } else {
+                                    if (post.type == PostType.PROJECT.displayName) {
+                                        item {
+                                            val hasAppliedToAny = remember(postState.enrollmentStatuses, postState.isRegistered) {
+                                                postState.enrollmentStatuses.values.any {
+                                                    it == EnrollmentStatus.PENDING || it == EnrollmentStatus.ACCEPTED
+                                                } || postState.isRegistered
+                                            }
+
+                                            ProjectDetailsTab(
+                                                roles = post.projectRoles,
+                                                enrollmentStatuses = postState.enrollmentStatuses,
+                                                isAuthor = postState.isAuthor,
+                                                onEnrollClick = { roleId ->
+                                                    postViewModel.openEnrollmentDialog(roleId)
+                                                },
+                                                onToggleRoleClosure = { roleId, isClosed ->
+                                                    postViewModel.toggleRoleClosure(roleId, isClosed)
+                                                },
+                                                hasAppliedToAny = hasAppliedToAny
+                                            )
+                                        }
+                                    } else {
+                                        item {
+                                            val hasAppliedToAny = remember(postState.enrollmentStatuses, postState.isRegistered) {
+                                                postState.enrollmentStatuses.values.any {
+                                                    it == EnrollmentStatus.PENDING || it == EnrollmentStatus.ACCEPTED
+                                                } || postState.isRegistered
+                                            }
+
+                                            post.eventDetails?.let { eventDetails ->
+                                                ModernEventDetailsTab(
+                                                    eventDetails = eventDetails,
+                                                    eventTitle = post.title,
+                                                    isRegistered = postState.isRegistered,
+                                                    isAuthor = postState.isAuthor,
+                                                    onRegisterClick = { postViewModel.openEventRegistrationDialog() },
+                                                    onToggleClosure = { isClosed ->
+                                                        postViewModel.toggleEventClosure(isClosed)
+                                                    },
+                                                    hasAppliedToAny = hasAppliedToAny
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                            if(curTab == 0) {
+//                            // COMMENTS SECTION
+                                item {
+                                    Column(Modifier.fillMaxWidth()) {
+                                        CommentHeader(commentState.comments.size)
+                                    }
+                                }
+
+                                commentListContent(commentState, currentUserId, commentViewModel, onUserClick)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // Dialogs
+        if (postState.showEnrollmentDialog && postState.selectedRoleForEnrollment != null) {
+            EnrollmentRequestDialog(
+                role = postState.selectedRoleForEnrollment!!,
+                onDismiss = { postViewModel.closeEnrollmentDialog() },
+                onSubmit = { message ->
+                    postViewModel.enrollInRole(postState.selectedRoleForEnrollment!!.id, message)
                 },
-                onReject = { userId ->
-                    viewModel.rejectJoinRequest(project, userId)
+                isLoading = postState.isProcessingEnrollment
+            )
+        }
+
+        if (postState.showEventRegDialog && postState.post != null && postState.post!!.eventDetails != null) {
+            EventRegistrationDialog(
+                eventDetails = postState.post!!.eventDetails!!,
+                eventTitle = postState.post!!.title,
+                onDismiss = { postViewModel.closeEventRegistrationDialog() },
+                onSubmit = { message ->
+                    postViewModel.registerForEvent()
+                    postViewModel.closeEventRegistrationDialog()
                 },
-                onViewMap = {
-                    if (project.requestedPersons.isNotEmpty()) {
-                        navController.navigate("map_screen/${project.requestedPersons.keys.joinToString(",")}")
-                    } else {
-                        Toast.makeText(context, "No requested members", Toast.LENGTH_SHORT).show()
+                isLoading = postState.isProcessingEnrollment
+            )
+        }
+
+        // Delete Confirmation Dialog
+        if (postState.showDeleteDialog && postState.post != null) {
+            DeleteConfirmationDialog(
+                postTitle = postState.post!!.title,
+                onDismiss = { postViewModel.dismissDeleteDialog() },
+                onConfirm = { postViewModel.deletePost() },
+                isDeleting = postState.isDeleting
+            )
+        }
+
+
+        if (showDiscardDialog) {
+            AlertDialog(
+                onDismissRequest = { showDiscardDialog = false },
+                title = { Text("Discard comment?") },
+                text = { Text("You have an unsaved comment. Do you want to leave without posting?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            // Cleanup state
+                            if (commentState.replyingToComment != null) {
+                                commentViewModel.onEvent(CommentEvent.CancelReply)
+                            }
+                            if (commentState.newCommentText.isNotEmpty()) {
+                                commentViewModel.onEvent(CommentEvent.UpdateCommentText(""))
+                            }
+                            showDiscardDialog = false
+                            onBackClick()
+                        }
+                    ) {
+                        Text("Discard", color = MaterialTheme.colorScheme.error)
                     }
                 },
-                onRequestProfileClick = { userId->
-                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                dismissButton = {
+                    TextButton(onClick = { showDiscardDialog = false }) {
+                        Text("Keep editing")
+                    }
                 }
             )
         }
 
-        val allowedTypes = listOf(
-            PostType.BUG.displayName,
-            PostType.POST.displayName,
-            PostType.OTHER.displayName
+        // Image Viewer with User Info and Caption
+        if (postState.showImageViewer) {
+            ImageViewer(
+                images = postState.selectedImages,
+                initialPage = postState.selectedImageIndex,
+                user = postState.selectedImageUser,
+                caption = postState.selectedImageCaption,
+                onDismiss = postViewModel::onDismissImageViewer
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun OverviewTab(post: Post, curUserId : String, onImageClick : (Int) -> Unit, onLikeClick: () -> Unit, onCommentClick: () -> Unit, onShareClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.small),
+        verticalArrangement = Arrangement.Center
+    ) {
+        // TITLE (if present)
+        if (post.title.isNotBlank()) {
+            Text(
+                text = post.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.small)
+            )
+        }
+
+        // DESCRIPTION (Text before images)
+        if (post.description.isNotBlank()) {
+            Text(
+                text = post.description,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.small)
+            )
+        }
+
+
+        //Links Preview
+        if (post.links.isNotEmpty()) {
+            //Spacer(modifier = Modifier.height(Spacing.small))
+            post.links.forEach { link ->
+                LinkPreview(
+                    url = link,
+                    modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.extraSmall)
+                )
+            }
+        }
+
+        // COMPACT IMAGE DISPLAY
+        if (post.imageUrls.isNotEmpty()) {
+            MediaContent(post.imageUrls, onImageClick = onImageClick)
+        }
+
+        //PDF (if available)
+        if(post.fileUrls.isNotEmpty()){
+            FileAttachmentsList(post.fileUrls)
+        }
+
+        // TAGS
+        if (post.tags.isNotEmpty()) {
+            CompactTagsRow(tags = post.tags)
+        }
+
+        Spacing.small
+
+        // POST ACTIONS (Like, Comment, Share
+        CompactInteractionRow (
+            post = post,
+            currentUserId = curUserId,
+            onLikeClick = onLikeClick,
+            onCommentClick = onCommentClick,
+            onShareClick = onShareClick
         )
 
-        val showSection = project.type in allowedTypes
-
-        if(showSection) {
-            LikeCommentSection(
-                project = project,
-                currentUserId = currentUserId,
-                viewModel = viewModel,
-                isOwner = isOwner
-            )
-        }
-
-        ProjectMetadata(project = project)
-
-        if (isOwner) {
-            ProjectManagementButtons(
-                project = project,
-                onEdit = { navController.navigate("edit_project/${project.id}") },
-                onDelete = {
-                    viewModel.onEvent(PostListEvent.DeleteProject(project.id))
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
+        HorizontalDivider(thickness = 8.dp, color = MaterialTheme.colorScheme.surfaceVariant)
     }
 }
 
 @Composable
-private fun ProjectStatusChip(project: Post) {
-    ElevatedAssistChip(
-        onClick = {},
-        label = { Text("Active") }, // Add actual status from project model
-        colors = AssistChipDefaults.elevatedAssistChipColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            labelColor = MaterialTheme.colorScheme.onSecondary
-        ),
-        leadingIcon = {
-            Icon(
-                Icons.Default.Circle,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.primary
+private fun CompactTagsRow(tags: List<String>) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+    ) {
+        tags.take(5).forEach { tag ->
+            SuggestionChip(
+                onClick = { },
+                label = { Text("#$tag", style = MaterialTheme.typography.labelSmall) }
             )
         }
+    }
+}
+
+@Composable
+private fun CompactInteractionRow(
+    post: Post,
+    currentUserId: String,
+    onLikeClick: () -> Unit,
+    onCommentClick: () -> Unit,
+    onShareClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(Spacing.small),
+        horizontalArrangement = Arrangement.SpaceAround
+    ) {
+        // Like Button
+        val isLiked = post.likes.contains(currentUserId)
+        InteractionButton(
+            icon = if (isLiked) Icons.Rounded.ThumbUp else Icons.Rounded.ThumbUpOffAlt,
+            count = post.likesCount,
+            label = "Like",
+            isActive = isLiked,
+            activeColor = LikeColorActive,
+            onClick = onLikeClick
+        )
+
+        // Comment
+        InteractionButton(
+            icon = Icons.Rounded.ChatBubbleOutline,
+            count = post.commentsCount,
+            label = "Comment",
+            activeColor = CommentColor,
+            onClick = onCommentClick
+        )
+
+//        // Repost
+//        InteractionButton(
+//            icon = Icons.Rounded.Repeat,
+//            count = post.sharesCount,
+//            label = "Repost",
+//            activeColor = AccentDark,
+//            onClick = onRepostClick
+//        )
+
+        // Share
+        InteractionButton(
+            icon = Icons.Rounded.Share,
+            count = 0,
+            label = "Share",
+            activeColor = ShareColor,
+            onClick = onShareClick
+        )
+
+//
+//        // Views count
+//        Row(
+//            horizontalArrangement = Arrangement.spacedBy(4.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Icon(
+//                Icons.Default.Visibility,
+//                contentDescription = null,
+//                modifier = Modifier.size(16.dp),
+//                tint = MaterialTheme.colorScheme.onSurfaceVariant
+//            )
+//            Text(
+//                text = formatCount(post.viewsCount),
+//                style = MaterialTheme.typography.labelSmall,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant
+//            )
+//        }
+    }
+}
+
+@Composable
+private fun CompactActionButton(
+    icon: ImageVector,
+    count: Int,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: () -> Unit
+) {
+    IconButton(onClick = onClick) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+            if (count > 0) {
+                Text(
+                    text = formatCount(count),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = color
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectDetailsTab(
+    roles: List<ProjectRole>,
+    enrollmentStatuses: Map<String, EnrollmentStatus>,
+    isAuthor: Boolean,
+    onEnrollClick: (String) -> Unit,
+    onToggleRoleClosure: (String, Boolean) -> Unit,
+    hasAppliedToAny: Boolean
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium)
+    ) {
+        roles.forEach { role ->
+            RoleCardCompact(
+                role = role,
+                enrollmentStatus = enrollmentStatuses[role.id],
+                isAuthor = isAuthor,
+                onEnrollClick = { onEnrollClick(role.id) },
+                onToggleClosure = { isClosed -> onToggleRoleClosure(role.id, isClosed) },
+                hasAppliedToAny = hasAppliedToAny
+            )
+        }
+    }
+}
+
+@Composable
+private fun RoleCardCompact(
+    role: ProjectRole,
+    enrollmentStatus: EnrollmentStatus?,
+    isAuthor: Boolean,
+    onEnrollClick: () -> Unit,
+    onToggleClosure: (Boolean) -> Unit,
+    hasAppliedToAny: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(Spacing.medium)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(role.roleName, fontWeight = FontWeight.Bold)
+                    role.technology?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                
+                Column(horizontalAlignment = Alignment.End) {
+                     Text(
+                        "${role.positionsFilled}/${role.positionsNeeded}",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    if (role.isManuallyClosed) {
+                         Text(
+                            "Closed",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+            
+            // Author Toggle
+            if (isAuthor) {
+                Spacer(modifier = Modifier.height(Spacing.small))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Accepting Applications", style = MaterialTheme.typography.bodySmall)
+                    Switch(
+                        checked = !role.isManuallyClosed,
+                        onCheckedChange = { isOpen -> onToggleClosure(!isOpen) },
+                        //scale = 0.8f
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.small))
+
+            if (enrollmentStatus != null && enrollmentStatus != EnrollmentStatus.NOT_ENROLLED) {
+                EnrollmentStatusBadge(status = enrollmentStatus)
+            } else {
+                 val isFull = role.positionsFilled >= role.positionsNeeded
+                 val isClosed = role.isManuallyClosed
+                 
+                 val buttonText = when {
+                     isClosed -> "Application Closed"
+                     isFull -> "Role Full"
+                     hasAppliedToAny -> "Already Applied"
+                     else -> "Apply"
+                 }
+                 
+                 val isEnabled = !isClosed && !isFull && !hasAppliedToAny
+
+                Button(
+                    onClick = onEnrollClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = isEnabled,
+                    colors = ButtonDefaults.buttonColors(
+                        disabledContainerColor = if (isClosed) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        disabledContentColor = if (isClosed) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    Text(buttonText)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernEventDetailsTab(
+    eventDetails: EventDetails,
+    eventTitle: String,
+    isRegistered: Boolean,
+    isAuthor: Boolean,
+    onRegisterClick: () -> Unit,
+    onToggleClosure: (Boolean) -> Unit,
+    hasAppliedToAny: Boolean
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(Spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium)
+    ) {
+        // Date & Time Card
+        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(Spacing.medium),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
+            ) {
+                Icon(Icons.Rounded.CalendarToday, null, tint = MaterialTheme.colorScheme.primary)
+                Column {
+                    Text(
+                        "When",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        formatEventDate(eventDetails.eventDate),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    eventDetails.eventTime?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+
+        // Location Card
+        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(Spacing.medium),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
+            ) {
+                Icon(
+                    if (eventDetails.isVirtual) Icons.Rounded.Laptop else Icons.Rounded.LocationOn,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        "Where",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        eventDetails.getLocationDisplay(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
+        // Capacity
+        if (eventDetails.capacity != null) {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.padding(Spacing.medium),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
+                ) {
+                    Icon(Icons.Rounded.People, null, tint = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Text(
+                            "Attendees",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "${eventDetails.registeredCount} / ${eventDetails.capacity} registered",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        LinearProgressIndicator(
+                            progress = { eventDetails.registeredCount.toFloat() / eventDetails.capacity },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Author Toggle
+        if (isAuthor) {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                 Row(
+                    modifier = Modifier.padding(Spacing.medium),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                         Text(
+                            "Registration Status",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                         Text(
+                            if (eventDetails.isManuallyClosed) "Closed" else "Open",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                             color = if (eventDetails.isManuallyClosed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Switch(
+                        checked = !eventDetails.isManuallyClosed,
+                        onCheckedChange = { isOpen -> onToggleClosure(!isOpen) }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Register Button
+        val isFull = eventDetails.isFull()
+        val isClosed = eventDetails.isManuallyClosed
+        val isDeadlinePassed = !eventDetails.isRegistrationOpen() && !isClosed && !isFull
+        
+        val buttonText = when {
+            isRegistered -> "Already Registered"
+            isClosed -> "Registration Closed"
+            isFull -> "Event Full"
+            isDeadlinePassed -> "Registration Ended"
+            hasAppliedToAny -> "Already Applied (One Request Limit)"
+            else -> "Register for Event"
+        }
+        
+        val isEnabled = !isRegistered && eventDetails.isRegistrationOpen() && !hasAppliedToAny
+
+        Button(
+            onClick = onRegisterClick,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isEnabled,
+            colors = ButtonDefaults.buttonColors(
+                disabledContainerColor = if (isClosed) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = if (isClosed) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        ) {
+            Text(buttonText)
+        }
+    }
+}
+
+
+// HELPER COMPOSABLE
+
+@Composable
+private fun CompactUserHeader(
+    post: Post,
+    onUserClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(Spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Avatar
+        val avatarUrl = post.userInfo?.avatarUrl
+        if (avatarUrl != null) {
+            AsyncImage(
+                model = avatarUrl,
+                contentDescription = "Profile",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = post.createdByName.firstOrNull()?.uppercase() ?: "?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = post.createdByName,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatTimeAgo(post.createdAt?.toDate()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text("•", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text = post.type,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        IconButton(onClick = { /* More options */ }) {
+            Icon(Icons.Default.MoreVert, "More")
+        }
+    }
+}
+
+@Composable
+private fun CompactImageDisplay(
+    images: List<String>,
+    modifier: Modifier = Modifier
+) {
+    if (images.isEmpty()) return
+
+    AsyncImage(
+        model = images.first(),
+        contentDescription = "Post image",
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 400.dp),
+        contentScale = ContentScale.Crop
     )
 }
 
-@Composable
-private fun AuthorSection(project: Post, onAuthorClick: (String) -> Unit = {}) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable { onAuthorClick(project.createdBy) }
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    project.createdByName.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column {
-            Text(
-                "Created by",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                project.createdByName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
-private fun DescriptionSection(description: String) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column {
-        Text(
-            "About the Project",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyLarge,
-            lineHeight = 24.sp,
-            maxLines = if (expanded) Int.MAX_VALUE else 4,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = !expanded }
-                .padding(bottom = 8.dp),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        if (!expanded) {
-            Text(
-                "Read more",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { expanded = true }
-            )
-        }
-    }
-}
-
-
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun ProjectChipsSection(
-    roles: List<String>,
-    tags: List<String>,
-    expandedRoles: Boolean,
-    expandedTags: Boolean,
-    onRoleClick: () -> Unit,
-    onTagClick: () -> Unit
-) {
-    Column {
-        // Roles Section
-        SectionHeader(
-            title = "Roles Needed",
-            expanded = expandedRoles,
-            onClick = onRoleClick
-        )
-
-        AnimatedVisibility(visible = expandedRoles) {
-            FlowRow(
-                modifier = Modifier.padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                roles.forEach { role ->
-                    AssistChip(
-                        onClick = { /* Handle role chip click */ },
-                        label = { Text(role) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Work,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    )
-                }
-            }
-        }
-
-        // Tags Section
-        SectionHeader(
-            title = "Project Tags",
-            expanded = expandedTags,
-            onClick = onTagClick
-        )
-
-        AnimatedVisibility(visible = expandedTags) {
-            FlowRow(
-                modifier = Modifier.padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                tags.forEach { tag ->
-                    FilterChip(
-                        selected = false,
-                        onClick = { /* Handle tag chip click */ },
-                        label = { Text(tag) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Tag,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SectionHeader(
-    title: String,
-    expanded: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.weight(1f)
-        )
-        Icon(
-            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-            contentDescription = if (expanded) "Collapse" else "Expand",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun TeamMembersSection(
-    members: Map<String, String>,
-    creatorId: String,
-    expanded: Boolean,
-    onHeaderClick: () -> Unit,
-    onMemberClick: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onHeaderClick() }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Group,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    "Team Members • ${members.size}",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand"
-                )
-            }
-
-            AnimatedVisibility(visible = expanded) {
-                Column {
-                    if (members.isEmpty()) {
-                        EmptyState(
-                            icon = Icons.Default.PersonOff,
-                            message = "No members yet",
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(150.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 300.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(members.entries.size) {
-                                val (userId, userName) = members.entries.elementAt(it)
-                                MemberCard(
-                                    name = userName,
-                                    isCreator = userId == creatorId,
-                                    role = if (userId == creatorId) "Creator" else "Member",
-                                    onMemberClick = {
-                                        onMemberClick(userId)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun JoinRequestsSection(
-    requests: Map<String, String>,
-    expanded: Boolean,
-    onHeaderClick: () -> Unit,
-    onAccept: (String, String) -> Unit,
-    onReject: (String) -> Unit,
-    onViewMap: () -> Unit,
-    onRequestProfileClick: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-        ),
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header Section
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onHeaderClick() }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.QuestionAnswer,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    "Join Requests • ${requests.size}",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Requests List
-            AnimatedVisibility(visible = expanded) {
-                Column {
-                    requests.entries.forEach { (userId, userName) ->
-                        RequestCard(
-                            name = userName,
-                            onAccept = { onAccept(userId, userName) },
-                            onReject = { onReject(userId) },
-                            modifier = Modifier.padding(vertical = 8.dp),
-                            onProfileClick = { onRequestProfileClick(userId) }
-                        )
-                    }
-
-                    if(requests.isNotEmpty()) {
-                        ElevatedButton(
-                            onClick = onViewMap,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            colors = ButtonDefaults.elevatedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            elevation = ButtonDefaults.elevatedButtonElevation(
-                                defaultElevation = 4.dp,
-                                pressedElevation = 8.dp
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Map,
-                                contentDescription = "Map",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("View Requests on Map")
-                        }
-                    }
-                }
-            }
-
-
-            if (requests.isEmpty() && expanded) {
-                EmptyState(
-                    icon = Icons.Default.PersonAddDisabled,
-                    message = "No pending requests",
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    }
-}
-
-
-// New Components
-@Composable
-private fun MemberCard(
-    name: String,
-    isCreator: Boolean,
-    role: String,
-    onMemberClick: () -> Unit = {}
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-                onMemberClick()
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        name.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = role,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (isCreator) {
-                Icon(
-                    Icons.Default.Star,
-                    contentDescription = "Creator",
-                    tint = MaterialTheme.colorScheme.tertiary
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun RequestCard(
-    name: String,
-    onAccept: () -> Unit,
-    onReject: () -> Unit,
-    modifier: Modifier = Modifier,
-    onProfileClick: () -> Unit
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clickable {
-                        onProfileClick()
-                    }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        name.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onProfileClick() },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            OutlinedButton(
-                onClick = onAccept,
-                modifier = Modifier
-                    .height(45.dp)
-                    .width(55.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                contentPadding = PaddingValues(4.dp)
-            ) {
-
-                Text("Accept", style = MaterialTheme.typography.labelSmall)
-
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Reject Button (Vertical)
-            OutlinedButton(
-                onClick = onReject,
-                modifier = Modifier
-                    .height(45.dp)
-                    .width(55.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                contentPadding = PaddingValues(4.dp)
-            ) {
-
-                Text("Reject", style = MaterialTheme.typography.labelSmall)
-
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
-private fun EmptyState(
-    icon: ImageVector,
-    message: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(48.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun ProjectMetadata(project: Post) {
-    Column(
-        modifier = Modifier.padding(vertical = 16.dp)
-    ) {
-        Text(
-            "Project Metadata",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 8.dp),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Text(
-            buildAnnotatedString {
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    append("Project ID: ")
-                }
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                ) {
-                    append(project.id)
-                }
-            },
-            style = MaterialTheme.typography.bodyLarge
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            buildAnnotatedString {
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    append("Creation Date: ")
-                }
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                ) {
-                    append(project.createdAt?.toDate()?.formatAsTimeAgo() ?: "")
-                }
-            },
-            style = MaterialTheme.typography.bodyLarge,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            buildAnnotatedString {
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    append("Members: ")
-                }
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                ) {
-                    append(project.enrolledPersons.size.toString())
-                }
-            },
-            style = MaterialTheme.typography.bodyLarge,
-        )
-    }
-}
-
-@Composable
-private fun ProjectManagementButtons(
-    project: Post,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        OutlinedButton(
-            onClick = onEdit,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Icon(Icons.Default.Edit, contentDescription = "Edit")
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Edit Project")
-        }
-
-        FilledTonalButton(
-            onClick = onDelete,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
-            )
-        ) {
-            Icon(Icons.Default.Delete, contentDescription = "Delete")
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Delete Project")
-        }
-    }
-}
-// Extension function for date formatting
-fun Date.formatAsTimeAgo(): String {
-    val seconds = (System.currentTimeMillis() - this.time) / 1000
+// Helper functions
+private fun formatTimeAgo(date: Date?): String {
+    if (date == null) return ""
+    val now = Date()
+    val diff = now.time - date.time
+    val hours = diff / (1000 * 60 * 60)
+    val days = hours / 24
     return when {
-        seconds < 60 -> "$seconds seconds ago"
-        seconds < 3600 -> "${seconds / 60} minutes ago"
-        seconds < 86400 -> "${seconds / 3600} hours ago"
-        seconds < 2592000 -> "${seconds / 86400} days ago"
-        seconds < 31536000 -> "${seconds / 2592000} months ago"
-        else -> "${seconds / 31536000} years ago"
+        days > 0 -> "${days}d ago"
+        hours > 0 -> "${hours}h ago"
+        else -> "Just now"
     }
 }
 
-@Composable
-private fun ImageGallery(images: List<String>, navController: NavController) {
-    if (images.isNotEmpty()) {
-        Column(modifier = Modifier.padding(vertical = 16.dp)) {
-            Text(
-                "Images",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            LazyRow {
-                items(images) { url ->
-                    AsyncImage(
-                        model = url,
-                        contentDescription = "Project image",
-                        modifier = Modifier
-                            .size(150.dp)
-                            .padding(end = 8.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(url))
-                            },
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            }
-        }
-    }
+private fun formatCount(count: Int): String = when {
+    count >= 1_000_000 -> "${count / 1_000_000}M"
+    count >= 1_000 -> "${count / 1_000}K"
+    else -> count.toString()
 }
 
-@Composable
-private fun ClickableLinks(links: List<String> , context: Context) {
-    if (links.isNotEmpty()) {
-        Column(modifier = Modifier.padding(vertical = 16.dp)) {
-            Text(
-                "Links",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            links.forEach { link ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { openUrl(link, context) }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Outlined.Link,
-                        contentDescription = "Link",
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(
-                        link,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun openUrl(url: String, context: Context) {
-    try {
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        )
-    } catch (e: Exception) {
-        Toast.makeText(context, "Invalid URL", Toast.LENGTH_SHORT).show()
-    }
-}
-
-@Composable
-private fun LikeCommentSection(
-    project: Post,
-    currentUserId: String?,
-    viewModel: PostListViewModel,
-    isOwner: Boolean
-) {
-    val isLiked = currentUserId in project.likes
-    val validTypes = listOf(PostType.BUG, PostType.POST, PostType.OTHER)
-    val showSection = validTypes.any { it.displayName == project.type } || isOwner
-
-    if (showSection) {
-        Column(modifier = Modifier.padding(vertical = 16.dp)) {
-            // Like Section
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                IconButton(
-                    onClick = { viewModel.toggleLike(project.id) },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Like",
-                        tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Text(
-                    "${project.likes.size} likes",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            // Comments Section
-            /*if (project.comments.isNotEmpty() || isOwner) {
-                Text(
-                    "Comments",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 200.dp) // Limit maximum height
-                ) {
-                    items(project.comments) { comment ->
-                        CommentItem(
-                            comment = comment,
-                            currentUserId = currentUserId,
-                            isOwner = isOwner,
-                            projectId = project.id,
-                            viewModel = viewModel
-                        )
-                    }
-                }
-            }*/
-
-            // Comment Input
-            /*if (currentUserId != null) {
-                var commentText by remember { mutableStateOf("") }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    TextField(
-                        value = commentText,
-                        onValueChange = { commentText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Add a comment...") },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                        )
-                    )
-                    IconButton(
-                        onClick = {
-                            if (commentText.isNotBlank()) {
-                                viewModel.addComment(project.id, commentText)
-                                commentText = ""
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Send, contentDescription = "Send comment")
-                    }
-                }
-            }*/
-        }
-    }
-}
-
-@Composable
-private fun CommentItem(
-    comment: Comment,
-    currentUserId: String?,
-    isOwner: Boolean,
-    projectId: String,
-    viewModel: PostListViewModel
-) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Add user avatar here if available
-                Text(
-                    comment.senderId.take(6), // Replace with actual username
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-
-                if (currentUserId == comment.senderId || isOwner) {
-                    IconButton(
-                        onClick = { showDeleteDialog = true },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Comment actions")
-                    }
-                }
-            }
-
-            Text(
-                comment.text,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            comment.timestamp?.toDate()?.let {
-                Text(
-                    text = it.formatAsTimeAgo(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-    }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Comment") },
-            text = { Text("Are you sure you want to delete this comment?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteComment(projectId, comment.id)
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteDialog = false }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+private fun formatEventDate(timestamp: Timestamp?): String {
+    if (timestamp == null) return "TBA"
+    val date = timestamp.toDate()
+    val formatter = SimpleDateFormat("EEE, MMM dd, yyyy", Locale.getDefault())
+    return formatter.format(date)
 }

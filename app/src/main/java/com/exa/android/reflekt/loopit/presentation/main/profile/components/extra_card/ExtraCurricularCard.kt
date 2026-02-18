@@ -99,7 +99,7 @@ fun ExtracurricularCard(
         is Response.Success -> {
             Card(
                 elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
+                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -109,7 +109,7 @@ fun ExtracurricularCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Extracurricular Activities", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiary)
+                        Text("Extracurricular Activities", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         if(userId == null || userId == curUser)
                             CircularIconCard(Icons.Default.Add, { onAddClick(null) })
                     }
@@ -144,14 +144,14 @@ fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
             .padding(8.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
             modifier = Modifier
                 .padding(8.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Text("Link", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onTertiary, modifier =
+            Text("Link", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface, modifier =
             Modifier.clickable { openUrl(context, extraActivity.link) })
 
             Spacer(Modifier.height(8.dp))
@@ -177,7 +177,8 @@ fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
                     contentDescription = "Default icon",
                     modifier = Modifier.size(80.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .align(Alignment.CenterHorizontally)
+                        .align(Alignment.CenterHorizontally),
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             //}
@@ -199,7 +200,7 @@ fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
                 modifier = Modifier.padding(top = 2.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onTertiary
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
@@ -212,7 +213,7 @@ fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
                 minLines = 2,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onTertiary
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

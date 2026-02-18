@@ -36,10 +36,10 @@ import com.exa.android.reflekt.loopit.core.utils.showToast
 
 fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController,locationViewModel: LocationViewModel) {
 
-    navigation(startDestination = "project_graph", route = "main_app") {
+    navigation(startDestination = "post_graph", route = "main_app") {
         homeNavGraph(navController)
         mapNavGraph(navController, locationViewModel)
-        projectNavGraph(navController)
+        postNavGraph(navController)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
     }

@@ -9,11 +9,14 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.Pro
 import com.google.gson.Gson
 
 sealed class AuthRoute(val route : String){
+    object Splash : AuthRoute("splash")
+    object Onboarding : AuthRoute("onboarding")
     object Login : AuthRoute("login")
     object Register : AuthRoute("register")
     object Verification : AuthRoute("verification")
     object ForgetPassword : AuthRoute("forget_password")
     object TermsCondition : AuthRoute("terms")
+    object GoogleProfileSetup : AuthRoute("google_profile_setup")
     companion object{
         const val ROOT="auth"
     }
@@ -26,7 +29,7 @@ sealed class MainRoute(val route : String){
     object Profile : MainRoute("profile")
     object Setting : MainRoute("setting")
     object Map : MainRoute("map_graph")
-    object Project : MainRoute("project_graph")
+    object Project : MainRoute("post_graph")
     object Photo : MainRoute("photo")
     companion object{
         const val ROOT="main_app"
@@ -34,13 +37,13 @@ sealed class MainRoute(val route : String){
 }
 
 sealed class ProfileRoute(val route: String) {
-    object UserProfile : ProjectRoute("user_profile?userId={userId}") {
+    object UserProfile : PostRoute("user_profile?userId={userId}") {
         fun createRoute(userId: String? = null): String {
             return if (userId != null) "user_profile?userId=$userId" else "user_profile"
         }
     }
 
-    object EditProfileHeader: ProjectRoute("edit_profile_header"){
+    object EditProfileHeader: PostRoute("edit_profile_header"){
         fun createRoute(navController: NavController,item: ProfileData) {
 
             navController.currentBackStackEntry?.savedStateHandle?.set("header", item)
@@ -48,28 +51,28 @@ sealed class ProfileRoute(val route: String) {
         }
     }
 
-    object EditExtraCurricularScreen: ProjectRoute("edit_extra_card"){
+    object EditExtraCurricularScreen: PostRoute("edit_extra_card"){
         fun createRoute(navController: NavController,item: ExtraActivity) {
             navController.currentBackStackEntry?.savedStateHandle?.set("extra", item)
             navController.navigate("edit_extra_card")
         }
     }
 
-    object FullExtraCard : ProjectRoute("full_extra_card/{userId}"){
+    object FullExtraCard : PostRoute("full_extra_card/{userId}"){
         fun createRoute(navController: NavController,userId: String?, item: ExtraActivity) {
             navController.currentBackStackEntry?.savedStateHandle?.set("extra_card_data", item)
             navController.navigate("full_extra_card/${userId}")
         }
     }
 
-    object EditEducation: ProjectRoute("edit_education"){
+    object EditEducation: PostRoute("edit_education"){
         fun createRoute(navController: NavController,item: CollegeInfo) {
             navController.currentBackStackEntry?.savedStateHandle?.set("college", item)
             navController.navigate("edit_education")
         }
     }
 
-    object EditExperience: ProjectRoute("edit_experience"){
+    object EditExperience: PostRoute("edit_experience"){
         fun createRoute(navController: NavController, item: ExperienceInfo) {
 //            val json = Gson().toJson(item)
 //            val encodedChatJson = URLEncoder.encode(json, "UTF-8")
@@ -110,6 +113,9 @@ sealed class HomeRoute(val route: String) {
 
 sealed class MapInfo(val route: String) {
     object MapScreen : MapInfo("map_screen")
+    object MapScreen2 : MapInfo("map_screen2_0")
+    object MapSearchScreen2 : MapInfo("searchScreen2_0")
+    object UserListScreen : MapInfo("userListScreen")
 }
 
 
@@ -123,14 +129,27 @@ sealed class PhotoRoute(val route: String){
 }
 
 
-sealed class ProjectRoute(val route: String) {
-    object ProjectList : ProjectRoute("project_list")
-    object ProjectDetail : ProjectRoute("project_detail/{projectId}") {
+sealed class PostRoute(val route: String) {
+    object PostList : PostRoute("project_list")
+    object PostDetail : PostRoute("project_detail/{projectId}") {
         fun createRoute(projectId: String): String = "project_detail/${projectId}"
     }
-    object CreateProject : ProjectRoute("create_project")
-    object EditProject : ProjectRoute("edit_project/{projectId}") {
-        fun createRoute(projectId: String): String = "edit_project/${projectId}"
+    object CreatePost : PostRoute("create_post")
+    object EditPost : PostRoute("edit_post/{postId}") {
+        fun createRoute(postId: String): String = "edit_post/${postId}"
+    }
+    object MyPosts : PostRoute("my_posts")
+    object EnrollmentManagement : PostRoute("enrollment_management/{postId}") {
+        fun createRoute(postId: String): String = "enrollment_management/${postId}"
+    }
+    object ManageEnrollments : PostRoute("manage_enrollments/{postId}") {
+        fun createRoute(postId: String): String = "manage_enrollments/${postId}"
+    }
+    object ManageRegistrations : PostRoute("manage_registrations/{postId}") {
+        fun createRoute(postId: String): String = "manage_registrations/${postId}"
+    }
+    object AuthorManagement : PostRoute("author_management/{postId}") {
+        fun createRoute(postId: String): String = "author_management/${postId}"
     }
     fun withArgs(vararg args: String): String {
         return buildString {

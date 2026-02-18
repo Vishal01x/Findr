@@ -66,11 +66,11 @@ fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: 
     Card(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Skills", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiary)
+            Text("Skills", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
 
             FlowRow(
@@ -313,7 +313,7 @@ private fun EditableChip(skill: String, isEditing: Boolean, onRemove: () -> Unit
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.onTertiary
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -348,7 +348,7 @@ private fun AddSkillButton(onClick: () -> Unit) {
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onTertiary
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

@@ -52,7 +52,9 @@ fun DeleteMessageDialog(
         },
         dismissButton = {
             CustomButton(text = "Cancel", isPrimary = false, onClick = onCancel)
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
     )
 }
 

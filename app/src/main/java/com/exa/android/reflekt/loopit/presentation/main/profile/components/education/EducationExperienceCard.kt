@@ -38,7 +38,7 @@ fun ExperienceCard(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -51,14 +51,14 @@ fun ExperienceCard(
                     text = "Experience",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onTertiary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (isCurUser) {
                     IconButton(onClick = onEditExperience) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Experience",
-                            tint = MaterialTheme.colorScheme.onTertiary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -79,7 +79,7 @@ fun ExperienceCard(
                             text = experienceInfo.title.ifBlank { "Unspecified" },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onTertiary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = experienceInfo.companyName,
@@ -96,7 +96,7 @@ fun ExperienceCard(
                         Text(
                             text = "$durationText • ${experienceInfo.location}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         if (experienceInfo.description.isNotBlank()) {
@@ -126,7 +126,7 @@ fun EducationCard(
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -139,14 +139,14 @@ fun EducationCard(
                     text = "Education",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onTertiary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (isCurUser) {
                     IconButton(onClick = onEditEducation) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Education",
-                            tint = MaterialTheme.colorScheme.onTertiary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -169,7 +169,7 @@ fun EducationCard(
                             text = collegeInfo.instituteName,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onTertiary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         if (collegeInfo.stream.isNotBlank()) {
@@ -189,7 +189,7 @@ fun EducationCard(
                         Text(
                             text = duration,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         if (!collegeInfo.grade.isNullOrBlank()) {
@@ -197,7 +197,7 @@ fun EducationCard(
                             Text(
                                 text = "Grade: ${collegeInfo.grade}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onTertiary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Medium
                             )
                         }

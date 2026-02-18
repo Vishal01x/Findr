@@ -147,7 +147,7 @@ private fun ProfileContent(
                 text = userProfileHeader.name ?: "Name",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onBackground
                 ),
                 modifier = Modifier.padding(top = 55.dp)
             )
@@ -164,7 +164,7 @@ private fun ProfileContent(
             }
                 ?: "Co-founder, Apna College | Ex-Microsoft | Google SPS'20",
             style = MaterialTheme.typography.bodyLarge.copy(
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onBackground,
                 lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.1 // smaller than default
             ),
             fontWeight = FontWeight.Medium,
@@ -286,15 +286,12 @@ fun CircularIconCardPainter(
     Card(
         shape = CircleShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primaryContainer),
         modifier = modifier.size(40.dp)
     ) {
         IconButton(
             onClick = {
-
-                if (onClick != null) {
-                    onClick()
-                }
+                onClick()
             },
             modifier = Modifier.fillMaxSize()
         ) {
@@ -313,7 +310,7 @@ fun CircularIconCard(
     Card(
         shape = CircleShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiary),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primaryContainer),
         modifier = modifier.size(40.dp)
     ) {
         IconButton(
@@ -328,7 +325,7 @@ fun CircularIconCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiary
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }

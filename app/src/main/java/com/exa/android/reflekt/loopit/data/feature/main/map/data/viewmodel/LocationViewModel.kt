@@ -18,6 +18,16 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 
+// View mode for list/map toggle
+enum class ViewMode {
+    MAP, LIST
+}
+
+// Sort order for list view
+enum class SortOrder {
+    DISTANCE, NAME, RATING
+}
+
 @HiltViewModel
 class LocationViewModel @Inject constructor(
     private val locationRepository: LocationRepository
@@ -26,6 +36,11 @@ class LocationViewModel @Inject constructor(
     val radius = mutableStateOf(5f)
     val selectedRoles = mutableStateOf(setOf<String>())
     val minRating = mutableStateOf(0f)
+    
+    // View mode and list view states
+    val viewMode = mutableStateOf(ViewMode.MAP)
+    val sortOrder = mutableStateOf(SortOrder.DISTANCE)
+    val searchQuery = mutableStateOf("")
 
     fun addRole(role: String) {
         selectedRoles.value = selectedRoles.value + role
@@ -34,6 +49,24 @@ class LocationViewModel @Inject constructor(
 
     fun removeRole(role: String) {
         selectedRoles.value = selectedRoles.value - role
+    }
+    
+    fun clearAllFilters() {
+        selectedRoles.value = setOf()
+        minRating.value = 0f
+        radius.value = 5f
+    }
+    
+    fun setViewMode(mode: ViewMode) {
+        viewMode.value = mode
+    }
+    
+    fun setSortOrder(order: SortOrder) {
+        sortOrder.value = order
+    }
+    
+    fun setSearchQuery(query: String) {
+        searchQuery.value = query
     }
 
     val userLocations: StateFlow<List<profileUser>> get() = locationRepository.userLocations
@@ -122,6 +155,56 @@ class LocationViewModel @Inject constructor(
         viewModelScope.launch {
             locationRepository.fetchRolesFromFirestore()
             _roleSuggestions.value = locationRepository.roles.value
+        }
+    }
+    
+    /**
+     * Calculate distance between two LatLng points using Haversine formula
+     * Returns distance in kilometers
+     */
+    fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadius = 6371.0 // Radius of the earth in km
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return earthRadius * c
+    }
+    
+    /**
+     * Get filtered and sorted users for list view
+     */
+    fun getFilteredAndSortedUsers(centerLocation: LatLng?): List<profileUser> {
+        var users = userLocations.value
+        
+        // Apply search query filter
+        if (searchQuery.value.isNotEmpty()) {
+            users = users.filter { user ->
+                user.name.contains(searchQuery.value, ignoreCase = true) ||
+                user.role.contains(searchQuery.value, ignoreCase = true)
+            }
+        }
+        
+        // Sort users
+        return when (sortOrder.value) {
+            SortOrder.DISTANCE -> {
+                if (centerLocation != null) {
+                    users.sortedBy { user ->
+                        calculateDistance(
+                            centerLocation.latitude,
+                            centerLocation.longitude,
+                            user.lat,
+                            user.lng
+                        )
+                    }
+                } else {
+                    users
+                }
+            }
+            SortOrder.NAME -> users.sortedBy { it.name }
+            SortOrder.RATING -> users.sortedByDescending { it.rating }
         }
     }
 

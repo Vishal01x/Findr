@@ -22,6 +22,8 @@ data class ProfileHeaderData(
     val isStudent: Boolean = false,
     val createdAt: Timestamp? = null,
     val collegeName: String = "",
+    val branch: String = "",          // NEW: Academic branch (CS, IT, ECE, etc.)
+    val course: String = "",          // NEW: Degree program (B.Tech, BCA, etc.)
     val year: String? = "",
     val lat: Double = 0.0,
     val lng: Double = 0.0,
@@ -47,6 +49,8 @@ data class About(
 data class CollegeInfo(
     val instituteName: String = "",
     val stream: String = "",
+    val branch: String = "",          // NEW: Academic branch
+    val course: String = "",          // NEW: Degree program
     val startDate: String = "",
     val endDate: String = "",
     val grade: String = "",

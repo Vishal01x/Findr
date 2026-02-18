@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import com.exa.android.reflekt.loopit.data.feature.main.link_data.metadata.model.LinkMetadata
 
-@Database(entities = [LinkMetadata::class], version = 1)
+@Database(entities = [LinkMetadata::class], version = 1, exportSchema = false)
 abstract class LinkMetadataDatabase : RoomDatabase() {
     abstract fun metadataDao(): LinkMetadataDao
 }

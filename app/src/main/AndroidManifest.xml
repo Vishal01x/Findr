@@ -74,8 +74,22 @@
                 <data android:pathPrefix="/"/>
                 <data android:host="chat"/>
                 <data android:host="project"/>
+                <data android:host="post"/>
                 <data android:host="profile"/>
                 <data android:host="profile_views"/>
+            </intent-filter>
+            
+            <!-- HTTP/HTTPS App Links for clickable sharing -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http"/>
+                <data android:scheme="https"/>
+                <data android:host="findr.app"/>
+                <data android:pathPrefix="/post/"/>
             </intent-filter>
         </activity>
 

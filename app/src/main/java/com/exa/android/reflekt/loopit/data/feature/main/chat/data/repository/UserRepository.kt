@@ -17,6 +17,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.Pro
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Status
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -1047,6 +1048,87 @@ class UserRepository @Inject constructor(
 
         awaitClose {
             registration.remove()
+        }
+    }
+    
+    // ==================== POST/COMMENT USER ENRICHMENT ====================
+    
+    /**
+     * Get user info by userId - used for enriching posts and comments
+     * Returns basic user information needed for display
+     */
+    suspend fun getUserInfoById(userId: String): Result<profileUser> {
+        return try {
+            withContext(Dispatchers.IO) {
+                val snapshot = userCollection.document(userId).get().await()
+                if (snapshot.exists()) {
+                    val user = snapshot.toObject(profileUser::class.java)
+                    if (user != null) {
+                        Result.success(user)
+                    } else {
+                        Result.failure(Exception("Failed to parse user data"))
+                    }
+                } else {
+                    Result.failure(Exception("User not found: $userId"))
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Batch fetch multiple users by their IDs
+     * Optimized for enriching multiple posts/comments at once
+     * Uses Firestore's whereIn query (max 10 per query, batches if more)
+     */
+    suspend fun getUsersInfoByIds(userIds: List<String>): Result<Map<String, profileUser>> {
+        return try {
+            if (userIds.isEmpty()) {
+                return Result.success(emptyMap())
+            }
+            
+            withContext(Dispatchers.IO) {
+                val uniqueIds = userIds.distinct()
+                val userMap = mutableMapOf<String, profileUser>()
+                
+                // Firestore whereIn supports max 10 items, so we need to batch
+                val batches = uniqueIds.chunked(10)
+                
+                val results = batches.map { batch ->
+                    async {
+                        try {
+                            userCollection
+                                .whereIn(FieldPath.documentId(), batch)
+                                .get()
+                                .await()
+                                .documents
+                                .mapNotNull { doc ->
+                                    try {
+                                        val user = doc.toObject(profileUser::class.java)
+                                        if (user != null) {
+                                            doc.id to user
+                                        } else null
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                }
+                                .toMap()
+                        } catch (e: Exception) {
+                            emptyMap<String, profileUser>()
+                        }
+                    }
+                }
+                
+                // Combine all batch results
+                results.awaitAll().forEach { batchResult ->
+                    userMap.putAll(batchResult)
+                }
+                
+                Result.success(userMap)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

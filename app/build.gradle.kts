@@ -18,7 +18,7 @@ android {
     defaultConfig {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 5
         versionName = "3.0.3"
 
@@ -39,7 +39,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        //isCoreLibraryDesugaringEnabled = true
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -92,6 +92,10 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -99,19 +103,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation (libs.androidx.compose.foundation)
-    implementation (libs.androidx.compose.material3)
+    implementation ("androidx.compose.foundation:foundation:1.7.8")
+    implementation ("androidx.compose.material3:material3:1.3.2")
 
-    implementation (libs.androidx.compose.material)
+    implementation ("androidx.compose.material:material:1.7.8")
 
     // system ui
-    implementation (libs.accompanist.systemuicontroller)
-    implementation (libs.accompanist.pager)
-    implementation (libs.accompanist.pager.indicators)
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation ("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
     //datastore
-    implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.datastore.preferences.core)
+    implementation("androidx.datastore:datastore-preferences:1.1.5")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.6")
 
     // Stream Video SDK
 //    implementation(libs.stream.video.ui.compose)
@@ -120,27 +124,28 @@ dependencies {
     //for permission dialog
     implementation(libs.accompanist.permissions)
 
-    //coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     //Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+
 
     // hilt Navigation
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     //coil
-    implementation(libs.coil.compose)
-    implementation(libs.coil.svg)
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-svg:2.4.0")
 
     // HTML parsing
-    implementation(libs.jsoup)
+    implementation("org.jsoup:jsoup:1.17.2")
 
-    implementation(libs.androidx.room.runtime)
-    kapt(libs.androidx.room.compiler)
-    implementation(libs.androidx.room.ktx)
+    implementation("androidx.room:room-runtime:2.7.0")
+    kapt("androidx.room:room-compiler:2.7.0")
+    implementation("androidx.room:room-ktx:2.7.0")
 
-    implementation(libs.gson)
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // map
     implementation("com.google.maps.android:maps-compose:6.4.1")
@@ -189,17 +194,20 @@ dependencies {
 
     // security crypto
     implementation ("androidx.security:security-crypto:1.1.0-alpha07")
+    
+    // Signal Protocol for E2E encryption (version 2.8.1 for proper Android support)
+    implementation("org.whispersystems:signal-protocol-android:2.8.1")
 //
 //    implementation ("androidx.media3:media3-exoplayer:1.6.1")
 //    implementation ("androidx.media3:media3-ui:1.6.1")
 //    implementation ("androidx.media3:media3-common:1.6.1")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
-//
-//    // Lottie animations
-//    implementation ("com.airbnb.android:lottie-compose:6.1.0")
-//
-//    // Motion Layout
-//    implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
+
+    // Lottie animations for onboarding and auth screens
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
+
+    // Google Sign-In for authentication
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
 
 }

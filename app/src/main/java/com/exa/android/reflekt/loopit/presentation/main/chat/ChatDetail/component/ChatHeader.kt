@@ -1,6 +1,15 @@
 package com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,23 +19,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,15 +48,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
+import com.exa.android.reflekt.loopit.theme.Spacing
+import com.exa.android.reflekt.loopit.theme.chatInputBackground
+import com.exa.android.reflekt.loopit.theme.chatOnlineIndicator
+import com.exa.android.reflekt.loopit.theme.chatSentBubbleEnd
+import com.exa.android.reflekt.loopit.theme.chatSentBubbleStart
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.BlockUserDialog
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.DeleteMessageDialog
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.ReportUserDialog
@@ -58,21 +76,17 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
 
 @Composable
 fun ChatHeader(
-//    profilePictureUrl: String,
-//    userName: String,
-//    userStatus: String,
     user: User?,
-    status: Status?, // status of other User
-    curUser: String, // cur User Id
-    //members: List<User>, // all the members of chat
-    selectedMessages: Set<Message>, // messages Selected to show its count
+    status: Status?,
+    curUser: String,
+    selectedMessages: Set<Message>,
     isCurUserBlock: Boolean,
     isOtherUserBlock: Boolean,
-    onProfileClick: () -> Unit, // when otherUserProfile Click show its details
-    onBackClick: () -> Unit, // navigate to ChatListDetail
+    onProfileClick: () -> Unit,
+    onBackClick: () -> Unit,
     onVoiceCallClick: () -> Unit,
     onVideoCallClick: () -> Unit,
-    onUnselectClick: () -> Unit, // unselect all the messages
+    onUnselectClick: () -> Unit,
     onCopyClick: () -> Unit,
     onEditClick: (Message?) -> Unit,
     onForwardClick: () -> Unit,
@@ -81,13 +95,20 @@ fun ChatHeader(
     onBlockClick: () -> Unit,
     onReportClick: (reason: String, proofText: String?, proofImageUri: Uri?) -> Unit
 ) {
-    Card(
-        elevation = CardDefaults.cardElevation(8.dp),
-        colors = CardDefaults.cardColors(Color.White),
-        shape = RectangleShape,
-        modifier = Modifier.clickable { onProfileClick() }
+    val colorScheme = MaterialTheme.colorScheme
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding(),
+        color = colorScheme.chatInputBackground,
+        shadowElevation = 2.dp
     ) {
-        if (selectedMessages.isNotEmpty()) { // if messages are selected then show Header options and hide other profile
+        AnimatedVisibility(
+            visible = selectedMessages.isNotEmpty(),
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200))
+        ) {
             HeaderWithOptions(
                 curUser = curUser,
                 selectedMessages = selectedMessages,
@@ -100,14 +121,19 @@ fun ChatHeader(
                     onEditClick(message)
                 }
             )
-        } else {
-            HeaderWithProfile( // when selectedMessages are 0 now show profile
+        }
+        AnimatedVisibility(
+            visible = selectedMessages.isEmpty(),
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200))
+        ) {
+            HeaderWithProfile(
                 otherUser = user,
                 status = status,
                 curUser = curUser,
                 isSelected = selectedMessages.isNotEmpty(),
-                isCurUserBlock,
-                isOtherUserBlock,
+                isCurUserBlock = isCurUserBlock,
+                isOtherUserBlock = isOtherUserBlock,
                 onBackClick = { onBackClick() },
                 onProfileClick = { onProfileClick() },
                 onVoiceCallClick = { onVoiceCallClick() },
@@ -131,7 +157,7 @@ fun HeaderWithOptions(
     onReplyClick: (Message?) -> Unit,
     onEditClick: (Message?) -> Unit
 ) {
-
+    val colorScheme = MaterialTheme.colorScheme
     var showDialog by remember { mutableStateOf(false) }
     val singleMessage = if (selectedMessages.size == 1) selectedMessages.first() else null
     val endIcons = mutableListOf<IconData>()
@@ -160,11 +186,10 @@ fun HeaderWithOptions(
             IconsName.EDIT -> endIcons.add(edit)
             IconsName.DELETE -> endIcons.add(delete)
             IconsName.FORWARD -> {}
-
         }
     }
 
-    PlaceIcons( // see docs
+    PlaceIcons(
         selectedMessages = selectedMessages.size,
         startIcons = listOf(
             IconData(
@@ -177,7 +202,6 @@ fun HeaderWithOptions(
     ) { iconData, index ->
         val rotation = if (iconData.contentDescription == "Forward Selected") 90f else 0f
         ShowIcon(iconData = iconData, rotationAngle = rotation)
-        // since we use want to use lambda for only one icon but now we need to manage for all
     }
 
     if (showDialog) {
@@ -205,21 +229,21 @@ fun PlaceIcons(
     startIcons: List<IconData>,
     endIcons: List<IconData>,
     iconContent: @Composable (iconData: IconData, index: Int) -> Unit = { iconData, _ ->
-        ShowIcon(iconData = iconData) // it is created to maintain some operations on particular icon
-        // like adding some modifiers, rotation etc functioning we make it default like you can utilize
-        // when needed else it is optional, here we use it for forward icon in which we set its rotation to 180
-        // and for the remaining one it remains no change and we directly call ShowIcon
+        ShowIcon(iconData = iconData)
     }
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
+            .background(colorScheme.primaryContainer.copy(alpha = 0.3f))
             .clickable(false) { }
-            .padding(vertical = 4.dp, horizontal = 8.dp),
+            .padding(vertical = Spacing.extraSmall, horizontal = Spacing.small),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
             verticalAlignment = Alignment.CenterVertically
         ) {
             startIcons.forEachIndexed { index, iconData ->
@@ -228,13 +252,13 @@ fun PlaceIcons(
 
             Text(
                 text = selectedMessages.toString(),
-                color = Color.Black,
+                color = colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f)) // for keeping endIcons at last
+        Spacer(modifier = Modifier.weight(1f))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -258,8 +282,7 @@ fun ShowIcon(iconData: IconData, rotationAngle: Float = 0f) {
                     modifier = Modifier
                         .rotate(rotationAngle)
                         .size(24.dp),
-                    tint = Color.Black,
-                    // for forward icon we rotate it opposite of reply
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -270,7 +293,7 @@ fun ShowIcon(iconData: IconData, rotationAngle: Float = 0f) {
                     modifier = Modifier
                         .rotate(rotationAngle)
                         .size(24.dp),
-                    tint = Color.Black
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -294,126 +317,15 @@ fun HeaderWithProfile(
     onReportClick: (reason: String, proofText: String?, proofImageUri: Uri?) -> Unit
 ) {
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
 
-    /*Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-//            .padding(vertical = 4.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Back Button
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Back",
-                tint = Color.Black,
-                modifier = Modifier
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
-                    .size(32.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // Profile Picture
-        ImageUsingCoil(
-            context, if(isCurUserBlock) "" else otherUser?.profilePicture,
-            placeholder = R.drawable.placeholder,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .border(1.dp, Color.Black, CircleShape)
-                .clickable { onProfileClick() },
-            errorImage = R.drawable.placeholder
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // User Name and Status
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(!isSelected) {
-                    onProfileClick()
-                }
-                .padding(vertical = 4.dp, horizontal = 8.dp),
-        ) {
-            // Chat Name
-            Text(
-                text = otherUser?.name ?: "---",
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping
-            )
-
-            // Chat Status
-
-            val statusText = when {
-                status?.typingTo == curUser -> "typing..."
-                status?.isOnline == true -> "•Active"
-                status?.lastSeen != null -> {
-                    val time =
-                        formatTimestamp(status.lastSeen * 1000L) // Convert to milliseconds
-                    "last active at $time"
-                }
-
-                else -> "last active at "
-            }
-
-            if (!isCurUserBlock) {
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (statusText == "•Active") Color(0xFF4CAF50) else Color.Gray,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(fraction = 0.9f) // Restrict width to avoid overlapping
-                )
-            }
-        }
-
-//        Box(
-//            modifier = Modifier
-//                .padding(end = 12.dp)
-//                .clip(CircleShape)
-//                .background(MaterialTheme.colorScheme.errorContainer)
-//                .clickable { onBlockClick() }
-//                .padding(horizontal = 4.dp, vertical = 4.dp)
-//        ) {
-//            Row(verticalAlignment = Alignment.CenterVertically) {
-//                Icon(
-//                    imageVector = Icons.Filled.Block,
-//                    contentDescription = "Block",
-//                    tint = MaterialTheme.colorScheme.error
-//                )
-//                Spacer(modifier = Modifier.width(4.dp))
-//                Text(
-//                    text = if(!isBlock)"Block" else "UnBlock",
-//                    color = MaterialTheme.colorScheme.error,
-//                    style = MaterialTheme.typography.labelMedium
-//                )
-//            }
-//        }
-
-        //Spacer(Modifier.weight(1f))
-
-        val expanded = remember { mutableStateOf(false) }
-
-        IconButton(onClick = { expanded.value = true }) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "More options",
-                tint = Color.Black,
-                modifier = Modifier.size(24.dp)
-            )
-        }*/
+    val isOnline = status?.isOnline == true
+    val isTyping = status?.typingTo == curUser
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = Spacing.small, vertical = Spacing.extraSmall)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -424,27 +336,64 @@ fun HeaderWithProfile(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Back",
-                    tint = Color.Black,
-                    modifier = Modifier.size(32.dp)
+                    tint = colorScheme.onSurface,
+                    modifier = Modifier.size(30.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            // Profile Picture
-            ImageUsingCoil(
-                context = context,
-                imageUrl = if (isCurUserBlock) "" else otherUser?.profilePicture,
-                placeholder = R.drawable.placeholder,
-                errorImage = R.drawable.placeholder,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, Color.Black, CircleShape)
-                    .clickable { onProfileClick() }
-            )
+            // Profile Picture with online ring
+            Box(contentAlignment = Alignment.BottomEnd) {
+                val borderBrush = if (isOnline) {
+                    Brush.linearGradient(
+                        listOf(
+                            colorScheme.chatSentBubbleStart,
+                            colorScheme.chatOnlineIndicator
+                        )
+                    )
+                } else {
+                    Brush.linearGradient(
+                        listOf(colorScheme.outline, colorScheme.outline)
+                    )
+                }
+                ImageUsingCoil(
+                    context = context,
+                    imageUrl = if (isCurUserBlock) "" else otherUser?.profilePicture,
+                    placeholder = R.drawable.placeholder,
+                    errorImage = R.drawable.placeholder,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, borderBrush, CircleShape)
+                        .clickable { onProfileClick() }
+                )
 
-            Spacer(modifier = Modifier.width(8.dp))
+                // Animated online dot
+                if (isOnline && !isCurUserBlock) {
+                    val pulseTransition = rememberInfiniteTransition(label = "pulse")
+                    val pulseAlpha by pulseTransition.animateFloat(
+                        initialValue = 0.5f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(800, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "pulseAlpha"
+                    )
+                    Box(
+                        modifier = Modifier
+                            .offset(x = (-1).dp, y = (-1).dp)
+                            .size(12.dp)
+                            .graphicsLayer { alpha = pulseAlpha }
+                            .clip(CircleShape)
+                            .background(colorScheme.chatOnlineIndicator)
+                            .border(2.dp, colorScheme.chatInputBackground, CircleShape)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
 
             // Name and Status
             Column(
@@ -455,30 +404,43 @@ fun HeaderWithProfile(
                 Text(
                     text = otherUser?.name ?: "---",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black,
+                    color = colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 if (!isCurUserBlock) {
-                    val statusText = when {
-                        status?.typingTo == curUser -> "typing..."
-                        status?.isOnline == true -> "• Active"
+                    val statusContent = when {
+                        isTyping -> "typing..."
+                        isOnline -> "• Active"
                         status?.lastSeen != null -> {
                             val time = formatTimestamp(status.lastSeen * 1000L)
                             "last active at $time"
                         }
-
                         else -> "last active"
                     }
 
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (statusText == "• Active") Color(0xFF4CAF50) else Color.Gray,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Animated typing dots
+                        if (isTyping) {
+                            TypingDotsIndicator()
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+
+                        Text(
+                            text = statusContent,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = when {
+                                isTyping -> colorScheme.chatSentBubbleStart
+                                isOnline -> colorScheme.chatOnlineIndicator
+                                else -> colorScheme.onSurfaceVariant
+                            },
+                            fontWeight = if (isTyping || isOnline) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = 11.5.sp
+                        )
+                    }
                 }
             }
         }
@@ -492,13 +454,12 @@ fun HeaderWithProfile(
         ) {
             IconButton(
                 onClick = { expanded.value = true },
-                modifier = Modifier
-                    .align(Alignment.CenterEnd) //Pin it at the absolute end of Box
+                modifier = Modifier.align(Alignment.CenterEnd)
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More options",
-                    tint = Color.Black,
+                    tint = colorScheme.onSurface,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -511,7 +472,7 @@ fun HeaderWithProfile(
                     onDismiss = { showBlockDialog = false },
                     onConfirmBlock = {
                         showBlockDialog = false
-                        onBlockClick() // Your actual block logic
+                        onBlockClick()
                     }
                 )
             }
@@ -521,7 +482,7 @@ fun HeaderWithProfile(
                     onDismiss = { showReportDialog = false },
                     onReportSubmit = { reason, proofText, proofImageUri ->
                         showReportDialog = false
-                        onReportClick(reason, proofText, proofImageUri) // Your actual report logic
+                        onReportClick(reason, proofText, proofImageUri)
                     }
                 )
             }
@@ -529,8 +490,9 @@ fun HeaderWithProfile(
             DropdownMenu(
                 expanded = expanded.value,
                 onDismissRequest = { expanded.value = false },
-                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
-                //offset = DpOffset(x = (-2).dp, y = 0.dp) // Move slightly left if you want
+                modifier = Modifier
+                    .background(colorScheme.surface)
+                    .clip(RoundedCornerShape(12.dp)),
             ) {
                 DropdownMenuItem(
                     text = { Text("Clear Chat") },
@@ -552,32 +514,38 @@ fun HeaderWithProfile(
                     onClick = {
                         expanded.value = false
                         showReportDialog = true
-                        // onReportClick()
                     }
                 )
             }
         }
+    }
+}
 
 
-//        //Video Call Icon
-//        IconButton(onClick = onVideoCallClick) {
-//            Icon(
-//                imageVector = Icons.Default.Call,
-//                contentDescription = "Video Call",
-//                tint = Color.Black,
-//                modifier = Modifier.size(24.dp)
-//            )
-//        }
-//        //CallButton()
-//
-//        // Voice Call Icon
-//        IconButton(onClick = onVoiceCallClick) {
-//            Icon(
-//                imageVector = Icons.Default.Call,
-//                contentDescription = "Call",
-//                tint = Color.Black
-//            )
-//        }
+// Animated 3-dot typing indicator
+@Composable
+private fun TypingDotsIndicator() {
+    val infiniteTransition = rememberInfiniteTransition(label = "typingDots")
+
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(3) { index ->
+            val offset by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = -3f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(400, delayMillis = index * 120, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot$index"
+            )
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .offset(y = offset.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.chatSentBubbleStart)
+            )
+        }
     }
 }
 
@@ -615,7 +583,7 @@ fun checkDeleted(selectedMessages: Set<Message>): Boolean {
 }
 
 
-sealed class IconType { // Since icon can be imageVector or painterResource we create a sealed class and utilize it further
+sealed class IconType {
     data class VectorIcon(val imageVector: ImageVector) : IconType()
     data class PainterIcon(val painter: Int) : IconType()
 }
@@ -624,92 +592,8 @@ data class IconData(
     val iconType: IconType,
     val contentDescription: String,
     val onClick: () -> Unit
-)// it's data class, we created it pass details of icon in form of list to another fun
-// actually we are creating same ui for all icons so instead of redundant code we create a separate composable and pass list
+)
 
 enum class IconsName {
     COPY, DELETE, FORWARD, EDIT, REPLY
 }
-
-
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            // Back Button
-//            IconButton(onClick = onBackClick) {
-//                Icon(
-//                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-//                    contentDescription = "Back",
-//                    tint = Color.Black,
-//                    modifier = Modifier.size(32.dp)
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.width(8.dp))
-//
-//            // Profile Picture
-//            Image(
-//                painter = painterResource(id = R.drawable.chat_img3),
-//                contentDescription = "Profile Picture",
-//                modifier = Modifier
-//                    .size(40.dp)
-//                    .clip(CircleShape)
-//                    .border(1.dp, Color.Black, CircleShape),
-//                contentScale = ContentScale.Crop
-//            )
-//
-//            Spacer(modifier = Modifier.width(8.dp))
-//
-//            // User Name and Status
-//            Column {
-//                Text(
-//                    text = user.name,
-//                    style = MaterialTheme.typography.bodyLarge,
-//                    fontWeight = FontWeight.Bold,
-//                    color = Color.Black
-//                )
-//                Text(
-//                    text =  when {
-//                        status.typingTo == curUser -> "typing..."
-//                        status.isOnline -> "Online"
-//                        status.lastSeen != null -> {
-//                            val time =
-//                                formatTimestamp(status.lastSeen * 1000L) // Convert to milliseconds
-//                            "last seen at $time"
-//                        }
-//
-//                        else -> "Offline"
-//                    },
-//                    style = MaterialTheme.typography.labelSmall,
-//                    color = Color.Gray
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.weight(1f))
-//
-//            // Video Call Icon
-//            IconButton(onClick = onVideoCallClick) {
-//                Icon(
-//                    imageVector = Icons.Default.Call,
-//                    contentDescription = "Video Call",
-//                    tint = Color.Black,
-//                    modifier = Modifier.size(24.dp)
-//                )
-//            }
-//
-//            // Call Icon
-//            IconButton(onClick = onCallClick) {
-//                Icon(
-//                    imageVector = Icons.Default.Call,
-//                    contentDescription = "Call",
-//                    tint = Color.Black
-//                )
-//            }
-//        }
-//    }
-//}
-
-
