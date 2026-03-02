@@ -88,8 +88,10 @@ fun TopHeaderBar(
                                 .background(
                                     Brush.linearGradient(
                                         colors = listOf(
-                                            GradientPurpleStart,
-                                            GradientPurpleEnd
+//                                            GradientPurpleStart,
+//                                            GradientPurpleEnd
+                                            HeaderGradientStart,
+                                            HeaderGradientEnd
                                         )
                                     )
                                 ),
@@ -157,8 +159,11 @@ fun TopHeaderBar(
                                 .background(
                                     Brush.linearGradient(
                                         colors = listOf(
-                                            GradientPinkStart,
-                                            GradientPinkEnd
+//                                            GradientPinkStart,
+//                                            GradientPinkEnd
+
+                                            HeaderGradientStart,
+                                            HeaderGradientEnd
                                         )
                                     )
                                 ),
@@ -264,14 +269,15 @@ private fun ModernFilterChip(
     modifier: Modifier = Modifier
 ) {
     val gradients = listOf(
-        listOf(GradientPurpleStart, GradientPurpleEnd),
-        listOf(GradientPinkStart, GradientPinkEnd),
-        listOf(GradientTealStart, GradientTealEnd),
-        listOf(GradientVibeStart, GradientVibeEnd)
+//        listOf(GradientPurpleStart, GradientPurpleEnd),
+//        listOf(GradientPinkStart, GradientPinkEnd),
+//        listOf(GradientTealStart, GradientTealEnd),
+//        listOf(GradientVibeStart, GradientVibeEnd)
+        GradientSoftStart, GradientSoftEnd
     )
 
     val gradientIndex = label.hashCode() % gradients.size
-    val gradient = gradients[gradientIndex.coerceAtLeast(0)]
+    val gradient = gradients //gradients[gradientIndex.coerceAtLeast(0)]
 
     Surface(
         onClick = onClick,

@@ -75,9 +75,13 @@ fun BottomNavigationBar(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                GradientPurpleStart,
-                                GradientPurpleMid,
-                                GradientPurpleEnd
+//                                GradientPurpleStart,
+//                                GradientPurpleMid,
+//                                GradientPurpleEnd
+
+                                GradientPrimaryStart,
+                                GradientPrimaryMid,
+                                GradientPrimaryEnd
                             )
                         )
                     )
@@ -158,7 +162,7 @@ private fun BottomNavItem(
                     .clip(CircleShape)
                     .background(
                         Brush.linearGradient(
-                            colors = listOf(GradientPurpleStart, GradientPurpleEnd)
+                            colors = listOf(GradientPrimaryStart, GradientPrimaryEnd) //listOf(GradientPurpleStart, GradientPurpleEnd)
                         )
                     )
             )

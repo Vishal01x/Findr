@@ -12,6 +12,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.exa.android.reflekt.loopit.data.feature.authentication.vm.LoginState
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.ChatViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
@@ -27,10 +28,10 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSh
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    isLoggedIn: Boolean,
+    loginState: LoginState,
     otherUserId: String? = null
 ) {
-    if(isLoggedIn){
+    if (loginState.loginSuccess) {
         val userViewModel : UserViewModel = hiltViewModel()
         LaunchedEffect(Unit) {
             userViewModel.subscribeTopics()
@@ -46,9 +47,7 @@ fun AppNavigation(
                 currentDestination == MapInfo.MapScreen2.route ||
                 currentDestination == PostRoute.PostList.route
             ) {
-
                 val chatViewModel : ChatViewModel = hiltViewModel()
-
                 CustomBottomNavigationBar(navController, chatViewModel) {
                     bottomSheet = true
                 }
@@ -57,7 +56,7 @@ fun AppNavigation(
     ) { paddingValues ->
         RootNavGraph(
             navController = navController,
-            isLoggedIn = isLoggedIn,
+            loginState = loginState,
             modifier = Modifier.padding(paddingValues)
         )
     }
@@ -67,20 +66,20 @@ fun AppNavigation(
 @Composable
 fun RootNavGraph(
     navController: NavHostController,
-    isLoggedIn: Boolean,
+    loginState: LoginState,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val locationViewModel : LocationViewModel = hiltViewModel()
 
-    val startDestination = if (isLoggedIn) MainRoute.ROOT else AuthRoute.ROOT
+    val startDestination = if (loginState.loginSuccess) MainRoute.ROOT else AuthRoute.ROOT
 
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
-        authNavGraph(navController)
+        authNavGraph(navController, needsProfileSetup = loginState.needsProfileSetup)
         mainAppNavGraph(context, navController, locationViewModel)
     }
 }

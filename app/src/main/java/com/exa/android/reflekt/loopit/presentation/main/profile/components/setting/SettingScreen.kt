@@ -27,7 +27,8 @@ import timber.log.Timber
 import android.Manifest
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import com.exa.android.reflekt.loopit.theme.GradientPurpleStart
+import com.exa.android.reflekt.loopit.theme.GradientPrimaryEnd
+import com.exa.android.reflekt.loopit.theme.GradientPrimaryStart
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.firebase.auth.FirebaseAuth
@@ -597,7 +598,7 @@ enum class ThemeColor(
     val color: Color,
     val displayName: String
 ) {
-    DEFAULT(GradientPurpleStart, "Default"),
+    DEFAULT(GradientPrimaryStart, "Default"),
     BLUE(Color(0xFF0D47A1), "Blue"),
     GREEN(Color(0xFF3E6E4D), "Green"),
     PURPLE(Color(0xFFB94E41), "Orange");

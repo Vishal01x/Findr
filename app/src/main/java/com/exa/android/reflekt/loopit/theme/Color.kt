@@ -1,7 +1,99 @@
 package com.exa.android.reflekt.loopit.theme
-
 import androidx.compose.ui.graphics.Color
 
+//val PrimaryLight = Color(0xFF1E88A8)        // Another better option for Primary
+val PrimaryLight = Color(0xFF13B6EC)
+val PrimaryVariantLight = Color(0xFF197A97)
+val SecondaryLight = Color(0xFF2EAED6)
+val SecondaryVariantLight = Color(0xFF2499BE)
+
+val BackgroundLight = Color(0xFFF8FAFC)
+val SurfaceLight = Color(0xFFFFFFFF)
+val SurfaceVariantLight = Color(0xFFF1F5F9)
+
+val ErrorLight = Color(0xFFEF4444)
+
+val OnPrimaryLight = Color(0xFFFFFFFF)
+val OnSecondaryLight = Color(0xFFFFFFFF)
+val OnBackgroundLight = Color(0xFF0F172A)
+val OnSurfaceLight = Color(0xFF0F172A)
+val OnErrorLight = Color(0xFFFFFFFF)
+
+// LIGHT TEXT SYSTEM
+val TextPrimaryLight = Color(0xFF0F172A)
+val TextSecondaryLight = Color(0xFF64748B)
+val TextTertiaryLight = Color(0xFF94A3B8)
+
+val DividerLight = Color(0xFFE2E8F0)
+val CardBackgroundLight = Color(0xFFFFFFFF)
+val IconTintLight = Color(0xFF64748B)
+
+val AccentLight = Color(0xFF22C55E)
+
+
+//DARK THEME
+val PrimaryDark = Color(0xFF2EAED6)
+val PrimaryVariantDark = Color(0xFF1E88A8)
+val SecondaryDark = Color(0xFF38BDF8)
+val SecondaryVariantDark = Color(0xFF0EA5E9)
+
+val BackgroundDark = Color(0xFF0F2230)
+val SurfaceDark = Color(0xFF132A3B)
+val SurfaceVariantDark = Color(0xFF163447)
+
+val ErrorDark = Color(0xFFFF6B6B)
+
+val OnPrimaryDark = Color(0xFFFFFFFF)
+val OnSecondaryDark = Color(0xFFFFFFFF)
+val OnBackgroundDark = Color(0xFFE2E8F0)
+val OnSurfaceDark = Color(0xFFE2E8F0)
+val OnErrorDark = Color(0xFF000000)
+
+// DARK TEXT SYSTEM
+val TextPrimaryDark = Color(0xFFE2E8F0)
+val TextSecondaryDark = Color(0xFF94A3B8)
+val TextTertiaryDark = Color(0xFF64748B)
+
+val DividerDark = Color(0xFF1E3A4C)
+val CardBackgroundDark = Color(0xFF132A3B)
+val IconTintDark = Color(0xFF94A3B8)
+
+val AccentDark = Color(0xFF34D399)
+
+// 🌈 PRIMARY CTA GRADIENT (matches button)
+val GradientPrimaryStart = Color(0xFF1E88A8)
+val GradientPrimaryMid = Color(0xFF2EAED6)
+val GradientPrimaryEnd = Color(0xFF38BDF8)
+
+// Subtle surface gradient
+val GradientSoftStart = Color(0xFFF1F5F9)
+val GradientSoftEnd = Color(0xFFE2E8F0)
+
+// Dark header gradient
+val HeaderGradientStart = Color(0xFF132A3B)
+val HeaderGradientEnd = Color(0xFF0F2230)
+
+// 💬 SOCIAL / STATUS
+val LikeColor = Color(0xFFEF4444)
+val LikeColorActive = Color(0xFFDC2626)
+
+val CommentColor = PrimaryLight
+val CommentColorActive = PrimaryVariantLight
+
+val ShareColor = Color(0xFF22C55E)
+val ShareColorActive = Color(0xFF16A34A)
+
+// ✅ UTILITY
+val SuccessColor = Color(0xFF22C55E)
+val WarningColor = Color(0xFFF59E0B)
+val InfoColor = PrimaryLight
+
+// ✨ GLASS
+val GlassLight = Color(0xCCFFFFFF)
+val GlassDark = Color(0xCC132A3B)
+
+
+/*
 // Light Theme Colors - Vibrant and Modern
 val PrimaryLight = Color(0xFF6C63FF)
 val PrimaryVariantLight = Color(0xFF5548E8)
@@ -100,3 +192,4 @@ val InfoColor = Color(0xFF6C63FF)
 // Glassmorphism Colors
 val GlassLight = Color(0xCCFFFFFF)  // 80% opacity white
 val GlassDark = Color(0xCC121212)   // 80% opacity dark
+ */

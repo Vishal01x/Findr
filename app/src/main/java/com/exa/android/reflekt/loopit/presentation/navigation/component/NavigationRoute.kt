@@ -9,7 +9,6 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.Pro
 import com.google.gson.Gson
 
 sealed class AuthRoute(val route : String){
-    object Splash : AuthRoute("splash")
     object Onboarding : AuthRoute("onboarding")
     object Login : AuthRoute("login")
     object Register : AuthRoute("register")

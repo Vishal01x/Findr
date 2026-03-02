@@ -101,13 +101,14 @@ private fun getInitials(name: String): String {
  */
 private fun getGradientForUser(name: String): List<Color> {
     val gradients = listOf(
-        listOf(GradientPurpleStart, GradientPurpleEnd),
-        listOf(GradientPinkStart, GradientPinkEnd),
-        listOf(GradientTealStart, GradientTealEnd),
-        listOf(GradientVibeStart, GradientVibeEnd),
-        listOf(TagGradient1Start, TagGradient1End),
-        listOf(TagGradient2Start, TagGradient2End),
-        listOf(TagGradient3Start, TagGradient3End)
+//        listOf(GradientPurpleStart, GradientPurpleEnd),
+//        listOf(GradientPinkStart, GradientPinkEnd),
+//        listOf(GradientTealStart, GradientTealEnd),
+//        listOf(GradientVibeStart, GradientVibeEnd),
+//        listOf(TagGradient1Start, TagGradient1End),
+//        listOf(TagGradient2Start, TagGradient2End),
+//        listOf(TagGradient3Start, TagGradient3End)
+        listOf(GradientPrimaryStart, GradientPrimaryEnd)
     )
     
     // Use hashCode to deterministically select a gradient

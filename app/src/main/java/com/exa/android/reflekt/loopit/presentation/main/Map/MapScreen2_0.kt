@@ -192,7 +192,7 @@ fun MapScreen2_0(
         contentColor = MaterialTheme.colorScheme.onBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
         // Google Map
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
@@ -281,9 +281,13 @@ fun MapScreen2_0(
                                     style = MaterialTheme.typography.headlineMedium.copy(
                                         brush = Brush.linearGradient(
                                             colors = listOf(
-                                                GradientPurpleStart,
-                                                GradientPurpleMid,
-                                                GradientPurpleEnd
+//                                                GradientPurpleStart,
+//                                                GradientPurpleMid,
+//                                                GradientPurpleEnd
+
+                                                GradientPrimaryStart,
+                                                GradientPrimaryMid,
+                                                GradientPrimaryEnd
                                             )
                                         )
                                     ),

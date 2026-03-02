@@ -9,37 +9,24 @@ import com.exa.android.reflekt.loopit.presentation.auth.GoogleProfileSetupScreen
 import com.exa.android.reflekt.loopit.presentation.auth.LoginScreen
 import com.exa.android.reflekt.loopit.presentation.auth.OnboardingScreen
 import com.exa.android.reflekt.loopit.presentation.auth.SignUpScreen
-import com.exa.android.reflekt.loopit.presentation.auth.SplashScreen
 import com.exa.android.reflekt.loopit.presentation.auth.VerificationEmailScreen
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.TermsWebView
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
 
-fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
+fun NavGraphBuilder.authNavGraph(
+    navController: NavHostController,
+    needsProfileSetup: Boolean = false
+) {
+    val startDest = if (needsProfileSetup)
+        AuthRoute.GoogleProfileSetup.route
+    else
+        AuthRoute.Onboarding.route
+
     navigation(
-        startDestination = AuthRoute.Splash.route,
+        startDestination = startDest,
         route = AuthRoute.ROOT
     ) {
-        // ─── Splash: decides where to go ───
-        composable(AuthRoute.Splash.route) {
-            SplashScreen(
-                onLoggedIn = {
-                    navController.navigate(MainRoute.ROOT) {
-                        popUpTo(AuthRoute.ROOT) { inclusive = true }
-                    }
-                },
-                onNeedsProfileSetup = {
-                    navController.navigate(AuthRoute.GoogleProfileSetup.route) {
-                        popUpTo(AuthRoute.Splash.route) { inclusive = true }
-                    }
-                },
-                onNotLoggedIn = {
-                    navController.navigate(AuthRoute.Onboarding.route) {
-                        popUpTo(AuthRoute.Splash.route) { inclusive = true }
-                    }
-                }
-            )
-        }
 
         composable(AuthRoute.Onboarding.route) {
             OnboardingScreen(
