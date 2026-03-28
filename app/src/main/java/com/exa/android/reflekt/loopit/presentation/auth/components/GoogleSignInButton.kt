@@ -72,7 +72,7 @@ fun GoogleSignInButton(
             )
         } else {
             Image(
-                painter = painterResource(id = R.drawable.ic_app),
+                painter = painterResource(id = R.drawable.google),
                 contentDescription = "Google Logo",
                 modifier = Modifier.size(24.dp)
             )

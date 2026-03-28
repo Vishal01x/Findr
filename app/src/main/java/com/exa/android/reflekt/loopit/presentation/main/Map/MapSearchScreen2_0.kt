@@ -135,6 +135,7 @@ fun MapSearchScreen2_0(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(20.dp)
                 ) {

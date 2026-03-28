@@ -29,8 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,10 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.theme.Spacing
-import com.exa.android.reflekt.loopit.theme.chatInputBackground
-import com.exa.android.reflekt.loopit.theme.chatOnlineIndicator
-import com.exa.android.reflekt.loopit.theme.chatSentBubbleEnd
-import com.exa.android.reflekt.loopit.theme.chatSentBubbleStart
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.BlockUserDialog
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.DeleteMessageDialog
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.ReportUserDialog
@@ -89,6 +87,7 @@ fun ChatHeader(
     onUnselectClick: () -> Unit,
     onCopyClick: () -> Unit,
     onEditClick: (Message?) -> Unit,
+    onReplyClick: (Message?) -> Unit,
     onForwardClick: () -> Unit,
     onDeleteClick: (Int) -> Unit,
     onClearChatClick: () -> Unit,
@@ -101,7 +100,7 @@ fun ChatHeader(
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
-        color = colorScheme.chatInputBackground,
+        color = colorScheme.surface,
         shadowElevation = 2.dp
     ) {
         AnimatedVisibility(
@@ -116,7 +115,7 @@ fun ChatHeader(
                 onCopyClick = { onCopyClick() },
                 onForwardClick = { onForwardClick() },
                 onDeleteClick = { onDeleteClick(it) },
-                onReplyClick = { message -> },
+                onReplyClick = { message -> onReplyClick(message) },
                 onEditClick = { message ->
                     onEditClick(message)
                 }
@@ -161,12 +160,17 @@ fun HeaderWithOptions(
     var showDialog by remember { mutableStateOf(false) }
     val singleMessage = if (selectedMessages.size == 1) selectedMessages.first() else null
     val endIcons = mutableListOf<IconData>()
+
+    val reply = IconData(
+        iconType = IconType.PainterIcon(R.drawable.reply_icon),
+        contentDescription = "Reply",
+        onClick = { onReplyClick(singleMessage) }
+    )
     val copy = IconData(
         iconType = IconType.PainterIcon(R.drawable.ic_copy),
         contentDescription = "Copy Selected",
         onClick = { onCopyClick() }
     )
-
     val delete = IconData(
         iconType = IconType.VectorIcon(Icons.Default.Delete),
         contentDescription = "Delete Selected",
@@ -178,10 +182,9 @@ fun HeaderWithOptions(
         onClick = { onEditClick(singleMessage) }
     )
 
-
     getVisibleIcons(selectedMessages, curUser).forEach {
         when (it) {
-            IconsName.REPLY -> {}
+            IconsName.REPLY -> endIcons.add(reply)
             IconsName.COPY -> endIcons.add(copy)
             IconsName.EDIT -> endIcons.add(edit)
             IconsName.DELETE -> endIcons.add(delete)
@@ -237,7 +240,7 @@ fun PlaceIcons(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
-            .background(colorScheme.primaryContainer.copy(alpha = 0.3f))
+            .background(colorScheme.surface)
             .clickable(false) { }
             .padding(vertical = Spacing.extraSmall, horizontal = Spacing.small),
         verticalAlignment = Alignment.CenterVertically
@@ -346,16 +349,9 @@ fun HeaderWithProfile(
             // Profile Picture with online ring
             Box(contentAlignment = Alignment.BottomEnd) {
                 val borderBrush = if (isOnline) {
-                    Brush.linearGradient(
-                        listOf(
-                            colorScheme.chatSentBubbleStart,
-                            colorScheme.chatOnlineIndicator
-                        )
-                    )
+                    Brush.linearGradient(listOf(colorScheme.primary, colorScheme.secondary))
                 } else {
-                    Brush.linearGradient(
-                        listOf(colorScheme.outline, colorScheme.outline)
-                    )
+                    Brush.linearGradient(listOf(colorScheme.outline, colorScheme.outline))
                 }
                 ImageUsingCoil(
                     context = context,
@@ -387,8 +383,8 @@ fun HeaderWithProfile(
                             .size(12.dp)
                             .graphicsLayer { alpha = pulseAlpha }
                             .clip(CircleShape)
-                            .background(colorScheme.chatOnlineIndicator)
-                            .border(2.dp, colorScheme.chatInputBackground, CircleShape)
+                            .background(colorScheme.secondary)
+                            .border(2.dp, colorScheme.surface, CircleShape)
                     )
                 }
             }
@@ -399,12 +395,13 @@ fun HeaderWithProfile(
             Column(
                 modifier = Modifier
                     .clickable(!isSelected) { onProfileClick() }
+                    .weight(1f)
                     .padding(vertical = 4.dp)
             ) {
                 Text(
                     text = otherUser?.name ?: "---",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = colorScheme.onSurface,
+                    color = colorScheme.onPrimaryContainer,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -421,7 +418,6 @@ fun HeaderWithProfile(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Animated typing dots
                         if (isTyping) {
                             TypingDotsIndicator()
                             Spacer(modifier = Modifier.width(4.dp))
@@ -431,8 +427,8 @@ fun HeaderWithProfile(
                             text = statusContent,
                             style = MaterialTheme.typography.labelSmall,
                             color = when {
-                                isTyping -> colorScheme.chatSentBubbleStart
-                                isOnline -> colorScheme.chatOnlineIndicator
+                                isTyping -> colorScheme.primary
+                                isOnline -> colorScheme.secondary
                                 else -> colorScheme.onSurfaceVariant
                             },
                             fontWeight = if (isTyping || isOnline) FontWeight.SemiBold else FontWeight.Normal,
@@ -487,35 +483,55 @@ fun HeaderWithProfile(
                 )
             }
 
-            DropdownMenu(
-                expanded = expanded.value,
-                onDismissRequest = { expanded.value = false },
-                modifier = Modifier
-                    .background(colorScheme.surface)
-                    .clip(RoundedCornerShape(12.dp)),
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Clear Chat") },
-                    onClick = {
-                        expanded.value = false
-                        onClearChatClick()
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(if (isOtherUserBlock) "Unblock" else "Block") },
-                    onClick = {
-                        expanded.value = false
-                        showBlockDialog = !isOtherUserBlock
-                        if (isOtherUserBlock) onBlockClick()
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Report") },
-                    onClick = {
-                        expanded.value = false
-                        showReportDialog = true
-                    }
-                )
+            Box {
+                IconButton(onClick = { expanded.value = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = expanded.value,
+                    onDismissRequest = { expanded.value = false },
+                    modifier = Modifier
+                        .background(colorScheme.surface)
+                        .clip(RoundedCornerShape(16.dp))
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Clear Chat") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Delete, null, tint = colorScheme.error)
+                        },
+                        onClick = {
+                            expanded.value = false
+                            onClearChatClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (isOtherUserBlock) "Unblock" else "Block") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Block, null,
+                                tint = if (isOtherUserBlock) colorScheme.primary else colorScheme.error)
+                        },
+                        onClick = {
+                            expanded.value = false
+                            showBlockDialog = !isOtherUserBlock
+                            if (isOtherUserBlock) onBlockClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Report") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Flag, null, tint = colorScheme.error)
+                        },
+                        onClick = {
+                            expanded.value = false
+                            showReportDialog = true
+                        }
+                    )
+                }
             }
         }
     }
@@ -543,7 +559,7 @@ private fun TypingDotsIndicator() {
                     .size(4.dp)
                     .offset(y = offset.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.chatSentBubbleStart)
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
     }

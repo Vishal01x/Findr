@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,10 +25,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.exa.android.reflekt.loopit.core.utils.showToast
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.theme.*
 
@@ -41,8 +44,12 @@ fun TopHeaderBar(
     selectedFilter: PostType?,
     onFilterSelected: (PostType) -> Unit,
     visible: Boolean = true,
+    onProfileClick : () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+    val context = LocalContext.current
+
     AnimatedVisibility(
         visible = visible,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
@@ -119,15 +126,15 @@ fun TopHeaderBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
-                            onClick = { /* Handle notifications */ },
+                            onClick = { showToast(context,"No notifications yet") },
                             modifier = Modifier.size(40.dp)
                         ) {
                             BadgedBox(
                                 badge = {
-                                    Badge(
-                                        containerColor = SecondaryDark,
-                                        modifier = Modifier.size(8.dp)
-                                    )
+//                                    Badge(
+//                                        containerColor = SecondaryDark,
+//                                        modifier = Modifier.size(8.dp)
+//                                    )
                                 }
                             ) {
                                 Icon(
@@ -139,17 +146,17 @@ fun TopHeaderBar(
                             }
                         }
 
-                        IconButton(
-                            onClick = { /* Handle messages */ },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Mail,
-                                contentDescription = "Messages",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+//                        IconButton(
+//                            onClick = { /* Handle messages */ },
+//                            modifier = Modifier.size(40.dp)
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Rounded.Mail,
+//                                contentDescription = "Messages",
+//                                tint = MaterialTheme.colorScheme.onSurface,
+//                                modifier = Modifier.size(24.dp)
+//                            )
+//                        }
 
                         // Profile Picture
                         Box(
@@ -166,7 +173,8 @@ fun TopHeaderBar(
                                             HeaderGradientEnd
                                         )
                                     )
-                                ),
+                                )
+                                .clickable { onProfileClick() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -273,7 +281,7 @@ private fun ModernFilterChip(
 //        listOf(GradientPinkStart, GradientPinkEnd),
 //        listOf(GradientTealStart, GradientTealEnd),
 //        listOf(GradientVibeStart, GradientVibeEnd)
-        GradientSoftStart, GradientSoftEnd
+        GradientPrimaryStart, GradientPrimaryEnd
     )
 
     val gradientIndex = label.hashCode() % gradients.size

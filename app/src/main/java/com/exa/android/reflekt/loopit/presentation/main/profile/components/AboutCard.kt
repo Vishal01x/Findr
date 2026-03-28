@@ -183,9 +183,9 @@ fun AboutCard(
                     Text(
                         text = if (expanded) "Show less" else "Show more",
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .padding(top = 4.dp)
+                            .padding(top = 2.dp)
                             .clickable { expanded = !expanded }
                     )
                 }

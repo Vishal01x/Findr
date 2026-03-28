@@ -6,8 +6,7 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * Chat-specific color extensions for MaterialTheme
- * Provides consistent colors for chat bubbles, indicators, media elements, etc.
- * Supports both light and dark themes with modern gradients and shimmer effects
+ * Delegates to proper theme tokens so the chat detail screen matches the app theme.
  */
 
 // Helper to determine if theme is light
@@ -18,12 +17,12 @@ val ColorScheme.isLight: Boolean
 // MESSAGE BUBBLE COLORS
 // ============================================================
 
-// Sent message bubble - Modern gradient colors
+// Sent message bubble — uses theme primary
 val ColorScheme.chatSentBubbleStart: Color
-    get() = if (isLight) Color(0xFF6C63FF) else Color(0xFF8B7FFF)
+    get() = primary
 
 val ColorScheme.chatSentBubbleEnd: Color
-    get() = if (isLight) Color(0xFF5548E8) else Color(0xFF7C73FF)
+    get() = primaryContainer
 
 // Sent message bubble gradient
 val ColorScheme.chatSentBubbleGradient: Brush
@@ -31,41 +30,41 @@ val ColorScheme.chatSentBubbleGradient: Brush
         colors = listOf(chatSentBubbleStart, chatSentBubbleEnd)
     )
 
-// Sent message bubble - Solid color (for simple implementation)
+// Sent message bubble - Solid color
 val ColorScheme.chatSentBubble: Color
-    get() = chatSentBubbleStart
+    get() = primary
 
-// Received message bubble color
+// Received message bubble — uses theme surfaceVariant
 val ColorScheme.chatReceivedBubble: Color
-    get() = if (isLight) Color(0xFFF1F3F5) else Color(0xFF2C2C2E)
+    get() = surfaceVariant
 
-// Text color on sent bubble
+// Text color on sent bubble — uses theme onPrimary
 val ColorScheme.chatSentText: Color
-    get() = Color.White // Always white on primary color
+    get() = onPrimary
 
-// Text color on received bubble
+// Text color on received bubble — uses theme onSurfaceVariant
 val ColorScheme.chatReceivedText: Color
-    get() = if (isLight) Color(0xFF212529) else Color(0xFFF8F9FA)
+    get() = onSurfaceVariant
 
-// Timestamp color in chat
+// Timestamp color in chat — uses theme onSurfaceVariant
 val ColorScheme.chatTimestamp: Color
-    get() = if (isLight) Color(0xFF6C757D) else Color(0xFFADB5BD)
+    get() = onSurfaceVariant
 
 // ============================================================
 // STATUS INDICATORS
 // ============================================================
 
-// Online indicator (green dot)
+// Online indicator (green dot) — semantic status color, kept distinct
 val ColorScheme.chatOnlineIndicator: Color
-    get() = if (isLight) Color(0xFF00D9A3) else Color(0xFF00F5C4)
+    get() = if (isLight) Color(0xFF22C55E) else Color(0xFF34D399)
 
-// Message read status (double check marks)
+// Message read status (double check marks) — uses theme primary
 val ColorScheme.chatMessageRead: Color
-    get() = if (isLight) Color(0xFF00D9A3) else Color(0xFF00F5C4)
+    get() = primary
 
-// Message sent status (single check mark)
+// Message sent/delivered status — uses theme outline (muted)
 val ColorScheme.chatMessageSent: Color
-    get() = if (isLight) Color(0xFFB0B0B0) else Color(0xFF6E767D)
+    get() = outline
 
 // ============================================================
 // MEDIA MESSAGE COLORS
@@ -75,68 +74,64 @@ val ColorScheme.chatMessageSent: Color
 val ColorScheme.chatImageOverlay: Color
     get() = Color(0x80000000) // 50% black overlay
 
-// PDF message background
+// PDF message background — uses theme errorContainer
 val ColorScheme.chatPdfBackground: Color
-    get() = if (isLight) Color(0xFFFFEBEE) else Color(0xFF3A1F1F)
+    get() = errorContainer
 
-// PDF icon color
+// PDF icon color — uses theme error
 val ColorScheme.chatPdfIcon: Color
-    get() = if (isLight) Color(0xFFE53935) else Color(0xFFFF6B6B)
+    get() = error
 
-// PDF text color
+// PDF text color — uses theme onSurface
 val ColorScheme.chatPdfText: Color
-    get() = if (isLight) Color(0xFF212529) else Color(0xFFE7E9EA)
+    get() = onSurface
 
-// Reply message accent line
+// Reply message accent line — uses theme primary
 val ColorScheme.chatReplyAccent: Color
-    get() = if (isLight) Color(0xFF6C63FF) else Color(0xFF8B7FFF)
+    get() = primary
 
-// Reply message background
+// Reply message background — uses theme primaryContainer with alpha
 val ColorScheme.chatReplyBackground: Color
-    get() = if (isLight) Color(0xFFE8E6FF) else Color(0xFF2A2840)
+    get() = primaryContainer.copy(alpha = 0.3f)
 
 // ============================================================
 // DATE SEPARATOR COLORS
 // ============================================================
 
-// Date separator background
+// Date separator background — uses theme surfaceVariant
 val ColorScheme.chatDateSeparatorBackground: Color
-    get() = if (isLight) Color(0xFFE0E0E0) else Color(0xFF2C2C2E)
+    get() = surfaceVariant
 
-// Date separator text
+// Date separator text — uses theme onSurfaceVariant
 val ColorScheme.chatDateSeparatorText: Color
-    get() = if (isLight) Color(0xFF536471) else Color(0xFF8B98A5)
+    get() = onSurfaceVariant
 
 // ============================================================
 // SHIMMER LOADING COLORS
 // ============================================================
 
-// Shimmer base color
+// Shimmer base color — uses theme surfaceVariant
 val ColorScheme.chatShimmerBase: Color
-    get() = if (isLight) Color(0xFFE0E0E0) else Color(0xFF2C2C2E)
+    get() = surfaceVariant
 
-// Shimmer highlight color
+// Shimmer highlight color — uses theme surface
 val ColorScheme.chatShimmerHighlight: Color
-    get() = if (isLight) Color(0xFFF5F5F5) else Color(0xFF3A3A3C)
+    get() = surface
 
 // Shimmer gradient
 val ColorScheme.chatShimmerGradient: Brush
     get() = Brush.horizontalGradient(
-        colors = listOf(
-            chatShimmerBase,
-            chatShimmerHighlight,
-            chatShimmerBase
-        )
+        colors = listOf(chatShimmerBase, chatShimmerHighlight, chatShimmerBase)
     )
 
 // ============================================================
 // BACKGROUND COLORS
 // ============================================================
 
-// Chat background (for message list)
+// Chat background (for message list) — uses theme background
 val ColorScheme.chatBackground: Color
-    get() = if (isLight) Color(0xFFF8F9FA) else Color(0xFF0E0E10)
+    get() = background
 
-// Input section background
+// Input section background — uses theme surface
 val ColorScheme.chatInputBackground: Color
-    get() = if (isLight) Color(0xFFFFFFFF) else Color(0xFF1A1A1A)
+    get() = surface

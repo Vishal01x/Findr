@@ -14,7 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.presentation.main.post.components.*
-import com.exa.android.reflekt.loopit.presentation.test.RolesSection
+import com.exa.android.reflekt.loopit.presentation.main.post.create.components.LinkInputSection
+
 
 /**
  * Screen for editing existing posts
@@ -128,22 +129,13 @@ fun EditPostScreen(
                     maxLines = 8
                 )
 
-                // Tags - Read-only display, edit via manual input if needed
-                if (state.tags.isNotEmpty()) {
-                    Text(
-                        text = "Tags (${state.tags.size})",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        state.tags.forEach { tag ->
-                            TagChip(tag = tag)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+                // Tags — interactive add / remove
+                TagInputSection(
+                    tags = state.tags,
+                    onAddTag = viewModel::addTag,
+                    onRemoveTag = viewModel::removeTag
+                )
+
 
                 // Links - Using LinkInputSection from create components
                 var linkInput by remember { mutableStateOf("") }

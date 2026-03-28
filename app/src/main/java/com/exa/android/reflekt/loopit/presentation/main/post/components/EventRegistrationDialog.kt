@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 import com.exa.android.reflekt.loopit.theme.Spacing
 import java.text.SimpleDateFormat
 import java.util.*
@@ -181,20 +183,16 @@ fun EventRegistrationDialog(
                 Spacer(modifier = Modifier.height(Spacing.large))
                 
                 // Optional Message
-                OutlinedTextField(
+                AppTextField(
                     value = message,
                     onValueChange = { message = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Message to organizer (Optional)") },
-                    placeholder = { Text("Any questions or special requirements...") },
+                    label = "Message to organizer (Optional)",
+                    placeholder = "Any questions or special requirements…",
+                    leadingIcon = Icons.Default.Edit,
+                    singleLine = false,
                     minLines = 3,
                     maxLines = 5,
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
                 )
                 
                 Spacer(modifier = Modifier.height(Spacing.large))

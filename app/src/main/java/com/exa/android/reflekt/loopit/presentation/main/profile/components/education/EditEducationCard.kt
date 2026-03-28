@@ -10,6 +10,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -23,6 +25,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.E
 import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 import java.text.SimpleDateFormat
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -215,13 +218,15 @@ fun EducationTextField(
     isError: Boolean = false,
     onValueChange: (String) -> Unit
 ) {
-    OutlinedTextField(
+    AppTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
-        placeholder = { Text(hint) },
-        singleLine = true,
+        label = label,
+        placeholder = hint,
+        leadingIcon = if (keyboardType == KeyboardType.Number) Icons.Default.Star
+                      else Icons.Default.School,
         isError = isError,
+        errorMessage = if (isError) "This field is required" else null,
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
         modifier = Modifier
             .fillMaxWidth()
@@ -238,15 +243,14 @@ fun DatePickerField(
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
-    OutlinedTextField(
+    AppTextField(
         value = dateText,
         onValueChange = {},
+        label = label,
         readOnly = true,
         isError = isError,
-        supportingText = {
-            if (isError) Text("End Date must be after Start Date")
-        },
-        label = { Text(label) },
+        errorMessage = if (isError) "End date must be after start date" else null,
+        leadingIcon = Icons.Default.DateRange,
         trailingIcon = {
             IconButton(onClick = { showDatePicker = true }) {
                 Icon(
@@ -259,7 +263,6 @@ fun DatePickerField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { showDatePicker = true }
     )
 
     if (showDatePicker) {

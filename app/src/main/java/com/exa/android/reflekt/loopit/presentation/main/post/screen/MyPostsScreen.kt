@@ -163,23 +163,12 @@ fun MyPostsScreen(
         }
         
         if (state.showDeleteDialog && state.postToDelete != null) {
-            AlertDialog(
-                onDismissRequest = viewModel::onDismissDeleteDialog,
-                title = { Text("Delete Post") },
-                text = { Text("Are you sure you want to delete '${state.postToDelete?.title}'? This action cannot be undone.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = viewModel::onConfirmDelete,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Delete")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = viewModel::onDismissDeleteDialog) {
-                        Text("Cancel")
-                    }
-                }
+            com.exa.android.reflekt.loopit.presentation.main.component.dialog.DestructiveDialog(
+                title = "Delete Post?",
+                message = "Are you sure you want to delete '${state.postToDelete?.title}'? This action cannot be undone.",
+                confirmText = "Delete",
+                onConfirm = viewModel::onConfirmDelete,
+                onDismiss = viewModel::onDismissDeleteDialog
             )
         }
     }

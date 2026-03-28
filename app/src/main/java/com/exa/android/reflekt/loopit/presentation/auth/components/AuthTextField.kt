@@ -1,22 +1,17 @@
 package com.exa.android.reflekt.loopit.presentation.auth.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 
+/**
+ * Auth-screen text field — thin wrapper over [AppTextField].
+ * Kept for backwards compatibility so no auth screen import needs to change.
+ */
 @Composable
 fun AuthTextField(
     value: String,
@@ -34,68 +29,20 @@ fun AuthTextField(
     singleLine: Boolean = true,
     enabled: Boolean = true
 ) {
-    var isFocused by remember { mutableStateOf(false) }
-    val colorScheme = MaterialTheme.colorScheme
-
-    val borderColor by animateColorAsState(
-        targetValue = when {
-            isError -> colorScheme.error
-            isFocused -> colorScheme.primary
-            else -> Color.Transparent
-        },
-        animationSpec = tween(250),
-        label = "border_color"
-    )
-
-    val containerColor by animateColorAsState(
-        targetValue = if (isFocused) colorScheme.surfaceContainerHigh
-        else colorScheme.surfaceContainerLow,
-        animationSpec = tween(250),
-        label = "container_color"
-    )
-
-    val shadowElevation by animateDpAsState(
-        targetValue = if (isFocused) 2.dp else 0.dp,
-        animationSpec = tween(250),
-        label = "shadow"
-    )
-
-    OutlinedTextField(
+    AppTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(label, color = colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
-        leadingIcon = {
-            Icon(
-                leadingIcon,
-                contentDescription = label,
-                tint = if (isFocused) colorScheme.primary
-                else colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        },
+        label = label,
+        leadingIcon = leadingIcon,
+        modifier = modifier,
         trailingIcon = trailingIcon,
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         isError = isError,
+        errorMessage = errorMessage,
+        supportingText = supportingText,
         singleLine = singleLine,
-        enabled = enabled,
-        supportingText = supportingText ?: errorMessage?.let {
-            { Text(it, color = colorScheme.error) }
-        },
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = borderColor,
-            unfocusedBorderColor = Color.Transparent,
-            focusedLabelColor = colorScheme.primary,
-            unfocusedLabelColor = colorScheme.onSurfaceVariant,
-            cursorColor = colorScheme.primary,
-            errorBorderColor = colorScheme.error,
-            focusedContainerColor = containerColor,
-            unfocusedContainerColor = containerColor
-        ),
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(shadowElevation, RoundedCornerShape(16.dp), clip = false)
-            .onFocusChanged { isFocused = it.isFocused }
+        enabled = enabled
     )
 }

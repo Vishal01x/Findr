@@ -5,7 +5,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,6 +25,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.E
 import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -81,61 +87,53 @@ fun EditExperienceScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
+                    .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(24.dp)
+                    .padding(24.dp,24.dp,24.dp,0.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                OutlinedTextField(
+                AppTextField(
                     value = title,
-                    onValueChange = {
-                        title = it
-                        titleError = null
-                    },
-                    label = { Text("Title*") },
-                    placeholder = { Text("Ex: Software Engineer") },
+                    onValueChange = { title = it; titleError = null },
+                    label = "Title*",
+                    placeholder = "Ex: Software Engineer",
+                    leadingIcon = Icons.Default.Work,
                     isError = titleError != null,
-                    supportingText = { titleError?.let { Text(it) } },
-                    modifier = Modifier.fillMaxWidth()
+                    errorMessage = titleError,
                 )
 
-                OutlinedTextField(
+                Spacer(Modifier.height(8.dp))
+
+                AppTextField(
                     value = employmentType,
                     onValueChange = { employmentType = it },
-                    label = { Text("Employment Type") },
-                    placeholder = { Text("Ex: Full-time") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
+                    label = "Employment Type",
+                    placeholder = "Ex: Full-time",
+                    leadingIcon = Icons.Default.Badge,
                 )
 
-                OutlinedTextField(
+                Spacer(Modifier.height(8.dp))
+
+                AppTextField(
                     value = company,
-                    onValueChange = {
-                        company = it
-                        companyError = null
-                    },
-                    label = { Text("Company*") },
-                    placeholder = { Text("Ex: Google") },
+                    onValueChange = { company = it; companyError = null },
+                    label = "Company*",
+                    placeholder = "Ex: Google",
+                    leadingIcon = Icons.Default.Business,
                     isError = companyError != null,
-                    supportingText = { companyError?.let { Text(it) } },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
+                    errorMessage = companyError,
                 )
 
-                OutlinedTextField(
+                Spacer(Modifier.height(8.dp))
+
+                AppTextField(
                     value = location,
-                    onValueChange = {
-                        location = it
-                        locationError = null
-                    },
-                    label = { Text("Location*") },
-                    placeholder = { Text("Ex: Bengaluru, India") },
+                    onValueChange = { location = it; locationError = null },
+                    label = "Location*",
+                    placeholder = "Ex: Bengaluru, India",
+                    leadingIcon = Icons.Default.LocationOn,
                     isError = locationError != null,
-                    supportingText = { locationError?.let { Text(it) } },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
+                    errorMessage = locationError,
                 )
 
                 val formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH)
@@ -186,14 +184,13 @@ fun EditExperienceScreen(
                     Text("Currently working here")
                 }
 
-                OutlinedTextField(
+                AppTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
-                    placeholder = { Text("Describe your role, responsibilities, and achievements") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
+                    label = "Description",
+                    placeholder = "Describe your role, responsibilities, and achievements",
+                    leadingIcon = Icons.Default.Description,
+                    singleLine = false,
                     maxLines = 5,
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Default)
                 )

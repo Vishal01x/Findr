@@ -48,7 +48,8 @@ fun PostHomeScreen(
                 searchQuery = state.searchQuery,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 selectedFilter = state.selectedFilter,
-                onFilterSelected = viewModel::onFilterSelected
+                onFilterSelected = viewModel::onFilterSelected,
+                onProfileClick = {onUserClick(currentUserId)}
             )
 
             // Posts Feed

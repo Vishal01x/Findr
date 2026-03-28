@@ -2,12 +2,18 @@ package com.exa.android.reflekt.loopit.presentation.main.post.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 import java.util.UUID
 
 /**
@@ -34,40 +40,41 @@ fun AddRoleDialog(
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
+                AppTextField(
                     value = roleName,
                     onValueChange = { roleName = it },
-                    label = { Text("Role Name *") },
-                    placeholder = { Text("e.g., Frontend Developer") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    label = "Role Name *",
+                    placeholder = "e.g., Frontend Developer",
+                    leadingIcon = Icons.Default.Work,
+                    isError = roleName.isBlank(),
                 )
-                
-                OutlinedTextField(
+
+                AppTextField(
                     value = technology,
                     onValueChange = { technology = it },
-                    label = { Text("Technology/Skill") },
-                    placeholder = { Text("e.g., React, Kotlin") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    label = "Technology / Skill",
+                    placeholder = "e.g., React, Kotlin",
+                    leadingIcon = Icons.Default.Code,
                 )
-                
-                OutlinedTextField(
+
+                AppTextField(
                     value = positions,
                     onValueChange = { positions = it },
-                    label = { Text("Positions Needed *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    label = "Positions Needed *",
+                    placeholder = "1",
+                    leadingIcon = Icons.Default.Group,
+                    isError = positions.toIntOrNull() == null || positions.toInt() <= 0,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-                
-                OutlinedTextField(
+
+                AppTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description (Optional)") },
-                    placeholder = { Text("Role responsibilities...") },
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 3
+                    label = "Description (Optional)",
+                    placeholder = "Role responsibilities…",
+                    leadingIcon = Icons.Default.Description,
+                    singleLine = false,
+                    maxLines = 3,
                 )
             }
         },

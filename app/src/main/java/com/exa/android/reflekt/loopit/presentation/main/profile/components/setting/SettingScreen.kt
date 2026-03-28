@@ -22,6 +22,8 @@ import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.core.utils.showToast
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.AppDialog
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.ConfirmDialog
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import android.Manifest
@@ -357,63 +359,46 @@ fun ChangePasswordDialog(
     var confirmPassword by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
+    AppDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Change Password") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = currentPassword,
-                    onValueChange = { currentPassword = it },
-                    label = { Text("Current Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = { Text("New Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirm New Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                error?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+        title = "Change Password",
+        content = {
+            OutlinedTextField(
+                value = currentPassword,
+                onValueChange = { currentPassword = it },
+                label = { Text("Current Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = newPassword,
+                onValueChange = { newPassword = it },
+                label = { Text("New Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Confirm New Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            error?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error)
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (newPassword != confirmPassword) {
-                        error = "Passwords don't match"
-                    } else if (newPassword.length < 6) {
-                        error = "Password must be at least 6 characters"
-                    } else {
-                        onChangePassword(currentPassword, newPassword)
-                    }
-                }
-            ) {
-                Text("Change Password")
+        confirmText = "Change Password",
+        onConfirm = {
+            if (newPassword != confirmPassword) {
+                error = "Passwords don't match"
+            } else if (newPassword.length < 6) {
+                error = "Password must be at least 6 characters"
+            } else {
+                onChangePassword(currentPassword, newPassword)
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
+        onDismiss = onDismiss
     )
 }
 
@@ -426,46 +411,30 @@ fun UpdateEmailDialog(
     var newEmail by remember { mutableStateOf(currentEmail) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
+    AppDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Update Email Address") },
-        text = {
-            Column {
-                Text("Current email: $currentEmail")
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = newEmail,
-                    onValueChange = { newEmail = it },
-                    label = { Text("New Email Address") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                error?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+        title = "Update Email Address",
+        content = {
+            Text("Current email: $currentEmail", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedTextField(
+                value = newEmail,
+                onValueChange = { newEmail = it },
+                label = { Text("New Email Address") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            error?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error)
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
-                        error = "Please enter a valid email"
-                    } else {
-                        onUpdateEmail(newEmail)
-                    }
-                }
-            ) {
-                Text("Update Email")
+        confirmText = "Update Email",
+        onConfirm = {
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+                error = "Please enter a valid email"
+            } else {
+                onUpdateEmail(newEmail)
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
+        onDismiss = onDismiss
     )
 }
 
@@ -475,34 +444,31 @@ fun ThemeSelectionDialog(
     onDismiss: () -> Unit,
     onThemeSelected: (ThemeColor) -> Unit
 ) {
-    AlertDialog(
+    AppDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Theme") },
-        text = {
-            Column {
-                ThemeColor.values().forEach { theme ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onThemeSelected(theme) }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = theme == currentTheme,
-                            onClick = { onThemeSelected(theme) }
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(text = theme.displayName)
-                    }
+        title = "Select Theme",
+        content = {
+            ThemeColor.values().forEach { theme ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onThemeSelected(theme) }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = theme == currentTheme,
+                        onClick = { onThemeSelected(theme) }
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(text = theme.displayName)
                 }
             }
         },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Done")
-            }
-        }
+        confirmText = "Done",
+        onConfirm = onDismiss,
+        showDismissButton = false,
+        onDismiss = onDismiss
     )
 }
 

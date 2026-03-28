@@ -67,6 +67,7 @@ import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.componen
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.video.VideoMessageItem
 import com.exa.android.reflekt.loopit.core.utils.LinkUtils
 import com.exa.android.reflekt.loopit.core.utils.formatTimestamp
+import com.exa.android.reflekt.loopit.core.utils.formatTimeOnly
 import com.exa.android.reflekt.loopit.core.utils.getVibrator
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
@@ -75,17 +76,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.UploadStatus
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
 import com.exa.android.reflekt.loopit.theme.Spacing
 import com.exa.android.reflekt.loopit.theme.SuccessColor
-import com.exa.android.reflekt.loopit.theme.chatSentBubbleStart
-import com.exa.android.reflekt.loopit.theme.chatSentBubbleEnd
-import com.exa.android.reflekt.loopit.theme.chatSentBubbleGradient
-import com.exa.android.reflekt.loopit.theme.chatReceivedBubble
-import com.exa.android.reflekt.loopit.theme.chatSentText
-import com.exa.android.reflekt.loopit.theme.chatReceivedText
-import com.exa.android.reflekt.loopit.theme.chatTimestamp
-import com.exa.android.reflekt.loopit.theme.chatMessageSent
-import com.exa.android.reflekt.loopit.theme.chatMessageRead
-import com.exa.android.reflekt.loopit.theme.chatDateSeparatorBackground
-import com.exa.android.reflekt.loopit.theme.chatDateSeparatorText
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -112,11 +103,11 @@ fun MessageList(
     var lastOtherUserMessageIdx = -1
     Log.d("Chat Messages1234", "Messages - ${messages.toString()}")
 
-    // Group messages by date
+    // Group messages by date, filtering out groups with no visible messages
     val groupedMessages = remember(messages) {
-        messages.groupBy { message ->
-            getDateLabel(message.timestamp.seconds * 1000L)
-        }
+        messages
+            .groupBy { message -> getDateLabel(message.timestamp.seconds * 1000L) }
+            .filter { (_, msgs) -> msgs.any { it.members.contains(curUser) } }
     }
 
     LazyColumn(
@@ -208,13 +199,13 @@ fun DateSeparator(
     ) {
         androidx.compose.material3.Surface(
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.chatDateSeparatorBackground,
+            color = MaterialTheme.colorScheme.surfaceVariant,
             shadowElevation = 0.dp
         ) {
             Text(
                 text = dateLabel,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.chatDateSeparatorText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 fontWeight = FontWeight.Medium
             )
@@ -288,7 +279,7 @@ fun MessageBubble(
             }
     ) {
         if (offsetX.value > 60) { // show reply icon on right swipe
-            SwipeHint(icon = Icons.Default.Reply, alignment = Alignment.CenterStart)
+            SwipeHint(icon = R.drawable.reply_icon, alignment = Alignment.CenterStart)
         }
         Row(
             modifier = Modifier
@@ -351,9 +342,9 @@ fun MessageBubble(
         ) {
             // Modern bubble colors and design
             val bubbleColor = if (curUserId == message.senderId)
-                MaterialTheme.colorScheme.chatSentBubbleStart
+                MaterialTheme.colorScheme.primary
             else
-                MaterialTheme.colorScheme.chatReceivedBubble
+                MaterialTheme.colorScheme.surfaceVariant
 
             // Modern asymmetric rounded corners (no tail design)
             val bubbleShape = if (curUserId == message.senderId) {
@@ -456,9 +447,9 @@ fun MessageBubble(
                             text = if (message.senderId == curUserId) "You deleted this message" else "This message was deleted",
                             style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
                             color = if (message.senderId == curUserId)
-                                MaterialTheme.colorScheme.chatSentText.copy(alpha = 0.8f)
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                             else
-                                MaterialTheme.colorScheme.chatReceivedText.copy(alpha = 0.8f),
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                             fontWeight = FontWeight.Normal,
                             fontStyle = FontStyle.Italic
                         )
@@ -475,9 +466,9 @@ fun MessageBubble(
                                     text = message.message,
                                     style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
                                     color = if (curUserId == message.senderId)
-                                        MaterialTheme.colorScheme.chatSentText
+                                        MaterialTheme.colorScheme.onPrimary
                                     else
-                                        MaterialTheme.colorScheme.chatReceivedText,
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
                                 )
                             } else {
@@ -541,13 +532,13 @@ fun MessageBubble(
                     ) {
                         val timestampInMillis = message.timestamp.seconds * 1000L
                         Text(
-                            text = formatTimestamp(timestampInMillis), // generate timeStamp like hrs, yesterday
+                            text = formatTimeOnly(timestampInMillis), // always show hh:mm a — date shown by DateSeparator
                             style = MaterialTheme.typography.labelSmall,
                             fontStyle = FontStyle.Italic,
                             color = if (curUserId == message.senderId)
-                                MaterialTheme.colorScheme.chatSentText.copy(alpha = 0.7f)
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                             else
-                                MaterialTheme.colorScheme.chatTimestamp
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         val messageStatus = if (isSeen) "seen" else message.status
@@ -562,21 +553,21 @@ fun MessageBubble(
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = "Sent",
-                                    tint = MaterialTheme.colorScheme.chatMessageSent,  // Gray color for sent
+                                    tint = MaterialTheme.colorScheme.outline,  // muted for sent
                                     modifier = Modifier.size(14.dp)
                                 )
                             } else if (messageStatus == "delivered") {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_seen),
                                     contentDescription = "Delivered",
-                                    tint = MaterialTheme.colorScheme.chatMessageSent,  // Gray color for delivered
+                                    tint = MaterialTheme.colorScheme.outline,  // muted for delivered
                                     modifier = Modifier.size(14.dp)
                                 )
                             } else {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_seen),
                                     contentDescription = "Seen",
-                                    tint = MaterialTheme.colorScheme.chatMessageRead,
+                                    tint = MaterialTheme.colorScheme.primary,
 
                                     modifier = Modifier.size(14.dp)
                                 )
@@ -590,7 +581,7 @@ fun MessageBubble(
 }
 
 @Composable
-fun SwipeHint(icon: ImageVector, alignment: Alignment) {
+fun SwipeHint(icon: Int, alignment: Alignment) {
     Box(
         modifier = Modifier
             .size(32.dp)
@@ -601,7 +592,7 @@ fun SwipeHint(icon: ImageVector, alignment: Alignment) {
         contentAlignment = alignment
     ) {
         Icon(
-            imageVector = icon,
+            painter = painterResource(icon),
             contentDescription = "Reply Icon",
             tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp)
@@ -645,9 +636,9 @@ fun MessageBubble(message: Message, curUser: String) {
                 .widthIn(max = (0.7 * LocalConfiguration.current.screenWidthDp).dp)
                 .background(
                     color = if (curUser == message.senderId) 
-                        MaterialTheme.colorScheme.chatSentBubbleStart 
+                        MaterialTheme.colorScheme.primary 
                     else 
-                        MaterialTheme.colorScheme.chatReceivedBubble,
+                        MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(12.dp)
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -656,10 +647,10 @@ fun MessageBubble(message: Message, curUser: String) {
             Text(
                 text = message.message,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (curUser == message.senderId) 
-                    MaterialTheme.colorScheme.chatSentText 
-                else 
-                    MaterialTheme.colorScheme.chatReceivedText,
+                    color = if (curUser == message.senderId)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
 
@@ -675,9 +666,9 @@ fun MessageBubble(message: Message, curUser: String) {
                     text = formatTimestamp(timestampInMillis), // A helper function to format timestamp
                     style = MaterialTheme.typography.labelSmall,
                     color = if (curUser == message.senderId) 
-                        MaterialTheme.colorScheme.chatSentText.copy(alpha = 0.7f) 
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) 
                     else 
-                        MaterialTheme.colorScheme.chatTimestamp
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
             }

@@ -66,8 +66,13 @@ import androidx.compose.material3.*
 import com.google.maps.android.compose.*
 
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Person
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
@@ -705,117 +710,164 @@ fun SearchBar(
 fun ProfileBottomSheet(
     user: profileUser, openProfile: () -> Unit, openChat: () -> Unit, onDismiss: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
-    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.secondary,
-        tonalElevation = 16.dp,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                            )
+                        )
+                    )
+                    .padding(top = 8.dp, bottom = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BottomSheetDefaults.DragHandle(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                )
+            }
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp)
         ) {
-            // Profile Header
-            Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { openProfile() }) {
-                // Profile Image or Initials
-                if (user.profilePicture.isNullOrEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = CircleShape
-                            )
-                            .padding(12.dp), contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = user.name.take(1).uppercase(),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                } else {
-                    ImageUsingCoil(
-                        context,
-                        user.profilePicture,
-                        R.drawable.placeholder,
-                        Modifier
-                            .size(64.dp)
-                            .clip(RoundedCornerShape(12.dp))
-
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column {
-                    Text(
-                        text = user.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = user.role,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Contact Information
-            Column(
+            // ── Avatar + Name row ──────────────────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.medium
-                    )
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { openProfile(); onDismiss() }
+                    .padding(vertical = 12.dp)
             ) {
-                InfoRow(
-                    icon = Icons.Default.Email, text = user.email, Modifier.clickable {
-                        if (user.email.isNotEmpty())
-                        openUrl(context, "mailto:${user.email}") }
-                )
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .shadow(4.dp, RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!user.profilePicture.isNullOrEmpty()) {
+                        ImageUsingCoil(
+                            context, user.profilePicture, R.drawable.placeholder,
+                            Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                    } else {
+                        Text(
+                            text = user.name.split(" ").map { it.take(1) }.take(2)
+                                .joinToString("").uppercase(),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
 
-                InfoRow(
-                    icon = Icons.Default.Phone, text = "Not available"
-                )
+                Spacer(Modifier.width(16.dp))
 
-                InfoRow(
-                    icon = Icons.Default.LocationOn,
-                    text = user.collegeName ?: user.companyName.ifBlank { "Not Available" }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = user.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (user.role.isNotBlank()) {
+                        Text(
+                            text = user.role,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    val org = user.collegeName ?: user.companyName.ifBlank { null }
+                    if (org != null) {
+                        Text(
+                            text = org,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "View profile",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(Modifier.height(16.dp))
 
-            // Action Buttons
+            // ── Info card ─────────────────────────────────────────────────────
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    InfoRow(
+                        icon = Icons.Default.Email,
+                        text = user.email.ifBlank { "Not available" },
+                        modifier = if (user.email.isNotBlank()) Modifier.clickable {
+                            openUrl(context, "mailto:${user.email}")
+                        } else Modifier
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    InfoRow(
+                        icon = Icons.Default.LocationOn,
+                        text = user.collegeName ?: user.companyName.ifBlank { "Location not available" }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // ── Action buttons ────────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Button(
-                    onClick = { openChat() }, modifier = Modifier.weight(1f)
-                ) {
-                    Text("Send Message")
-                }
-
                 OutlinedButton(
-                    onClick = onDismiss, modifier = Modifier.weight(1f)
+                    onClick = { openProfile(); onDismiss() },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Close")
+                    Icon(Icons.Default.Person, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("View Profile")
+                }
+                Button(
+                    onClick = { openChat(); onDismiss() },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Chat, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Message")
                 }
             }
         }

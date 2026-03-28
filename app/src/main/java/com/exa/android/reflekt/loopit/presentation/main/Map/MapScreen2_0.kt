@@ -34,6 +34,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.ViewM
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
 import com.exa.android.reflekt.loopit.presentation.main.Map.components.FilterChipsComponent
 import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.ConfirmDialog
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.SettingsViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
@@ -46,6 +47,9 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.ConfirmDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.compose.*
 import timber.log.Timber
@@ -113,6 +117,16 @@ fun MapScreen2_0(
     // Fetch current user's profile
     LaunchedEffect(userId) {
         viewModel.getUserProfile(userId)
+    }
+
+    // Clear keyboard focus when leaving this screen (e.g. back navigation)
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    DisposableEffect(Unit) {
+        onDispose {
+            focusManager.clearFocus(force = true)
+            keyboardController?.hide()
+        }
     }
 
     // Update map when filters or location change
@@ -192,201 +206,201 @@ fun MapScreen2_0(
         contentColor = MaterialTheme.colorScheme.onBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-        // Google Map
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = MapProperties(
-                isMyLocationEnabled = locationPermissionState.status.isGranted,
-                mapType = mapType,
-                mapStyleOptions = MapStyleOptions.loadRawResourceStyle(
-                    context,
-                    if (isDarkTheme) R.raw.map_style_dark else R.raw.map_style_light
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            // Google Map
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(
+                    isMyLocationEnabled = locationPermissionState.status.isGranted,
+                    mapType = mapType,
+                    mapStyleOptions = MapStyleOptions.loadRawResourceStyle(
+                        context,
+                        if (isDarkTheme) R.raw.map_style_dark else R.raw.map_style_light
+                    )
+                ),
+                uiSettings = MapUiSettings(
+                    zoomControlsEnabled = false,
+                    myLocationButtonEnabled = false,
+                    mapToolbarEnabled = false
                 )
-            ),
-            uiSettings = MapUiSettings(
-                zoomControlsEnabled = false,
-                myLocationButtonEnabled = false,
-                mapToolbarEnabled = false
-            )
-        ) {
-            // User markers
-            if (userLocations.isNotEmpty()) {
-                userLocations.forEach { user ->
-                    if (user.uid != userId) {
-                        CustomMapMarker(
-                            imageUrl = user.profilePicture,
-                            fullName = user.name,
-                            location = LatLng(user.lat, user.lng),
-                            onClick = {
-                                selectedUser = user
-                                true
-                            }
-                        )
+            ) {
+                // User markers
+                if (userLocations.isNotEmpty()) {
+                    userLocations.forEach { user ->
+                        if (user.uid != userId) {
+                            CustomMapMarker(
+                                imageUrl = user.profilePicture,
+                                fullName = user.name,
+                                location = LatLng(user.lat, user.lng),
+                                onClick = {
+                                    selectedUser = user
+                                    true
+                                }
+                            )
+                        }
                     }
+                }
+
+                // Geofence circle
+                (selectedLocation ?: currentLocation)?.let { location ->
+                    Circle(
+                        center = location,
+                        radius = radius * 1000.0, // Convert km to meters
+                        fillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        strokeColor = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 3f
+                    )
                 }
             }
 
-            // Geofence circle
-            (selectedLocation ?: currentLocation)?.let { location ->
-                Circle(
-                    center = location,
-                    radius = radius * 1000.0, // Convert km to meters
-                    fillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    strokeColor = MaterialTheme.colorScheme.primary,
-                    strokeWidth = 3f
-                )
-            }
-        }
-
-        // Enhanced top card with better information display
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(top = 8.dp, start = 16.dp, end = 16.dp)
-        ) {
-            var isStatsExpanded by remember { mutableStateOf(false) }
-            
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                shape = RoundedCornerShape(20.dp)
+            // Enhanced top card with better information display
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(top = 8.dp, start = 16.dp, end = 16.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Main header row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // User count with icon
+                var isStatsExpanded by remember { mutableStateOf(false) }
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        // Main header row
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                Icons.Default.People,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Column {
-                                Text(
-                                    "${userLocations.size}",
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        brush = Brush.linearGradient(
-                                            colors = listOf(
+                            // User count with icon
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.People,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Column {
+                                    Text(
+                                        "${userLocations.size}",
+                                        style = MaterialTheme.typography.headlineMedium.copy(
+                                            brush = Brush.linearGradient(
+                                                colors = listOf(
 //                                                GradientPurpleStart,
 //                                                GradientPurpleMid,
 //                                                GradientPurpleEnd
 
-                                                GradientPrimaryStart,
-                                                GradientPrimaryMid,
-                                                GradientPrimaryEnd
+                                                    GradientPrimaryStart,
+                                                    GradientPrimaryMid,
+                                                    GradientPrimaryEnd
+                                                )
                                             )
-                                        )
-                                    ),
-                                    fontWeight = FontWeight.Bold
+                                        ),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "users found",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // Action buttons row
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // Stats expand/collapse
+                                FilledTonalIconButton(
+                                    onClick = { isStatsExpanded = !isStatsExpanded },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        if (isStatsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        "Toggle stats",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                // Filter button
+                                FilledTonalIconButton(
+                                    onClick = { navController.navigate("searchScreen2_0") },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.FilterList,
+                                        "Filters",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                // List view button
+                                FilledIconButton(
+                                    onClick = {
+                                        viewModel.setViewMode(ViewMode.LIST)
+                                        navController.navigate("userListScreen")
+                                    },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.List,
+                                        "List View",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Expandable stats section
+                        if (isStatsExpanded) {
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                // Radius stat
+                                StatItem(
+                                    icon = Icons.Default.Navigation,
+                                    label = "Radius",
+                                    value = "${radius.toInt()} km"
                                 )
-                                Text(
-                                    "users found",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                                VerticalDivider(
+                                    modifier = Modifier.height(40.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+
+                                // Roles stat
+                                StatItem(
+                                    icon = Icons.Default.Work,
+                                    label = "Roles",
+                                    value = if (selectedRoles.isEmpty()) "All" else "${selectedRoles.size}"
+                                )
+
+                                VerticalDivider(
+                                    modifier = Modifier.height(40.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+
+                                // Location stat
+                                StatItem(
+                                    icon = Icons.Default.LocationOn,
+                                    label = "Location",
+                                    value = if (selectedLocation != null) "Custom" else "Current"
                                 )
                             }
                         }
-                        
-                        // Action buttons row
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            // Stats expand/collapse
-                            FilledTonalIconButton(
-                                onClick = { isStatsExpanded = !isStatsExpanded },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    if (isStatsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    "Toggle stats",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            
-                            // Filter button
-                            FilledTonalIconButton(
-                                onClick = { navController.navigate("searchScreen2_0") },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.FilterList,
-                                    "Filters",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            
-                            // List view button
-                            FilledIconButton(
-                                onClick = {
-                                    viewModel.setViewMode(ViewMode.LIST)
-                                    navController.navigate("userListScreen")
-                                },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.List,
-                                    "List View",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                    
-                    // Expandable stats section
-                    if (isStatsExpanded) {
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Spacer(Modifier.height(12.dp))
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            // Radius stat
-                            StatItem(
-                                icon = Icons.Default.Navigation,
-                                label = "Radius",
-                                value = "${radius.toInt()} km"
-                            )
-                            
-                            VerticalDivider(
-                                modifier = Modifier.height(40.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                            
-                            // Roles stat
-                            StatItem(
-                                icon = Icons.Default.Work,
-                                label = "Roles",
-                                value = if (selectedRoles.isEmpty()) "All" else "${selectedRoles.size}"
-                            )
-                            
-                            VerticalDivider(
-                                modifier = Modifier.height(40.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                            
-                            // Location stat
-                            StatItem(
-                                icon = Icons.Default.LocationOn,
-                                label = "Location",
-                                value = if (selectedLocation != null) "Custom" else "Current"
-                            )
-                        }
-                    }
-                    
+
 //                    // Active filters chips (always visible if filters are active)
 //                    if (selectedRoles.isNotEmpty() || radius != 5f || selectedLocation != null) {
 //                        Spacer(Modifier.height(12.dp))
@@ -399,113 +413,106 @@ fun MapScreen2_0(
 //                            modifier = Modifier.padding(0.dp) // Remove extra padding in this context
 //                        )
 //                    }
+                    }
                 }
             }
-        }
 
-        // Floating action buttons
-        // Current location button (top-left)
-        FloatingActionButton(
-            onClick = {
-                if (locationPermissionState.status.isGranted) {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                        location?.let {
-                            val newLocation = LatLng(it.latitude, it.longitude)
-                            currentLocation = newLocation
-                            viewModel.setSelectedLocation(newLocation)
-                        }
-                    }
-                } else {
-                    locationPermissionState.launchPermissionRequest()
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp)
-                .padding(top = 120.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(Icons.Default.MyLocation, "Current Location")
-        }
-
-        // Map type selector (bottom-right)
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+            // Floating action buttons
+            // Current location button (top-left)
             FloatingActionButton(
-                onClick = { showMapTypeMenu = !showMapTypeMenu },
+                onClick = {
+                    if (locationPermissionState.status.isGranted) {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                            location?.let {
+                                val newLocation = LatLng(it.latitude, it.longitude)
+                                currentLocation = newLocation
+                                viewModel.setSelectedLocation(newLocation)
+                            }
+                        }
+                    } else {
+                        locationPermissionState.launchPermissionRequest()
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+                    .padding(top = 120.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Layers, "Map Type")
+                Icon(Icons.Default.MyLocation, "Current Location")
             }
 
-            // Map type menu
-            if (showMapTypeMenu) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            // Map type selector (bottom-right)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FloatingActionButton(
+                    onClick = { showMapTypeMenu = !showMapTypeMenu },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        MapTypeButton("Normal", mapType == MapType.NORMAL) {
-                            mapType = MapType.NORMAL
-                            showMapTypeMenu = false
-                        }
-                        MapTypeButton("Satellite", mapType == MapType.SATELLITE) {
-                            mapType = MapType.SATELLITE
-                            showMapTypeMenu = false
-                        }
-                        MapTypeButton("Terrain", mapType == MapType.TERRAIN) {
-                            mapType = MapType.TERRAIN
-                            showMapTypeMenu = false
-                        }
-                        MapTypeButton("Hybrid", mapType == MapType.HYBRID) {
-                            mapType = MapType.HYBRID
-                            showMapTypeMenu = false
+                    Icon(Icons.Default.Layers, "Map Type")
+                }
+
+                // Map type menu
+                if (showMapTypeMenu) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            MapTypeButton("Normal", mapType == MapType.NORMAL) {
+                                mapType = MapType.NORMAL
+                                showMapTypeMenu = false
+                            }
+                            MapTypeButton("Satellite", mapType == MapType.SATELLITE) {
+                                mapType = MapType.SATELLITE
+                                showMapTypeMenu = false
+                            }
+                            MapTypeButton("Terrain", mapType == MapType.TERRAIN) {
+                                mapType = MapType.TERRAIN
+                                showMapTypeMenu = false
+                            }
+                            MapTypeButton("Hybrid", mapType == MapType.HYBRID) {
+                                mapType = MapType.HYBRID
+                                showMapTypeMenu = false
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Profile Bottom Sheet
-        selectedUser?.let { user ->
-            ProfileBottomSheet(
-                user = user,
-                openProfile = { navController.navigate(ProfileRoute.UserProfile.createRoute(user.uid)) },
-                openChat = { navController.navigate(HomeRoute.ChatDetail.createRoute(user.uid)) },
-                onDismiss = { selectedUser = null }
-            )
-        }
+            // Profile Bottom Sheet
+            selectedUser?.let { user ->
+                ProfileBottomSheet(
+                    user = user,
+                    openProfile = { navController.navigate(ProfileRoute.UserProfile.createRoute(user.uid)) },
+                    openChat = { navController.navigate(HomeRoute.ChatDetail.createRoute(user.uid)) },
+                    onDismiss = { selectedUser = null }
+                )
+            }
 
-        // GPS Dialog
-        if (showGpsDialog) {
-            AlertDialog(
-                onDismissRequest = { showGpsDialog = false },
-                title = { Text("GPS Required") },
-                text = { Text("Please enable GPS for accurate location services") },
-                confirmButton = {
-                    Button(onClick = {
+            // GPS Dialog
+            if (showGpsDialog) {
+                ConfirmDialog(
+                    title = "GPS Required",
+                    message = "Please enable GPS for accurate location services.",
+                    confirmText = "Enable GPS",
+                    dismissText = "Cancel",
+                    onConfirm = {
                         context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
                         showGpsDialog = false
-                    }) {
-                        Text("Enable GPS")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showGpsDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
+                    },
+                    onDismiss = { showGpsDialog = false }
+                )
+            }
         }
-    }
     }
 
     // Permission Dialog
@@ -513,40 +520,27 @@ fun MapScreen2_0(
         val permissionStatus = locationPermissionState.status
         val isPermanentlyDenied = !permissionStatus.shouldShowRationale && !permissionStatus.isGranted
 
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
-            title = { Text("Permission Required") },
-            text = {
+        ConfirmDialog(
+            title = "Permission Required",
+            message = if (isPermanentlyDenied)
+                "Location permission was permanently denied. Please enable it in app settings."
+            else
+                "Location permission is needed to show nearby users.",
+            confirmText = if (isPermanentlyDenied) "Open Settings" else "Grant Permission",
+            dismissText = "Cancel",
+            showDismissButton = !isPermanentlyDenied,
+            onConfirm = {
+                showPermissionDialog = false
                 if (isPermanentlyDenied) {
-                    Text("Location permission was permanently denied. Please enable it in app settings.")
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
                 } else {
-                    Text("Location permission is needed to show nearby users.")
+                    locationPermissionState.launchPermissionRequest()
                 }
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showPermissionDialog = false
-                        if (isPermanentlyDenied) {
-                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                            context.startActivity(intent)
-                        } else {
-                            locationPermissionState.launchPermissionRequest()
-                        }
-                    }
-                ) {
-                    Text(if (isPermanentlyDenied) "Open Settings" else "Grant Permission")
-                }
-            },
-            dismissButton = {
-                if (!isPermanentlyDenied) {
-                    TextButton(onClick = { showPermissionDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            }
+            onDismiss = { showPermissionDialog = false }
         )
     }
 }

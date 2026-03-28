@@ -1,11 +1,15 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostConstants
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 
 /**
  * Title and Description Input Component
@@ -19,19 +23,22 @@ fun TitleDescriptionInput(
     onDescriptionChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val titleOverLimit = title.length > PostConstants.Limits.MAX_TITLE_LENGTH
+    val descOverLimit = description.length > PostConstants.Limits.MAX_DESCRIPTION_LENGTH
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Title Field
-        OutlinedTextField(
+        AppTextField(
             value = title,
             onValueChange = onTitleChange,
-            label = { Text("Title *") },
-            placeholder = { Text("Enter post title") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = title.length > PostConstants.Limits.MAX_TITLE_LENGTH,
+            label = "Title *",
+            placeholder = "Enter post title",
+            leadingIcon = Icons.Default.Title,
+            isError = titleOverLimit,
+            errorMessage = if (titleOverLimit) "Title too long" else null,
             supportingText = {
                 Text(
                     text = "${title.length}/${PostConstants.Limits.MAX_TITLE_LENGTH}",
@@ -41,16 +48,17 @@ fun TitleDescriptionInput(
         )
         
         // Description Field
-        OutlinedTextField(
+        AppTextField(
             value = description,
             onValueChange = onDescriptionChange,
-            label = { Text("Description") },
-            placeholder = { Text("What's on your mind?") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp),
+            label = "Description",
+            placeholder = "What's on your mind?",
+            leadingIcon = Icons.Default.Description,
+            singleLine = false,
+            minLines = 4,
             maxLines = 8,
-            isError = description.length > PostConstants.Limits.MAX_DESCRIPTION_LENGTH,
+            isError = descOverLimit,
+            errorMessage = if (descOverLimit) "Description too long" else null,
             supportingText = {
                 Text(
                     text = "${description.length}/${PostConstants.Limits.MAX_DESCRIPTION_LENGTH}",

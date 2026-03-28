@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.DestructiveDialog
 
 @Composable
 fun DeleteMessageDialog(
@@ -17,44 +18,26 @@ fun DeleteMessageDialog(
 ) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text(text = "Delete message?", color = MaterialTheme.colorScheme.onSurface) },
-        text = {
-            Column {
-                if (canDeleteForEveryone && !hasBeenDeleted) {
-                    Text(text = "You can delete messages for everyone or just for yourself.")
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                if (canDeleteForEveryone && !hasBeenDeleted) {
-                    val options = listOf("Delete for Me", "Delete for Everyone")
-                    options.forEach { option ->
-                        SelectableOption(
-                            text = option,
-                            isSelected = selectedOption == option,
-                            onSelect = { selectedOption = option }
-                        )
-                    }
+    DestructiveDialog(
+        title = "Delete message?",
+        message = if (canDeleteForEveryone && !hasBeenDeleted)
+            "You can delete messages for everyone or just for yourself."
+        else null,
+        confirmText = "Delete",
+        onConfirm = { onDelete(selectedOption ?: "Delete for Me") },
+        onDismiss = onCancel,
+        extraContent = if (canDeleteForEveryone && !hasBeenDeleted) {
+            {
+                val options = listOf("Delete for Me", "Delete for Everyone")
+                options.forEach { option ->
+                    SelectableOption(
+                        text = option,
+                        isSelected = selectedOption == option,
+                        onSelect = { selectedOption = option }
+                    )
                 }
             }
-        },
-        confirmButton = {
-            CustomButton(
-                text = "Delete",
-                isPrimary = true,
-                enabled = selectedOption != null || !canDeleteForEveryone || hasBeenDeleted,
-                onClick = {
-                    val deleteOption = selectedOption ?: "Delete for Me"
-                    onDelete(deleteOption)
-                }
-            )
-        },
-        dismissButton = {
-            CustomButton(text = "Cancel", isPrimary = false, onClick = onCancel)
-        },
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+        } else null
     )
 }
 
@@ -63,10 +46,7 @@ fun SelectableOption(text: String, isSelected: Boolean, onSelect: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .selectable(
-                selected = isSelected,
-                onClick = onSelect
-            )
+            .selectable(selected = isSelected, onClick = onSelect)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -79,6 +59,7 @@ fun SelectableOption(text: String, isSelected: Boolean, onSelect: () -> Unit) {
     }
 }
 
+/** Legacy shim — kept for any remaining call sites that used CustomButton directly. */
 @Composable
 fun CustomButton(text: String, isPrimary: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     if (isPrimary) {
@@ -90,17 +71,11 @@ fun CustomButton(text: String, isPrimary: Boolean, enabled: Boolean = true, onCl
                 contentColor = MaterialTheme.colorScheme.onError
             ),
             shape = MaterialTheme.shapes.medium
-        ) {
-            Text(text = text)
-        }
+        ) { Text(text = text) }
     } else {
         OutlinedButton(
             onClick = onClick,
-            shape = MaterialTheme.shapes.medium,
-            border = ButtonDefaults.outlinedButtonBorder,
-            colors = ButtonDefaults.outlinedButtonColors()
-        ) {
-            Text(text = text)
-        }
+            shape = MaterialTheme.shapes.medium
+        ) { Text(text = text) }
     }
 }

@@ -1,8 +1,7 @@
-package com.exa.android.reflekt.loopit.presentation.main.post.components
+package com.exa.android.reflekt.loopit.presentation.main.post.create.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -11,7 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 
 /**
  * Link Input Section Component
@@ -38,16 +39,14 @@ fun LinkInputSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            AppTextField(
                 value = currentInput,
                 onValueChange = onInputChange,
-                label = { Text("Add link") },
-                placeholder = { Text("https://example.com") },
+                label = "Add link",
+                placeholder = "https://example.com",
+                leadingIcon = Icons.Default.Link,
                 modifier = Modifier.weight(1f),
-                singleLine = true,
-                leadingIcon = {
-                    Icon(Icons.Default.Link, contentDescription = null)
-                }
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
             )
             
             IconButton(

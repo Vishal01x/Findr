@@ -213,8 +213,8 @@ fun ZoomableImage( // animated double tap, two finger no pager
         AsyncImage(
             model = imageUrl,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+            modifier = Modifier.height(400.dp),
+            contentScale = ContentScale.Crop
         )
     }
 }

@@ -28,6 +28,20 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostTy
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole
 import com.exa.android.reflekt.loopit.presentation.main.post.components.*
 import com.exa.android.reflekt.loopit.theme.Spacing
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.DiscardDialog
+import com.exa.android.reflekt.loopit.theme.CommentColor
+import com.exa.android.reflekt.loopit.theme.LikeColorActive
+import com.exa.android.reflekt.loopit.theme.ShareColor
+import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Modern social media-style Post Detail Screen
@@ -37,20 +51,6 @@ import com.exa.android.reflekt.loopit.theme.Spacing
  * - Tabs for Project/Event details
  * - Comments section
  */
-import androidx.activity.compose.BackHandler
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails
-import com.exa.android.reflekt.loopit.theme.CommentColor
-import com.exa.android.reflekt.loopit.theme.LikeColorActive
-import com.exa.android.reflekt.loopit.theme.ShareColor
-import com.google.firebase.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PostDetailScreen(
@@ -192,7 +192,12 @@ fun PostDetailScreen(
 
         bottomBar = {
             if(curTab == 0) {
-                Column(Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .imePadding()
+                ) {
                     CommentInput(commentState, commentViewModel, focusRequester)
                 }
             }
@@ -300,7 +305,7 @@ fun PostDetailScreen(
                                 item {
                                     TabRow(
                                         selectedTabIndex = curTab,
-                                        containerColor = MaterialTheme.colorScheme.surface
+                                        containerColor = MaterialTheme.colorScheme.background
                                     ) {
                                         Tab(
                                             selected = curTab == 0,
@@ -452,32 +457,22 @@ fun PostDetailScreen(
 
 
         if (showDiscardDialog) {
-            AlertDialog(
-                onDismissRequest = { showDiscardDialog = false },
-                title = { Text("Discard comment?") },
-                text = { Text("You have an unsaved comment. Do you want to leave without posting?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            // Cleanup state
-                            if (commentState.replyingToComment != null) {
-                                commentViewModel.onEvent(CommentEvent.CancelReply)
-                            }
-                            if (commentState.newCommentText.isNotEmpty()) {
-                                commentViewModel.onEvent(CommentEvent.UpdateCommentText(""))
-                            }
-                            showDiscardDialog = false
-                            onBackClick()
-                        }
-                    ) {
-                        Text("Discard", color = MaterialTheme.colorScheme.error)
+            DiscardDialog(
+                title = "Discard comment?",
+                message = "You have an unsaved comment. Do you want to leave without posting?",
+                discardText = "Discard",
+                keepText = "Keep editing",
+                onDiscard = {
+                    if (commentState.replyingToComment != null) {
+                        commentViewModel.onEvent(CommentEvent.CancelReply)
                     }
+                    if (commentState.newCommentText.isNotEmpty()) {
+                        commentViewModel.onEvent(CommentEvent.UpdateCommentText(""))
+                    }
+                    showDiscardDialog = false
+                    onBackClick()
                 },
-                dismissButton = {
-                    TextButton(onClick = { showDiscardDialog = false }) {
-                        Text("Keep editing")
-                    }
-                }
+                onKeep = { showDiscardDialog = false }
             )
         }
 
@@ -500,7 +495,7 @@ private fun OverviewTab(post: Post, curUserId : String, onImageClick : (Int) -> 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = Spacing.small),
+            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
         verticalArrangement = Arrangement.Center
     ) {
         // TITLE (if present)
@@ -509,7 +504,7 @@ private fun OverviewTab(post: Post, curUserId : String, onImageClick : (Int) -> 
                 text = post.title,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.small)
+                modifier = Modifier.padding(vertical = Spacing.small)
             )
         }
 
@@ -518,7 +513,7 @@ private fun OverviewTab(post: Post, curUserId : String, onImageClick : (Int) -> 
             Text(
                 text = post.description,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.small)
+                modifier = Modifier.padding(vertical = Spacing.small)
             )
         }
 
@@ -564,15 +559,17 @@ private fun OverviewTab(post: Post, curUserId : String, onImageClick : (Int) -> 
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CompactTagsRow(tags: List<String>) {
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.medium, vertical = Spacing.small),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        tags.take(5).forEach { tag ->
+        tags.forEach { tag ->
             SuggestionChip(
                 onClick = { },
                 label = { Text("#$tag", style = MaterialTheme.typography.labelSmall) }

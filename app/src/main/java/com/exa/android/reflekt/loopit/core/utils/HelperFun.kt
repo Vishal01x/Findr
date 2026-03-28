@@ -95,22 +95,25 @@ fun formatTimestamp(timestamp: Long): String {
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    val yesterdayStart = todayStart - 24 * 60 * 60 * 1000 // Start of yesterday
-    // val dayBeforeYesterdayStart = yesterdayStart - 24 * 60 * 60 * 1000 // Start of day before yesterday
+    val yesterdayStart = todayStart - 24 * 60 * 60 * 1000
 
     return when {
         timestamp >= todayStart -> {
-            // Today's timestamp: show clock time
             val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
             timeFormat.format(Date(timestamp))
         }
-        timestamp >= yesterdayStart -> "Yesterday" // Yesterday's timestamp
+        timestamp >= yesterdayStart -> "Yesterday"
         else -> {
-            // Older: show date in a specific format
             val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
             dateFormat.format(Date(timestamp))
         }
     }
+}
+
+/** Always returns just the time part (hh:mm a), used inside message bubbles where
+ *  the date is already shown by the [DateSeparator]. */
+fun formatTimeOnly(timestamp: Long): String {
+    return SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(timestamp))
 }
 
 fun Context.createImageFile(): File {

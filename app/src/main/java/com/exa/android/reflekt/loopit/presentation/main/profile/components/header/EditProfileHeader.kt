@@ -36,6 +36,7 @@ import com.exa.android.reflekt.loopit.presentation.main.component.ImageFromUri
 import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,62 +282,44 @@ private fun ProfileInputGroup(
     val context = LocalContext.current
 
     Column(modifier = modifier) {
-        OutlinedTextField(
+        AppTextField(
             value = name,
             onValueChange = onNameChange,
-            label = { Text("Full Name") },
+            label = "Full Name",
+            leadingIcon = Icons.Default.Person,
             isError = nameError,
-            supportingText = {
-                if (nameError) Text("Name can't be empty", color = MaterialTheme.colorScheme.error)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            errorMessage = if (nameError) "Name can't be empty" else null,
         )
         Spacer(modifier = Modifier.height(8.dp))
-//        OutlinedTextField(
-//            value = headline,
-//            onValueChange = onHeadlineChange,
-//            label = { Text("Headline") },
-//            modifier = Modifier.fillMaxWidth(),
-//            singleLine = true
-//        )
 
         val maxChars = 250
 
         Column {
-            OutlinedTextField(
+            AppTextField(
                 value = headline,
                 onValueChange = {
-                    if (it.length <= maxChars) {
-                        onHeadlineChange(it)
-                    } else {
-                        Toast.makeText(context, "Headline cannot exceed $maxChars characters", Toast.LENGTH_SHORT).show()
-                    }
+                    if (it.length <= maxChars) onHeadlineChange(it)
                 },
-                label = { Text("Headline") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                label = "Headline",
+                leadingIcon = Icons.Default.Info,
             )
-
             Text(
                 text = "${headline.length} / $maxChars",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
                     .align(Alignment.End)
                     .padding(end = 8.dp, top = 2.dp),
-                color = if (headline.length == maxChars) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (headline.length == maxChars) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-
-
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
+        AppTextField(
             value = role,
             onValueChange = onRoleChange,
-            label = { Text("Role/Position") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            label = "Role / Position",
+            leadingIcon = Icons.Default.Work,
         )
     }
 }
@@ -402,21 +385,14 @@ private fun IconTextField(
     label: String
 ) {
 
-    OutlinedTextField(
+    AppTextField(
         value = value,
         onValueChange = onValueChange,
-        leadingIcon = {
-            if(icon1 != null)
-            Icon(imageVector = icon1, contentDescription = label)
-            else
-                icon2?.let { painterResource(it) }
-                    ?.let { Icon(painter = it, contentDescription = label) }
-        },
-        label = { Text(label) },
+        label = label,
+        leadingIcon = icon1,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        singleLine = true,
         keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = if (label.contains("Email")) KeyboardType.Email
             else KeyboardType.Uri

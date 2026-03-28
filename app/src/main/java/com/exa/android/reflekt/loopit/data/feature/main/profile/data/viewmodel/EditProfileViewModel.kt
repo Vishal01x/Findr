@@ -135,17 +135,17 @@ class EditProfileViewModel @Inject constructor(
             !_updatedSkills.value.contains(cleanSkill) &&
             !_stagedSkills.value.contains(cleanSkill)
         ) {
-            _stagedSkills.value.add(cleanSkill)
+            _stagedSkills.value = (_stagedSkills.value + cleanSkill).toMutableList()
         }
         _skillInput.value = ""
     }
 
     fun removeStagedSkill(skill: String) {
-        _stagedSkills.value.remove(skill)
+        _stagedSkills.value = _stagedSkills.value.filter { it != skill }.toMutableList()
     }
 
     fun removeUpdatedSkill(skill: String) {
-        _updatedSkills.value.remove(skill)
+        _updatedSkills.value = _updatedSkills.value.filter { it != skill }.toMutableList()
     }
 
     fun cancelEditing(oldSkills: MutableList<String>) {

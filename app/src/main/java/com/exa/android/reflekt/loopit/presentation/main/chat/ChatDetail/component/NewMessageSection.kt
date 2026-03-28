@@ -1,5 +1,10 @@
 package com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,27 +14,33 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +61,7 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
@@ -67,13 +78,13 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ReplyType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.theme.chatInputBackground
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import com.exa.android.reflekt.loopit.theme.chatInputBackground
 
 @Composable
 fun NewMessageSection(
@@ -96,7 +107,7 @@ fun NewMessageSection(
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     var recordingTime by remember { mutableStateOf("00:00") }
-    var elapsedSeconds by remember { mutableStateOf(0) } // Tracks total elapsed seconds
+    var elapsedSeconds by remember { mutableStateOf(0) }
     var timerJob by remember { mutableStateOf<Job?>(null) }
 
     fun startTimer() {
@@ -105,15 +116,12 @@ fun NewMessageSection(
             while (isActive) {
                 delay(1000L)
                 elapsedSeconds++
-                recordingTime =
-                    String.format("%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)
+                recordingTime = String.format("%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)
             }
         }
     }
 
-    fun pauseTimer() {
-        timerJob?.cancel()
-    }
+    fun pauseTimer() { timerJob?.cancel() }
 
     fun resetTimer() {
         isRecording = false
@@ -123,14 +131,9 @@ fun NewMessageSection(
         timerJob?.cancel()
     }
 
-    // Timer logic
     LaunchedEffect(isRecording, isPaused) {
         if (isRecording) {
-            if (!isPaused) {
-                startTimer()
-            } else {
-                pauseTimer()
-            }
+            if (!isPaused) startTimer() else pauseTimer()
         } else {
             resetTimer()
         }
@@ -154,7 +157,7 @@ fun NewMessageSection(
             onTyping = { message ->
                 if (message.isEmpty())
                     viewModel.setTypingStatus(curUser, "")
-                else if (message.isNotEmpty())
+                else
                     viewModel.setTypingStatus(curUser, typingTo)
             },
             onUnblockClick = onUnblockClick,
@@ -199,13 +202,6 @@ fun SendTFMessage(
     onDone: () -> Unit,
     onFocusChange: (FocusState) -> Unit
 ) {
-//    var message by remember { mutableStateOf("") }
-//
-//    LaunchedEffect(editMessage) {  // Update text field when editMessage changes
-//        message = editMessage?.message ?: ""
-//        if(editMessage != null)focusRequester.requestFocus()
-//    }
-
     var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -220,168 +216,186 @@ fun SendTFMessage(
         }
     }
 
+    val hasText = textFieldValue.text.isNotEmpty()
+    val inputBg = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val sendBtnBg =
+        if (hasText) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
+            alpha = 0.12f
+        )
+    val sendIconTint =
+        if (hasText) MaterialTheme.colorScheme.surface else onSurfaceColor.copy(alpha = 0.35f)
 
-
-    Card(
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.chatInputBackground),
-        shape = RoundedCornerShape(26.dp),
-        modifier = Modifier
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp) // Floating margin
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 5.dp,
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.background
     ) {
-
-        if (isOtherUserBlocked) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "You have blocked this user",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Text(
-                        text = "You can't message until you unblock.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-
-                    OutlinedButton(
-                        onClick = { onUnblockClick() }, // <-- handle unblock
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Block,
-                            contentDescription = "Unblock",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Unblock")
-                    }
-                }
-            }
-        } else {
-            if (replyTo != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+        ) {
+            // ── Blocked banner ──────────────────────────────────────────────
+            if (isOtherUserBlocked) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 8.dp,end = 8.dp, top = 8.dp),
+                        .background(MaterialTheme.colorScheme.errorContainer)
+                        .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    ReplyUi(curUser, replyTo, members, true, ReplyType.NEWMESSAGE) {
-                        onDiscardReply()
-                        onDone()
-                    }
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Add Button
-                IconButton(onClick = onAddClick) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Text Field
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (textFieldValue.text.isEmpty()) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
-                            text = "Type a Message",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "You have blocked this user",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    }
-                    BasicTextField(
-                        value = textFieldValue,
-                        onValueChange = {
-                            textFieldValue =
-                                it   //.copy(selection = TextRange(it.text.length)) // Keep cursor at end
-                            onTyping(it.text)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { focusState ->
-                                onFocusChange(focusState)
-                            },
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        maxLines = 4,
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                val text = textFieldValue.text.trim()
-                                if (text.isNotEmpty())
-                                    onSendClick(text, replyTo)
-                                textFieldValue = TextFieldValue("") // Clear text after sending
-                                onTyping("")
-                            }
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Microphone or Send Button
-                IconButton(
-                    onClick = {
-                        if (textFieldValue.text.isNotEmpty()) {
-                            onSendClick(textFieldValue.text, replyTo)
-                            textFieldValue = TextFieldValue("")
-                            onTyping("")
-                        } else {
-                            //onMicClick()
+                        OutlinedButton(
+                            onClick = onUnblockClick,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(
+                                Icons.Default.Block,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Unblock")
                         }
                     }
+                }
+            } else {
+                // ── Reply preview ────────────────────────────────────────────
+                if (replyTo != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        ReplyUi(curUser, replyTo, members, true, ReplyType.NEWMESSAGE) {
+                            onDiscardReply()
+                            onDone()
+                        }
+                    }
+                }
+
+                // ── Main bar ─────────────────────────────────────────────────
+                // Matches reference: [◉+]  [────── pill input ──────]  [◉↑]
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(
-                        //painter = painterResource(if (textFieldValue.text.isEmpty()) R.drawable.microphone else R.drawable.send),
-                        painter = painterResource(R.drawable.send),
-                        contentDescription = "Send or Mic",
-                        tint = if (textFieldValue.text.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            .5f
-                        ),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    // ── + circular button ──────────────────────────────────
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(inputBg)
+                    ) {
+                        IconButton(onClick = onAddClick) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add attachment",
+                                tint = onSurfaceColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+
+                    // ── Pill-shaped text input ────────────────────────────
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(30.dp))
+                            .background(inputBg)
+                            .padding(horizontal = 18.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (textFieldValue.text.isEmpty()) {
+                            Text(
+                                text = "Message…",
+                                color = onSurfaceColor.copy(alpha = 0.38f),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        BasicTextField(
+                            value = textFieldValue,
+                            onValueChange = {
+                                textFieldValue = it
+                                onTyping(it.text)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 20.dp, max = 120.dp)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { onFocusChange(it) },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = onSurfaceColor
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            maxLines = 5,
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Default),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    val text = textFieldValue.text.trim()
+                                    if (text.isNotEmpty()) {
+                                        onSendClick(text, replyTo)
+                                        textFieldValue = TextFieldValue("")
+                                        onTyping("")
+                                    }
+                                }
+                            )
+                        )
+                    }
+
+                    // ── Send circular button ──────────────────────────────
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(sendBtnBg)
+                    ) {
+                        IconButton(
+                            onClick = {
+                                val text = textFieldValue.text.trim()
+                                if (text.isNotEmpty()) {
+                                    onSendClick(text, replyTo)
+                                    textFieldValue = TextFieldValue("")
+                                    onTyping("")
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "Send message",
+                                tint = sendIconTint,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+
 @Composable
 fun SendAudioMessage(
-//    isRecording: Boolean = true,
     isPaused: Boolean,
     recordingTime: String,
     onDeleteRecording: () -> Unit,
@@ -468,12 +482,10 @@ fun ReplyUi(
         if (user?.userId == curUser) "You" else user?.name ?: "Unknown"
     }
 
-    //Log.d("ProfileScreen", "$members, $user, $displayName, ${replyTo.senderId}")
-
-    val replyColor = when(replyType){
-        ReplyType.YOU -> {MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)}
+    val replyColor = when (replyType) {
+        ReplyType.YOU -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ReplyType.OTHER -> MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-        ReplyType.NEWMESSAGE -> {MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)}
+        ReplyType.NEWMESSAGE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
     }
 
     Surface(
@@ -484,29 +496,22 @@ fun ReplyUi(
         color = replyColor,
         tonalElevation = 2.dp
     ) {
-        Box(
-            modifier = Modifier
-                .padding(8.dp)
-        ) {
+        Box(modifier = Modifier.padding(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Vertical divider
                 Box(
                     modifier = Modifier
                         .width(3.dp)
                         .height(40.dp)
                         .background(MaterialTheme.colorScheme.primary)
                 )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
+                Spacer(Modifier.width(12.dp))
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Sender info
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -519,8 +524,6 @@ fun ReplyUi(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-
-                        // Media type indicator
                         replyTo.media?.let { media ->
                             Icon(
                                 imageVector = when (media.mediaType) {
@@ -534,8 +537,6 @@ fun ReplyUi(
                             )
                         }
                     }
-
-                    // Message content
                     replyTo.message.ifEmpty { replyTo.media?.mediaType?.name }?.let {
                         Text(
                             text = it,
@@ -546,8 +547,6 @@ fun ReplyUi(
                         )
                     }
                 }
-
-                // Close button
                 if (showCross) {
                     IconButton(
                         onClick = { onDiscard?.invoke() },

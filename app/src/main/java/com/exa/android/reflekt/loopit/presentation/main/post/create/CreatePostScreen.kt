@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.presentation.main.post.components.*
+import com.exa.android.reflekt.loopit.presentation.main.post.create.components.LinkInputSection
 
 /**
  * Main Create Post Screen
@@ -102,6 +102,7 @@ fun CreatePostScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -194,23 +195,13 @@ fun CreatePostScreen(
         }
 
         if (state.showDiscardDialog) {
-            AlertDialog(
-                onDismissRequest = { viewModel.onEvent(CreatePostEvent.OnCancelDiscard) },
-                title = { Text("Discard post?") },
-                text = { Text("You have unsaved changes. Are you sure you want to discard this post?") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.onEvent(CreatePostEvent.OnConfirmDiscard)
-                        //onBack()
-                    }) {
-                        Text("Discard")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.onEvent(CreatePostEvent.OnCancelDiscard) }) {
-                        Text("Cancel")
-                    }
-                }
+            com.exa.android.reflekt.loopit.presentation.main.component.dialog.DiscardDialog(
+                title = "Discard post?",
+                message = "You have unsaved changes. Are you sure you want to discard this post?",
+                discardText = "Discard",
+                keepText = "Keep editing",
+                onDiscard = { viewModel.onEvent(CreatePostEvent.OnConfirmDiscard) },
+                onKeep = { viewModel.onEvent(CreatePostEvent.OnCancelDiscard) }
             )
         }
 

@@ -10,13 +10,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.TextSnippet
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
 
 
 @Composable
@@ -40,7 +42,7 @@ fun ReportUserDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Report",
+                text = "Report User",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.error
             )
@@ -55,41 +57,46 @@ fun ReportUserDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedTextField(
+                AppTextField(
                     value = reason,
                     onValueChange = {
                         reason = it
                         showError = false
                     },
-                    label = { Text("Reason for reporting") },
-                    placeholder = { Text("e.g., Harassment, Spam, Fake profile") },
+                    label = "Reason for reporting",
+                    placeholder = "e.g., Harassment, Spam, Fake profile",
+                    leadingIcon = Icons.Default.Flag,
+                    isError = showError && reason.isBlank(),
+                    errorMessage = if (showError && reason.isBlank()) "Reason is required" else null,
                     singleLine = false,
                     maxLines = 3,
-                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedTextField(
+                AppTextField(
                     value = proofText,
                     onValueChange = {
                         proofText = it
                         showError = false
                     },
-                    placeholder = { Text("Proof description (optional)") },
-                    label = { Text("Describe the incident") },
+                    label = "Describe the incident",
+                    placeholder = "Proof description (optional)",
+                    leadingIcon = Icons.Default.TextSnippet,
                     singleLine = false,
                     maxLines = 3,
-                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Attach Screenshot Button
-                Button(
+                OutlinedButton(
                     onClick = { launcher.launch("image/*") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     Icon(Icons.Default.AddPhotoAlternate, contentDescription = "Add Screenshot")
                     Spacer(modifier = Modifier.width(8.dp))

@@ -128,7 +128,7 @@ fun UserInfoHeader(
             ) {
                 // Static college info as requested
                 Text(
-                    text = "Computer Science • 3rd Year",
+                    text = "Computer Science", //Computer Science • 3rd Year",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

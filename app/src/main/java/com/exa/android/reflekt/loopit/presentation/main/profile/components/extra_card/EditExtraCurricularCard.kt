@@ -290,6 +290,7 @@ private fun ActionButtons(loading: Boolean, onCancel: () -> Unit, onSave: () -> 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(16.dp),
         horizontalArrangement = Arrangement.End
     ) {

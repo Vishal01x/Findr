@@ -7,11 +7,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -30,12 +29,15 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.BlendMode.Companion.Color
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.AnnotatedString
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -94,7 +96,6 @@ fun DetailChat(
     var isOtherUserBlocked by remember { mutableStateOf(false) }
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    val imePadding = WindowInsets.ime.asPaddingValues() // Adjusts for the keyboard
     val focusRequester = remember { FocusRequester() } // to request focus of keyboard
     val focusManager = LocalFocusManager.current // handling focus like show or not show keyboard
     val isFocused = remember { mutableStateOf(false) }
@@ -256,9 +257,29 @@ fun DetailChat(
         }
     )
 
+    // --- Status bar: use direct window API (accompanist is deprecated & unreliable) ---
+    val view = androidx.compose.ui.platform.LocalView.current
+    val statusBarColor = Color(0xFFFFFF) //MaterialTheme.colorScheme.background
+    val isDarkTheme = isSystemInDarkTheme()
+    DisposableEffect(isDarkTheme) {
+        val window = (view.context as? android.app.Activity)?.window ?: return@DisposableEffect onDispose {}
+        val prevColor = window.statusBarColor
+        window.statusBarColor = statusBarColor.copy(alpha = 1f).hashCode().let {
+            android.graphics.Color.argb(
+                (statusBarColor.alpha * 255).toInt(),
+                (statusBarColor.red   * 255).toInt(),
+                (statusBarColor.green * 255).toInt(),
+                (statusBarColor.blue  * 255).toInt()
+            )
+        }
+        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
+        onDispose {
+            window.statusBarColor = prevColor
+        }
+    }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        modifier = Modifier.imePadding(),
         topBar = {
             ChatHeader(
                 otherUserDetail.value, userStatus, curUserId, selectedMessages,
@@ -281,6 +302,10 @@ fun DetailChat(
                     editMessage = message
                     selectedMessages = emptySet()
                 },
+                onReplyClick = { message ->
+                    message?.let { replyMessage = it; focusRequester.requestFocus() }
+                    selectedMessages = emptySet()
+                },
                 onForwardClick = {},
                 onDeleteClick = { deleteFor ->
                     deleteMessages(
@@ -297,7 +322,6 @@ fun DetailChat(
                 onClearChatClick = {
                     val chatId = generateChatId(curUserId, otherUserId)
                     chatViewModel.deleteAllMessages(chatId)
-
                 },
                 onBlockClick = {
                     val chatId = chatIdState.value
@@ -311,16 +335,11 @@ fun DetailChat(
                 onReportClick = { reason, proofText, proofImageUri ->
                     coroutineScope.launch {
                         var imageUrl: String? = null
-
                         if (proofImageUri != null) {
-                            val file =
-                                mediaSharingViewModel.createTempFileFromUri(context, proofImageUri)
+                            val file = mediaSharingViewModel.createTempFileFromUri(context, proofImageUri)
                             val uploadResult = mediaSharingViewModel.uploadFileToCloudinary(file)
                             imageUrl = uploadResult?.mediaUrl
                         }
-
-                        //  Log.d("FireStore Service", imageUrl.toString())
-
                         chatViewModel.sendReportToAdmin(
                             curUserId = curUserId,
                             reportedUserId = otherUserId,
