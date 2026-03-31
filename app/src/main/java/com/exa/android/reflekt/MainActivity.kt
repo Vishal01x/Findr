@@ -52,7 +52,9 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRout
 import dagger.hilt.android.AndroidEntryPoint
 import com.exa.android.reflekt.loopit.core.notification.clearAllNotifications
 import io.getstream.meeting.room.compose.ui.AppTheme
+import io.ktor.websocket.WebSocketDeflateExtension.Companion.install
 import java.util.concurrent.TimeUnit
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

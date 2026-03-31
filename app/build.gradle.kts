@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
     id("kotlin-parcelize")
     alias(libs.plugins.google.firebase.crashlytics)
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 android {
@@ -203,4 +204,9 @@ dependencies {
 //    // Motion Layout
 //    implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
 
+
+    implementation(platform(libs.bom))
+    implementation(libs.postgrest.kt)
+    implementation(libs.ktor.client.android)
+    implementation(libs.kotlinx.serialization.json)
 }

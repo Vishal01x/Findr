@@ -1,10 +1,13 @@
 [versions]
-agp = "8.7.3"
+agp = "8.13.2"
+bom = "3.0.0"
 kotlin = "2.0.0"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
+kotlinxSerializationJson = "1.9.0"
+ktorClientAndroid = "3.3.3"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
 composeBom = "2025.03.01"
@@ -32,6 +35,10 @@ datastorePreferencesCoreAndroid = "1.1.5"
 datastorePreferencesCoreJvm = "1.1.5"
 
 [libraries]
+bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "bom" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
+postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
 stream-video-ui-compose = { group = "io.getstream", name = "stream-video-android-ui-compose", version.ref = "streamVideo" }
 stream-video-ui-previewdata = { group = "io.getstream", name = "stream-video-android-previewdata", version.ref = "streamVideo" }
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
