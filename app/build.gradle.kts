@@ -168,7 +168,10 @@ dependencies {
 
 //    // fm
 //    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // Logging for debugging
-    implementation(libs.google.auth.library.oauth2.http) // Google OAuth2
+    implementation(libs.google.auth.library.oauth2.http) {  // Google OAuth2
+        exclude(group = "org.apache.httpcomponents", module = "httpclient")
+        exclude(group = "org.apache.httpcomponents", module = "httpcore")
+    }
 
     // new dependency
     implementation(libs.androidx.compose.material.icons.extended)
