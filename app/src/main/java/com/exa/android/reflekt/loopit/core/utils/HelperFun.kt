@@ -110,6 +110,27 @@ fun formatTimestamp(timestamp: Long): String {
     }
 }
 
+fun formatTimeAgo(timestamp: Long): String {
+    val diff = System.currentTimeMillis() - timestamp
+    val seconds = diff / 1000
+    val mins = seconds / 60
+    val hours = mins / 60
+    val days = hours / 24
+    val weeks = days / 7
+    val months = days / 30
+    val years = days / 365
+
+    return when {
+        years >= 1  -> if (years == 1L) "1 year ago" else "$years years ago"
+        months >= 1 -> if (months == 1L) "1 month ago" else "$months months ago"
+        weeks >= 1  -> if (weeks == 1L) "1 week ago" else "$weeks weeks ago"
+        days >= 1   -> "${days}d ago"
+        hours >= 1  -> "${hours}h ago"
+        mins >= 1   -> "${mins}m ago"
+        else -> "Just now"
+    }
+}
+
 /** Always returns just the time part (hh:mm a), used inside message bubbles where
  *  the date is already shown by the [DateSeparator]. */
 fun formatTimeOnly(timestamp: Long): String {
