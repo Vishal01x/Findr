@@ -27,11 +27,31 @@ import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRout
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PlacementRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
+import com.exa.android.reflekt.loopit.presentation.main.placement.RecruitmentSeasonTimelineScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.RecruitingCompaniesScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.YearlyPlacementStatisticsScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.CompanyDetailScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.DetailedCompanyInsightsScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.EligibilityFormScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.AddCompanyFormScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.PlacedStudentsScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.PlacementPredictionScreen
+import com.exa.android.reflekt.loopit.presentation.main.placement.vm.RecruitingCompaniesViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
+import com.exa.android.reflekt.loopit.presentation.main.notification.screen.NotificationScreen
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
 import com.exa.android.reflekt.loopit.core.utils.showToast
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
 
 
 fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostController,locationViewModel: LocationViewModel) {
@@ -40,8 +60,33 @@ fun NavGraphBuilder.mainAppNavGraph(context: Context,navController: NavHostContr
         homeNavGraph(navController)
         mapNavGraph(navController, locationViewModel)
         postNavGraph(navController)
+        placementNavGraph(navController)
         profileNavGraph(context,navController)
         photoViewScreen(navController)
+        
+        composable(MainRoute.Notification.route) {
+            NotificationScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSettings = { navController.navigate(ProfileRoute.ProfileSetting.route) },
+                onNavigateToRoute = { route -> 
+                    try {
+                        if (route.contains("://")) {
+                            val request = androidx.navigation.NavDeepLinkRequest.Builder
+                                .fromUri(android.net.Uri.parse(route))
+                                .build()
+                            navController.navigate(request)
+                        } else {
+                            navController.navigate(route)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                },
+                onNavigateToChat = { userId -> navController.navigate(HomeRoute.ChatDetail.createRoute(userId)) },
+                onNavigateToProfile = { userId -> navController.navigate(ProfileRoute.UserProfile.createRoute(userId)) },
+                onNavigateToPost = { postId -> navController.navigate(com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute.PostDetail.createRoute(postId)) }
+            )
+        }
     }
 }
 
@@ -55,7 +100,10 @@ fun NavGraphBuilder.profileNavGraph(context : Context, navController: NavHostCon
                 nullable = true
                 defaultValue = null
             }),
-            deepLinks = listOf(navDeepLink { uriPattern = "findr://profile/{userId}" })
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "findr://profile/{userId}" },
+                navDeepLink { uriPattern = "https://reflekt.com/profile/{userId}" }
+            )
         ) {
             val userId = it.arguments?.getString("userId")
 
@@ -359,8 +407,158 @@ fun NavGraphBuilder.photoViewScreen(navController: NavHostController) {
 }
 
 
-//object MainRoutes {
-//    const val MainApp = "main_app"
-//    const val Profile = "profile"
-//    const val Settings = "settings"
-//}
+
+fun NavGraphBuilder.placementNavGraph(navController: NavHostController) {
+    navigation(startDestination = PlacementRoute.Statistics.route, route = MainRoute.Placement.route) {
+        composable(PlacementRoute.Timeline.route) {
+            val viewModel: com.exa.android.reflekt.loopit.presentation.main.placement.vm.PlacementHomeViewModel = hiltViewModel()
+            val state by viewModel.state.collectAsState()
+            RecruitmentSeasonTimelineScreen(
+                onBack = { navController.popBackStack() },
+                onCompanyClick = { companyId -> navController.navigate(PlacementRoute.CompanyDetail.createRoute(companyId)) },
+                companies = state.companies
+            )
+        }
+        composable(PlacementRoute.RecruitingCompanies.route) {
+            val viewModel: RecruitingCompaniesViewModel = hiltViewModel()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            RecruitingCompaniesScreen(
+                companies = state.companies,
+                isAdmin = state.isAdmin,
+                onBack = { navController.popBackStack() },
+                onCompanyClick = { company -> navController.navigate(PlacementRoute.CompanyDetail.createRoute(company.id)) },
+                onAddCompanyClick = { navController.navigate(PlacementRoute.AddCompanyForm.route) }
+            )
+        }
+        composable(PlacementRoute.AddCompanyForm.route) {
+            AddCompanyFormScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = { navController.popBackStack() }
+            )
+        }
+        composable(PlacementRoute.Statistics.route) {
+            val viewModel: com.exa.android.reflekt.loopit.presentation.main.placement.vm.PlacementHomeViewModel = hiltViewModel()
+            val state by viewModel.state.collectAsState()
+
+            LaunchedEffect(Unit) {
+                viewModel.effect.collect { effect ->
+                    when (effect) {
+                        is com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeSideEffect.NavigateToCompanyDetail ->
+                            navController.navigate(PlacementRoute.CompanyDetail.createRoute(effect.companyId))
+                        is com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeSideEffect.NavigateToAddCompany ->
+                            navController.navigate(PlacementRoute.AddCompanyForm.route)
+                        is com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeSideEffect.NavigateToAllCompanies ->
+                            navController.navigate(PlacementRoute.RecruitingCompanies.route)
+                        is com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeSideEffect.NavigateToTimeline ->
+                            navController.navigate(PlacementRoute.Timeline.route)
+                        is com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeSideEffect.NavigateToAlumni ->
+                            navController.navigate(PlacementRoute.PlacedStudents.createRoute())
+                        is com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeSideEffect.ShowToast ->
+                            Unit // Toast is handled via state.seedResult snackbar in the screen
+                    }
+                }
+            }
+
+            YearlyPlacementStatisticsScreen(
+                onBack = { navController.navigate(PostRoute.PostList.route) {
+                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                },
+                onViewTimelineClick = { viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.ViewTimelineClicked) },
+                onViewCompaniesClick = { viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.ViewAllCompaniesClicked) },
+                onViewAlumniClick = { viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.ViewAllAlumniClicked) },
+                onViewAlumniWithFiltersClick = { batch, minPkg, maxPkg ->
+                    navController.navigate(PlacementRoute.PlacedStudents.createRoute(batch = batch, packageMin = minPkg, packageMax = maxPkg))
+                },
+                onAlumniBatchSelected = { batch -> viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.AlumniBatchSelected(batch)) },
+                alumniSelectedBatch = state.alumniSelectedBatch,
+                onEventClick = { postId -> navController.navigate(com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute.PostDetail.createRoute(postId)) },
+                isAdmin = state.isAdmin,
+                onAddCompanyClick = { viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.AddCompanyClicked) },
+                onSeedDataClick = { viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.SeedData) },
+                isSeeding = state.isSeeding,
+                seedResult = state.seedResult,
+                onDismissSeedResult = { viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.DismissSeedResult) },
+                companies = state.companies,
+                onCompanyClick = { id -> viewModel.onEvent(com.exa.android.reflekt.loopit.presentation.main.placement.mvi.PlacementHomeEvent.CompanyClicked(id)) },
+                onCompareBatchesClick = { navController.navigate(PlacementRoute.Analytics.route) },
+                onAiPredictionClick = { navController.navigate(PlacementRoute.Prediction.route) }
+            )
+        }
+        composable(
+            route = PlacementRoute.CompanyDetail.route,
+            arguments = listOf(navArgument("companyId") { type = NavType.StringType }),
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://reflekt.com/company/{companyId}" },
+                navDeepLink { uriPattern = "findr://company/{companyId}" }
+            )
+        ) { backStackEntry ->
+            val companyId = backStackEntry.arguments?.getString("companyId") ?: ""
+            CompanyDetailScreen(
+                companyId = companyId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEligibilityForm = { navController.navigate(PlacementRoute.EligibilityForm.route) },
+                onNavigateToPlacedStudents = { batch, company ->
+                    navController.navigate(PlacementRoute.PlacedStudents.createRoute(batch = batch, company = company))
+                }
+            )
+        }
+        composable(PlacementRoute.Analytics.route) {
+            com.exa.android.reflekt.loopit.presentation.main.placement.PlacementAnalyticsScreen(navController = navController)
+        }
+        composable(
+            route = PlacementRoute.CompanyInsights.route,
+            arguments = listOf(navArgument("companyId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val companyId = backStackEntry.arguments?.getString("companyId") ?: ""
+            DetailedCompanyInsightsScreen(
+                companyId = companyId,
+                onBack = { navController.popBackStack() },
+                onCheckEligibility = { navController.navigate(PlacementRoute.EligibilityForm.route) }
+            )
+        }
+        composable(PlacementRoute.EligibilityForm.route) {
+            EligibilityFormScreen(
+                onBack = { navController.popBackStack() },
+                onSubmit = { navController.popBackStack() } // Navigate back on submit for now
+            )
+        }
+        composable(PlacementRoute.Prediction.route) {
+            PlacementPredictionScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToCompanyDetail = { companyId ->
+                    navController.navigate(PlacementRoute.CompanyDetail.createRoute(companyId))
+                }
+            )
+        }
+        composable(
+            route = PlacementRoute.PlacedStudents.route,
+            arguments = listOf(
+                navArgument("company") { type = NavType.StringType; defaultValue = "" },
+                navArgument("batch") { type = NavType.StringType; defaultValue = "" },
+                navArgument("packageMin") { type = NavType.StringType; defaultValue = "" },
+                navArgument("packageMax") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val company = backStackEntry.arguments?.getString("company")
+                ?.let { android.net.Uri.decode(it) }
+                ?.takeIf { it.isNotBlank() }
+            val batchStr = backStackEntry.arguments?.getString("batch")
+            val batch = batchStr?.toIntOrNull()
+            val pkgMinStr = backStackEntry.arguments?.getString("packageMin")
+            val pkgMin = pkgMinStr?.toFloatOrNull()
+            val pkgMaxStr = backStackEntry.arguments?.getString("packageMax")
+            val pkgMax = pkgMaxStr?.toFloatOrNull()
+            PlacedStudentsScreen(
+                onBack = { navController.popBackStack() },
+                preFilterCompany = company,
+                preFilterBatch = batch,
+                preFilterPackageMin = pkgMin,
+                preFilterPackageMax = pkgMax
+            )
+        }
+    }
+}

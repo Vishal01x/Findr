@@ -1,12 +1,18 @@
 package com.exa.android.reflekt.loopit.presentation.navigation.nav_graph
 
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -16,13 +22,14 @@ import com.exa.android.reflekt.loopit.data.feature.authentication.vm.LoginState
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.ChatViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
 import com.exa.android.reflekt.loopit.presentation.navigation.component.AuthRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.CustomBottomNavigationBar
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.MapInfo
-import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PlacementRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.bottomSheet
 
 @Composable
@@ -38,27 +45,38 @@ fun AppNavigation(
         }
     }
 
+    val isDark = isSystemInDarkTheme()
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination?.route
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (currentDestination == HomeRoute.ChatList.route ||
-                currentDestination == ProfileRoute.UserProfile.route ||
-                currentDestination == MapInfo.MapScreen2.route ||
-                currentDestination == PostRoute.PostList.route
-            ) {
-                val chatViewModel : ChatViewModel = hiltViewModel()
-                CustomBottomNavigationBar(navController, chatViewModel) {
-                    bottomSheet = true
+
+    // Root canvas: LiquidUI mesh in light mode, plain dark background in dark mode
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            bottomBar = {
+                if (currentDestination == HomeRoute.ChatList.route ||
+                    currentDestination == PlacementRoute.Timeline.route ||
+                    currentDestination == PlacementRoute.Statistics.route ||
+                    currentDestination == MapInfo.MapScreen2.route ||
+                    currentDestination == PostRoute.PostList.route
+                ) {
+                    val chatViewModel: ChatViewModel = hiltViewModel()
+                    CustomBottomNavigationBar(navController, chatViewModel) {
+                        bottomSheet = true
+                    }
                 }
             }
+        ) { paddingValues ->
+            RootNavGraph(
+                navController = navController,
+                loginState = loginState,
+                modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
+            )
         }
-    ) { paddingValues ->
-        RootNavGraph(
-            navController = navController,
-            loginState = loginState,
-            modifier = Modifier.padding(paddingValues)
-        )
     }
 }
 

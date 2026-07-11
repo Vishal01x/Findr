@@ -22,16 +22,28 @@ import com.exa.android.reflekt.loopit.presentation.main.Map.RequestedPersonMapSc
 import com.exa.android.reflekt.loopit.presentation.main.Map.MapSearchScreen
 import com.exa.android.reflekt.loopit.presentation.main.Map.MapScreen2_0
 import com.exa.android.reflekt.loopit.presentation.main.Map.MapSearchScreen2_0
-import com.exa.android.reflekt.loopit.presentation.main.Map.UserListScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.ChatMediaScreen
 import com.exa.android.reflekt.loopit.presentation.main.post.create.CreatePostScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.create.PostTypeSelectionScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.create.CreateProjectScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.create.CreateEventScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.create.CreatePostViewModel
+import com.exa.android.reflekt.loopit.presentation.main.post.create.CreateSharePostScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.create.CreatePollScreen
+import androidx.compose.runtime.remember
+import com.exa.android.reflekt.loopit.presentation.main.post.create.MarkdownEditorScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.AuthorManagementScreen
-import com.exa.android.reflekt.loopit.presentation.main.post.screen.EditPostScreen
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.MyPostsScreen
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.PostDetailScreen
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.PostHomeScreen
+import com.exa.android.reflekt.loopit.presentation.navigation.component.MainRoute
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.UserSearchScreen
+import com.exa.android.reflekt.loopit.presentation.main.post.screen.ShortlistedUsersScreen
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 
 
 fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
@@ -54,15 +66,15 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
 
         composable(
             HomeRoute.ChatDetail.route,
-            arguments = listOf(navArgument("userId") {
-                type = NavType.StringType
-            }),
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("eventTitle") { type = NavType.StringType; defaultValue = "" }
+            ),
             deepLinks = listOf(navDeepLink { uriPattern = "findr://chat/{userId}" })
         ) { backStackEntry ->
-//            val encodedUserJson = backStackEntry.arguments?.getString("userJson")
-//            val user = Gson().fromJson(URLDecoder.decode(encodedUserJson, "UTF-8"), User::class.java)
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
-            DetailChat(navController, userId) { users ->
+            val eventTitle = backStackEntry.arguments?.getString("eventTitle")?.takeIf { it.isNotBlank() }
+            DetailChat(navController, userId, eventTitle) { users ->
                 navController.navigate(MeetingRoute.LobbyScreen.createRoute(users))
             }
         }
@@ -101,13 +113,6 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
         }
         
         // User List Screen
-        composable(MapInfo.UserListScreen.route) {
-            UserListScreen(
-                navController = navController,
-                viewModel = locationViewModel
-            )
-        }
-        
         // Legacy MapScreen (for backward compatibility)
         composable(MapInfo.MapScreen.route) {
             MapScreen(
@@ -143,12 +148,6 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
         }
         
         // User list screen - also accessible via simple route
-        composable("userListScreen") {
-            UserListScreen(
-                navController = navController,
-                viewModel = locationViewModel
-            )
-        }
 
 //        // New Bottom Sheet Map Screen (Experimental)
 //        composable(MapInfo.MapScreenBottomSheet.route) {
@@ -159,12 +158,6 @@ fun NavGraphBuilder.mapNavGraph(navController: NavHostController, locationViewMo
 //        }
         
         // User list screen - also accessible via simple route
-        composable("userListScreen") {
-            UserListScreen(
-                navController = navController,
-                viewModel = locationViewModel
-            )
-        }
     }
 }
 
@@ -183,35 +176,99 @@ fun NavGraphBuilder.postNavGraph(navController: NavHostController) {
                 onUserClick = { userId ->
                     // Navigate to user profile when implemented
                     navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                },
+                onNotificationClick = {
+                    navController.navigate(MainRoute.Notification.route)
                 }
             )
         }
 
         // Post Detail Screen
         composable(
-            PostRoute.PostDetail.route,
-            deepLinks = listOf(navDeepLink { uriPattern = "findr://project/{projectId}" })
+            route = PostRoute.PostDetail.route,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.StringType },
+                navArgument("scrollTo") { type = NavType.StringType; defaultValue = "" }
+            ),
+            deepLinks = listOf(
+                // FDL link= parameter domain
+                navDeepLink { uriPattern = "https://reflekt.com/project/{projectId}" },
+                navDeepLink { uriPattern = "https://reflekt.com/project/{projectId}?scrollTo={scrollTo}" },
+                // FCM custom scheme
+                navDeepLink { uriPattern = "findr://project/{projectId}" },
+                // Firebase Hosting fallback
+                navDeepLink { uriPattern = "https://social-media-ab0cc.web.app/post/{projectId}" },
+                navDeepLink { uriPattern = "https://social-media-ab0cc.web.app/post/{projectId}?scrollTo={scrollTo}" },
+                navDeepLink { uriPattern = "https://findr.app/post/{projectId}" },
+                navDeepLink { uriPattern = "https://findr.app/post/{projectId}?scrollTo={scrollTo}" }
+            )
         ) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val scrollTo = backStackEntry.arguments?.getString("scrollTo") ?: ""
             PostDetailScreen(
-                postId,
-                onBackClick = {
-                    navController.popBackStack()
+                postId = postId,
+                scrollTo = scrollTo,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { id, postType ->
+                    val route = when {
+                        postType == PostType.PROJECT.displayName -> PostRoute.CreateProject.createRoute(id)
+                        postType == PostType.EVENT.displayName -> PostRoute.CreateEvent.createRoute(id)
+                        postType == PostType.POLL.displayName -> PostRoute.CreatePoll.createRoute(id)
+                        else -> PostRoute.CreateSharePost.createRoute(id)
+                    }
+                    navController.navigate(route)
                 },
-                onEditClick = { postId ->
-                    navController.navigate(PostRoute.EditPost.createRoute(postId))
+                onManageRequestsClick = { id -> navController.navigate(PostRoute.AuthorManagement.createRoute(id)) },
+                onUserClick = { userId -> navController.navigate(ProfileRoute.UserProfile.createRoute(userId)) },
+                onChatClick = { userId, eventTitle ->
+                    navController.navigate(HomeRoute.ChatDetail.createRoute(userId, eventTitle))
                 },
-                onManageRequestsClick = { postId ->
-                    navController.navigate(PostRoute.AuthorManagement.createRoute(postId))
+                onInviteClick = { id, title ->
+                    navController.navigate(PostRoute.UserSearch.createRoute(id, title))
                 },
-                onUserClick = {userId->
-                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                onViewAllCollaborators = { id, title ->
+                    navController.navigate(PostRoute.ShortlistedUsers.createRoute(id, "project", title))
+                },
+                onViewAllParticipants = { id, title ->
+                    navController.navigate(PostRoute.ShortlistedUsers.createRoute(id, "event", title))
                 }
-
             )
         }
 
-        // Create Post Screen
+        // User Search / Invite Screen
+        composable(
+            route = PostRoute.UserSearch.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType },
+                navArgument("title") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) {
+            UserSearchScreen(
+                onBackClick = { navController.popBackStack() },
+                onUserSelected = { userId ->
+                    navController.navigate(HomeRoute.ChatDetail.createRoute(userId))
+                },
+                onProfileClick = { userId ->
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                }
+            )
+        }
+
+        composable(
+            route = PostRoute.ShortlistedUsers.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType },
+                navArgument("mode") { type = NavType.StringType; defaultValue = "project" },
+                navArgument("title") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) {
+            ShortlistedUsersScreen(
+                onBackClick = { navController.popBackStack() },
+                onUserClick = { userId -> if (userId.isNotBlank()) navController.navigate(ProfileRoute.UserProfile.createRoute(userId)) }
+            )
+        }
+
+        // Legacy Create Post Screen (kept for backward compat)
         composable(PostRoute.CreatePost.route) {
             CreatePostScreen(
                 onBack = {
@@ -222,22 +279,232 @@ fun NavGraphBuilder.postNavGraph(navController: NavHostController) {
                 }
             )
         }
+
+        // ── New Create Post Selection ─────────────────────────────────────
+        composable(PostRoute.CreatePostSelection.route) {
+            PostTypeSelectionScreen(
+                onStartProject = {
+                    navController.navigate(PostRoute.CreateProject.createRoute()) {
+                        launchSingleTop = true
+                    }
+                },
+                onOrganizeEvent = {
+                    navController.navigate(PostRoute.CreateEvent.createRoute()) {
+                        launchSingleTop = true
+                    }
+                },
+                onSharePost = {
+                    navController.navigate(PostRoute.CreateSharePost.createRoute()) {
+                        launchSingleTop = true
+                    }
+                },
+                onCreatePoll = {
+                    navController.navigate(PostRoute.CreatePoll.createRoute()) {
+                        launchSingleTop = true
+                    }
+                },
+                onDismiss = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ── Create Project ────────────────────────────────────────────────
+        composable(
+            route = PostRoute.CreateProject.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId")
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry("post_graph")
+            }
+            val viewModel: CreatePostViewModel = hiltViewModel(parentEntry)
+            val editorResult = backStackEntry.savedStateHandle
+                .getStateFlow<String?>("md_result", null)
+                .collectAsState().value
+            CreateProjectScreen(
+                postId = postId,
+                onBack = { navController.popBackStack() },
+                onPostCreated = {
+                    navController.navigate(PostRoute.PostList.route) {
+                        popUpTo("post_graph") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToEditor = { text ->
+                    backStackEntry.savedStateHandle["md_input"] = text
+                    navController.navigate(PostRoute.MarkdownEditor.route)
+                },
+                editorResult = editorResult,
+                onEditorResultConsumed = {
+                    backStackEntry.savedStateHandle.remove<String>("md_result")
+                },
+                viewModel = viewModel
+            )
+        }
+
+        // ── Create Event ──────────────────────────────────────────────────
+        composable(
+            route = PostRoute.CreateEvent.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId")
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry("post_graph")
+            }
+            val viewModel: CreatePostViewModel = hiltViewModel(parentEntry)
+            val editorResult = backStackEntry.savedStateHandle
+                .getStateFlow<String?>("md_result", null)
+                .collectAsState().value
+            CreateEventScreen(
+                postId = postId,
+                onBack = { navController.popBackStack() },
+                onPostCreated = {
+                    navController.navigate(PostRoute.PostList.route) {
+                        popUpTo("post_graph") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToEditor = { text ->
+                    backStackEntry.savedStateHandle["md_input"] = text
+                    navController.navigate(PostRoute.MarkdownEditor.route)
+                },
+                editorResult = editorResult,
+                onEditorResultConsumed = {
+                    backStackEntry.savedStateHandle.remove<String>("md_result")
+                },
+                viewModel = viewModel
+            )
+        }
+
+        // ── Create Share Post ─────────────────────────────────────────────
+        composable(
+            route = PostRoute.CreateSharePost.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId")
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry("post_graph")
+            }
+            val viewModel: CreatePostViewModel = hiltViewModel(parentEntry)
+            val editorResult = backStackEntry.savedStateHandle
+                .getStateFlow<String?>("md_result", null)
+                .collectAsState().value
+            CreateSharePostScreen(
+                postId = postId,
+                onBack = { navController.popBackStack() },
+                onPostCreated = {
+                    navController.navigate(PostRoute.PostList.route) {
+                        popUpTo("post_graph") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToEditor = { text ->
+                    backStackEntry.savedStateHandle["md_input"] = text
+                    navController.navigate(PostRoute.MarkdownEditor.route)
+                },
+                editorResult = editorResult,
+                onEditorResultConsumed = {
+                    backStackEntry.savedStateHandle.remove<String>("md_result")
+                },
+                viewModel = viewModel
+            )
+        }
+
+        // ── Create Poll ───────────────────────────────────────────────────
+        composable(
+            route = PostRoute.CreatePoll.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId")
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry("post_graph")
+            }
+            val viewModel: CreatePostViewModel = hiltViewModel(parentEntry)
+            val editorResult = backStackEntry.savedStateHandle
+                .getStateFlow<String?>("md_result", null)
+                .collectAsState().value
+            CreatePollScreen(
+                postId = postId,
+                onBack = { navController.popBackStack() },
+                onPostCreated = {
+                    navController.navigate(PostRoute.PostList.route) {
+                        popUpTo("post_graph") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToEditor = { text ->
+                    backStackEntry.savedStateHandle["md_input"] = text
+                    navController.navigate(PostRoute.MarkdownEditor.route)
+                },
+                editorResult = editorResult,
+                onEditorResultConsumed = {
+                    backStackEntry.savedStateHandle.remove<String>("md_result")
+                },
+                viewModel = viewModel
+            )
+        }
+
+        // ── Markdown Editor ───────────────────────────────────────────────
+        composable(PostRoute.MarkdownEditor.route) {
+            val initialText = navController.previousBackStackEntry
+                ?.savedStateHandle?.get<String>("md_input") ?: ""
+            MarkdownEditorScreen(
+                initialText = initialText,
+                onSave = { result ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle?.set("md_result", result)
+                    navController.popBackStack()
+                },
+                onCancel = { navController.popBackStack() }
+            )
+        }
         
         // My Posts Screen
-        composable(PostRoute.MyPosts.route) {
+        composable(
+            route = PostRoute.MyPosts.route,
+            arguments = listOf(navArgument("userId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            val targetUserId = backStackEntry.arguments?.getString("userId")
             MyPostsScreen(
+                targetUserId = targetUserId,
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onEditPost = { postId ->
-                    navController.navigate(PostRoute.EditPost.createRoute(postId))
+                onEditPost = { postId, postType ->
+                    val route = when {
+                        postType == com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType.PROJECT.displayName ->
+                            PostRoute.CreateProject.createRoute(postId)
+                        postType == com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType.EVENT.displayName ->
+                            PostRoute.CreateEvent.createRoute(postId)
+                        postType == com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType.POLL.displayName ->
+                            PostRoute.CreatePoll.createRoute(postId)
+                        else -> PostRoute.CreateSharePost.createRoute(postId)
+                    }
+                    navController.navigate(route)
                 },
-                onPostClick = {postId->
+                onPostClick = { postId ->
                     navController.navigate(PostRoute.PostDetail.createRoute(postId))
                 },
                 onUserClick = { userId ->
-                    // Navigate to user profile when implemented
                     navController.navigate(ProfileRoute.UserProfile.createRoute(userId))
+                },
+                onCreatePost = {
+                    navController.navigate(PostRoute.CreatePostSelection.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -288,21 +555,6 @@ fun NavGraphBuilder.postNavGraph(navController: NavHostController) {
             )
         }
 
-        
-        // Edit Post Screen
-        composable(PostRoute.EditPost.route) { backStackEntry ->
-            val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            EditPostScreen(
-                postId = postId,
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onPostUpdated = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        
         // Map Screen
         composable("map_screen/{userIds}") { backStackEntry ->
             val userIds = backStackEntry.arguments?.getString("userIds") ?: ""
