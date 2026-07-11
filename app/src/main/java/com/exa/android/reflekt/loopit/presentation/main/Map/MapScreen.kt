@@ -98,6 +98,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.component.AcademicChipsRow
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.setting.SettingsViewModel
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
@@ -367,221 +368,6 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
                     }
                 )
             }
-
-            /*
-            if (showBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showBottomSheet = false
-                    },
-                    sheetState = sheetState
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        // Location Input
-                        Text("Search Location", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.outline,
-                                    shape = MaterialTheme.shapes.medium
-                                )
-                        ) {
-                            SearchBar(
-                                onPlaceSelected = { place ->
-                                    viewModel.selectLocation(place, context)
-                                }
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                                    location?.let {
-                                        viewModel.setSelectedLocation(LatLng(it.latitude, it.longitude))
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.LocationOn, "Current Location")
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Use Current Location")
-                        }
-
-                        // Radius Slider
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Search Radius: ${radius.toInt()} km")
-                        Slider(
-                            value = radius,
-                            onValueChange = {
-                                // radius = it
-                            },
-                            valueRange = 1f..50f,
-                            steps = 9,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        if (selectedRoles.isNotEmpty()) {
-                            Text(
-                                text = "Selected Roles:",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp)
-                            ) {
-                                items(selectedRoles.size) {
-                                    val role = selectedRoles.elementAt(it)
-                                    SuggestionChip(
-                                        onClick = {
-                                            //selectedRoles = selectedRoles - role
-                                        },
-                                        label = {
-                                            Text(
-                                                text = role,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        },
-                                        border = BorderStroke(  
-                                            1.dp,
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        ),
-                                        colors = SuggestionChipDefaults.suggestionChipColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            labelColor = MaterialTheme.colorScheme.onPrimary
-                                        ),
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Remove",
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Select Role", style = MaterialTheme.typography.titleMedium)
-
-                        /*
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.horizontalScroll(rememberScrollState())
-                        ) {
-                            roles.forEach { role ->
-                                FilterChip(
-                                    selected = role == selectedRole,
-                                    onClick = { selectedRole = role },
-                                    label = { Text(role) }
-                                )
-                            }
-                        }
-
-                         */
-                        OutlinedTextField(
-                            value = roleSearchQuery,
-                            onValueChange = { roleSearchQuery = it },
-                            placeholder = { Text("Search roles...") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                            )
-                        )
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 128.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.height(100.dp)
-                        ) {
-                            items(filteredRoles.size) {
-                                val role = filteredRoles[it]
-                                FilterChip(
-                                    selected = selectedRoles.contains(role),
-                                    onClick = {
-                                        /*
-                                        selectedRoles = if (selectedRoles.contains(role)) {
-                                            selectedRoles - role
-                                        } else {
-                                            selectedRoles + role
-                                        }
-
-                                         */
-                                    },
-                                    label = {
-                                        Text(
-                                            text = role,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-
-                        // Apply Button
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        sheetState.hide()
-
-                                        showBottomSheet = false
-
-                                        // Get the target location for camera movement
-                                        val targetLocation = selectedLocation ?: currentLocation
-
-                                        targetLocation?.let { location ->
-                                            // Move camera to selected location
-                                            cameraPositionState.animate(
-                                                update = CameraUpdateFactory.newLatLngZoom(
-                                                    location,
-                                                    12f
-                                                ),
-                                                durationMs = 500
-                                            )
-
-                                            val rolesAsString = selectedRoles.joinToString(",")
-                                            // Fetch new data with current filters
-                                            viewModel.fetchUserLocations(
-                                                location = location,
-                                                radius = radius.toDouble(),
-                                                role = rolesAsString
-                                            )
-                                        }
-                                    }catch (e: Exception) {
-                                        // Timber.e(e, "Error applying filters")
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Apply Filters")
-                        }
-                    }
-                }
-            }
-
-             */
         }
     }
 
@@ -797,12 +583,12 @@ fun ProfileBottomSheet(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    val org = user.collegeName ?: user.companyName.ifBlank { null }
-                    if (org != null) {
-                        Text(
-                            text = org,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (user.branch?.isNotBlank() == true || user.section?.isNotBlank() == true || user.year?.isNotBlank() == true) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        AcademicChipsRow(
+                            branch = user.branch,
+                            section = user.section,
+                            year = user.year
                         )
                     }
                 }
@@ -902,7 +688,7 @@ fun CustomMapMarker(
     val context = LocalContext.current
 
     val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
+        ImageRequest.Builder(LocalContext.current).data(imageUrl)
             .placeholder(R.drawable.placeholder).error(R.drawable.placeholder).allowHardware(false)
             .build()
     )

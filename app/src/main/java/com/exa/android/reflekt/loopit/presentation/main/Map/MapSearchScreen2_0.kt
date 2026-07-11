@@ -10,7 +10,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -41,6 +41,9 @@ import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
+import androidx.compose.ui.graphics.Color
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.liquidTopBarColors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -107,6 +110,7 @@ fun MapSearchScreen2_0(
     }
 
     Scaffold(
+        containerColor = LiquidColors.BgBase,
         topBar = {
             TopAppBar(
                 title = { Text("Search Filters", fontWeight = FontWeight.SemiBold) },
@@ -122,21 +126,20 @@ fun MapSearchScreen2_0(
                         Text("Clear All")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = liquidTopBarColors()
             )
         },
         bottomBar = {
             Surface(
-                shadowElevation = 8.dp,
-                tonalElevation = 3.dp
+                color = LiquidColors.GlassSurface,
+                shadowElevation = 0.dp,
+                tonalElevation = 0.dp
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(LiquidColors.GlassSurface)
                         .padding(20.dp)
                 ) {
                     Row(
@@ -149,14 +152,14 @@ fun MapSearchScreen2_0(
                             Icon(
                                 Icons.Default.People,
                                 null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = LiquidColors.Primary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "${userCount.size} users found",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = LiquidColors.TextPrimary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -167,7 +170,11 @@ fun MapSearchScreen2_0(
                     Button(
                         onClick = { navController.popBackStack() },
                         modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(vertical = 16.dp)
+                        contentPadding = PaddingValues(vertical = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = LiquidColors.Primary,
+                            contentColor = LiquidColors.BgBase
+                        )
                     ) {
                         Icon(Icons.Default.Check, "Apply")
                         Spacer(Modifier.width(8.dp))
@@ -200,7 +207,7 @@ fun MapSearchScreen2_0(
                             .fillMaxWidth()
                             .border(
                                 width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = LiquidColors.Border,
                                 shape = MaterialTheme.shapes.medium
                             )
                     ) {
@@ -215,8 +222,8 @@ fun MapSearchScreen2_0(
                         onClick = { isRequestingLocation = true },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            containerColor = LiquidColors.GlassSurface,
+                            contentColor = LiquidColors.Primary
                         )
                     ) {
                         Icon(Icons.Default.MyLocation, "Current Location")
@@ -239,7 +246,7 @@ fun MapSearchScreen2_0(
                     Text(
                         "Quick Select",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = LiquidColors.TextSecondary
                     )
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -264,18 +271,18 @@ fun MapSearchScreen2_0(
                         Text(
                             "1 km",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = LiquidColors.TextSecondary
                         )
                         Text(
                             "${viewModel.radius.value.toInt()} km",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = LiquidColors.Primary
                         )
                         Text(
                             "50 km",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = LiquidColors.TextSecondary
                         )
                     }
                     
@@ -287,8 +294,8 @@ fun MapSearchScreen2_0(
                         steps = 48,
                         modifier = Modifier.fillMaxWidth(),
                         colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary
+                            thumbColor = LiquidColors.Primary,
+                            activeTrackColor = LiquidColors.Primary
                         )
                     )
                 }
@@ -307,9 +314,9 @@ fun MapSearchScreen2_0(
                     if (viewModel.selectedRoles.value.isNotEmpty()) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                containerColor = LiquidColors.Primary.copy(alpha = 0.15f).copy(alpha = 0.3f)
                             ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            border = BorderStroke(1.dp, LiquidColors.Primary.copy(alpha = 0.5f))
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
@@ -320,7 +327,7 @@ fun MapSearchScreen2_0(
                                     Text(
                                         text = "${viewModel.selectedRoles.value.size} role(s) selected",
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = LiquidColors.Primary
                                     )
                                     TextButton(onClick = { viewModel.selectedRoles.value = setOf() }) {
                                         Text("Clear", style = MaterialTheme.typography.labelMedium)
@@ -336,18 +343,18 @@ fun MapSearchScreen2_0(
                                             label = { Text(role) },
                                             border = BorderStroke(
                                                 1.dp,
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                                LiquidColors.Primary.copy(alpha = 0.5f)
                                             ),
                                             colors = SuggestionChipDefaults.suggestionChipColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                labelColor = MaterialTheme.colorScheme.onPrimary
+                                                containerColor = LiquidColors.Primary,
+                                                labelColor = LiquidColors.BgBase
                                             ),
                                             icon = {
                                                 Icon(
                                                     Icons.Default.Close,
                                                     contentDescription = "Remove",
                                                     modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.onPrimary
+                                                    tint = LiquidColors.BgBase
                                                 )
                                             }
                                         )
@@ -362,7 +369,7 @@ fun MapSearchScreen2_0(
                         Text(
                             "Popular Roles",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = LiquidColors.TextSecondary
                         )
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -382,8 +389,8 @@ fun MapSearchScreen2_0(
                                         { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
                                     } else null,
                                     colors = SuggestionChipDefaults.suggestionChipColors(
-                                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
-                                        else MaterialTheme.colorScheme.surfaceVariant
+                                        containerColor = if (isSelected) LiquidColors.Primary.copy(alpha = 0.15f) 
+                                        else LiquidColors.GlassSurface
                                     )
                                 )
                             }
@@ -398,7 +405,7 @@ fun MapSearchScreen2_0(
                             Icon(
                                 Icons.Default.Search,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = LiquidColors.Primary
                             )
                         },
                         trailingIcon = if (roleSearchQuery.isNotEmpty()) {
@@ -411,9 +418,9 @@ fun MapSearchScreen2_0(
                         placeholder = { Text("Search all roles...") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            focusedContainerColor = LiquidColors.Primary.copy(alpha = 0.05f),
+                            unfocusedContainerColor = LiquidColors.Surface,
+                            focusedBorderColor = LiquidColors.Primary,
                         ),
                         shape = RoundedCornerShape(12.dp),
                         textStyle = MaterialTheme.typography.bodyLarge,
@@ -423,9 +430,9 @@ fun MapSearchScreen2_0(
                     // Role Grid (improved layout)
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
+                            containerColor = LiquidColors.Surface
                         ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        border = BorderStroke(1.dp, LiquidColors.Border),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(280.dp)
@@ -440,13 +447,13 @@ fun MapSearchScreen2_0(
                                         Icons.Default.WorkOff,
                                         null,
                                         modifier = Modifier.size(48.dp),
-                                        tint = MaterialTheme.colorScheme.outline
+                                        tint = LiquidColors.Border
                                     )
                                     Spacer(Modifier.height(8.dp))
                                     Text(
                                         "No roles found",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = LiquidColors.TextSecondary
                                     )
                                 }
                             }
@@ -481,20 +488,20 @@ fun MapSearchScreen2_0(
                                                 if (isSelected) Icons.Default.CheckCircle else Icons.Default.Work,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(20.dp),
-                                                tint = if (isSelected) MaterialTheme.colorScheme.primary 
-                                                else MaterialTheme.colorScheme.onSurfaceVariant
+                                                tint = if (isSelected) LiquidColors.Primary 
+                                                else LiquidColors.TextSecondary
                                             )
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = FilterChipDefaults.filterChipColors(
-                                            containerColor = MaterialTheme.colorScheme.surface,
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            labelColor = MaterialTheme.colorScheme.onSurface,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            containerColor = LiquidColors.Surface,
+                                            selectedContainerColor = LiquidColors.Primary.copy(alpha = 0.15f),
+                                            labelColor = LiquidColors.TextPrimary,
+                                            selectedLabelColor = LiquidColors.Primary
                                         ),
                                         border = FilterChipDefaults.filterChipBorder(
-                                            borderColor = MaterialTheme.colorScheme.outline,
-                                            selectedBorderColor = MaterialTheme.colorScheme.primary,
+                                            borderColor = LiquidColors.Border,
+                                            selectedBorderColor = LiquidColors.Primary,
                                             borderWidth = 1.dp,
                                             selectedBorderWidth = 2.dp,
                                             selected = isSelected,
@@ -525,7 +532,7 @@ fun CollapsibleFilterSection(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = LiquidColors.GlassSurface
         ),
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier
@@ -538,12 +545,12 @@ fun CollapsibleFilterSection(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onToggle)
+                    .clickableWithNoIndication(onClick = onToggle)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = LiquidColors.Primary,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.width(12.dp))
@@ -552,13 +559,13 @@ fun CollapsibleFilterSection(
                         title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = LiquidColors.TextSecondary
                     )
                     if (badge != null && !isExpanded) {
                         Text(
                             badge,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = LiquidColors.Primary,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -566,7 +573,7 @@ fun CollapsibleFilterSection(
                 Icon(
                     if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     "Toggle section",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = LiquidColors.TextSecondary
                 )
             }
             

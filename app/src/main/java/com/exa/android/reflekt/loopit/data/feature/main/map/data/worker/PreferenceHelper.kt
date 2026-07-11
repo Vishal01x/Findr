@@ -38,6 +38,20 @@ class PreferenceHelper @Inject constructor(context: Context) {
     fun clearUserId() {
         sharedPreferences.edit().remove("CURRENT_USER_ID").apply()
     }
+
+    /** Cached result of the last Firestore profile-completeness check, keyed per user. */
+    fun saveProfileComplete(userId: String, isComplete: Boolean) {
+        sharedPreferences.edit().putBoolean("PROFILE_COMPLETE_$userId", isComplete).apply()
+    }
+
+    /** Returns null if we've never checked this user's profile before (no cached value yet). */
+    fun getProfileComplete(userId: String): Boolean? {
+        return if (sharedPreferences.contains("PROFILE_COMPLETE_$userId")) {
+            sharedPreferences.getBoolean("PROFILE_COMPLETE_$userId", false)
+        } else {
+            null
+        }
+    }
     fun setLocationUpdatesRunning(userId: String, isRunning: Boolean) {
         sharedPreferences.edit().putBoolean("LOCATION_UPDATES_$userId", isRunning).apply()
     }

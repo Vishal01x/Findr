@@ -14,11 +14,16 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
+import com.exa.android.reflekt.loopit.core.env.AppCollections
 import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 class FirebaseDataSource @Inject constructor() {
@@ -32,7 +37,7 @@ class FirebaseDataSource @Inject constructor() {
     }
 
     fun fetchUser(userId: String, onSuccess: (profileUser?) -> Unit, onFailure: (Exception) -> Unit) {
-        firestore.collection("users").document(userId).get()
+        firestore.collection(AppCollections.USERS).document(userId).get()
             .addOnSuccessListener { documentSnapshot: DocumentSnapshot ->
                 if (documentSnapshot.exists()) {
                     try {
@@ -117,5 +122,55 @@ class FirebaseDataSource @Inject constructor() {
         }
     }
 
+    suspend fun searchUsersByNameOrEmail(query: String): List<profileUser> {
+        return try {
+            if (query.isBlank()) return emptyList()
+            val trimmed = query.trim()
+            val lowerTrimmed = trimmed.lowercase()
+            
+            withContext(Dispatchers.IO) {
+                val nameVariants = buildSet {
+                    add(trimmed)
+                    add(lowerTrimmed)
+                    add(trimmed.uppercase())
+                    add(trimmed.replaceFirstChar { it.uppercase() })
+                    add(lowerTrimmed.replaceFirstChar { it.uppercase() })
+                }
+                
+                val nameDocs = nameVariants.map { variant ->
+                    async {
+                        firestore.collection(AppCollections.USERS)
+                            .whereGreaterThanOrEqualTo("name", variant)
+                            .whereLessThanOrEqualTo("name", variant + "\uf8ff")
+                            .limit(20)
+                            .get().await()
+                            .documents
+                    }
+                }.awaitAll().flatten()
 
-}
+                val emailDocs = if (trimmed.contains("@")) {
+                    firestore.collection(AppCollections.USERS)
+                        .whereEqualTo("email", trimmed)
+                        .limit(5)
+                        .get().await()
+                        .documents
+                } else emptyList()
+                
+                val combinedDocs = (nameDocs + emailDocs).distinctBy { it.id }
+                
+                combinedDocs.mapNotNull { doc ->
+                    try {
+                        val parsedUser = doc.toObject(profileUser::class.java)
+                        parsedUser?.copy(uid = doc.id)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+
+
+}}
