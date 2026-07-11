@@ -13,3 +13,27 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase service account keys — NEVER commit these
+scripts/serviceAccountKey.json
+app/src/main/res/raw/reflect_firebase_admin_sdk_key.json
+
+# Node scripts (one-time Firestore import)
+scripts/node_modules/
+scripts/package-lock.json
+
+# PII / placement data
+scripts/*.csv
+
+# Claude Code agent worktrees & settings
+.claude/
+
+# Dev-only scripts and prototypes at root level
+*.py
+*.html
+
+# Claude Code agent worktrees
+.claude/worktrees/
+
+# Build outputs
+app/release/
