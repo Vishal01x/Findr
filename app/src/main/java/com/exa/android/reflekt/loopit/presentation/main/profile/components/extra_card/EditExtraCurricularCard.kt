@@ -70,6 +70,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,16 +150,15 @@ fun EditExtracurricularScreen(
                 title = { Text("Edit Activity",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = LiquidColors.TextPrimary
                     )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Back")
+                        Icon(Icons.Default.Close, contentDescription = "Back", tint = LiquidColors.TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = LiquidColors.GlassSurface
                 )
             )
         },
@@ -298,11 +299,14 @@ private fun ActionButtons(loading: Boolean, onCancel: () -> Unit, onSave: () -> 
 //            CircularProgressIndicator(modifier = Modifier.size(24.dp))
 //        } else {
             OutlinedButton(onClick = onCancel) {
-                Text("Cancel")
+                Text("Cancel", color = LiquidColors.TextSecondary)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = onSave) {
-                Text("Save")
+            Button(
+                onClick = onSave,
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LiquidColors.Primary)
+            ) {
+                Text("Save", color = androidx.compose.ui.graphics.Color.White)
             }
        // }
     }
@@ -455,14 +459,14 @@ private fun ImageSection(
                 .align(Alignment.BottomEnd)
                 .offset(x = 16.dp, y = 16.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = LiquidColors.GlassSurface,
                     shape = CircleShape
                 )
         ) {
             Icon(
                 imageVector = Icons.Default.PhotoCamera,
                 contentDescription = "Add logo",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                tint = LiquidColors.Primary
             )
         }
     }

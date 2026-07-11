@@ -3,7 +3,7 @@ package com.exa.android.reflekt.loopit.presentation.main.profile.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -33,6 +33,7 @@ import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.presentation.main.component.TrackableImage
 import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 
 
@@ -64,10 +65,12 @@ fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: 
     }
 
     Card(
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(LiquidColors.GlassSurface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp))
     ) {
         Column(Modifier.padding(16.dp)) {
             Text("Skills", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
@@ -77,6 +80,14 @@ fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: 
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (updatedSkills.isEmpty() && !isEditing) {
+                    Text(
+                        text = if (isCurUser) "Add skills so people can discover what you know." else "No skills added yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 updatedSkills.forEach { skill ->
                     EditableChip(skill = skill, isEditing) {
                         editProfileViewModel.removeUpdatedSkill(skill)
@@ -91,7 +102,7 @@ fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: 
 
             if (updatedSkills.isNotEmpty() && stagedSkills.isNotEmpty()) {
                 Spacer(Modifier.width(8.dp))
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .height(1.dp)
                         .width(24.dp)
@@ -159,7 +170,7 @@ fun SkillsCard(isCurUser : Boolean, skills: List<String>, editProfileViewModel: 
                             fontSize = 13.sp,
                             modifier = Modifier
                                 .padding(start = 4.dp)
-                                .clickable { editProfileViewModel.addSkillToStaging() }
+                                .clickableWithNoIndication { editProfileViewModel.addSkillToStaging() }
                         )
                     }
 
@@ -294,7 +305,7 @@ private fun EditableChip(skill: String, isEditing: Boolean, onRemove: () -> Unit
                             .offset(x = 12.dp, y = (-4).dp)
                             .clip(CircleShape)
                             .background(Color.White)
-                            .clickable { onRemove() },
+                            .clickableWithNoIndication { onRemove() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -324,7 +335,7 @@ private fun AddSkillButton(onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(64.dp)
-            .clickable(onClick = onClick),
+            .clickableWithNoIndication(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -356,7 +367,7 @@ private fun AddSkillButton(onClick: () -> Unit) {
 @Composable
 private fun SuggestionChip(text: String, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.clickableWithNoIndication(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),

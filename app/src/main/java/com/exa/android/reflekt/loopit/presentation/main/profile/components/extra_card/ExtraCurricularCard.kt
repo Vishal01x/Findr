@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.header.CircularIconCard
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 
 @Composable
@@ -98,10 +100,12 @@ fun ExtracurricularCard(
 
         is Response.Success -> {
             Card(
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(0.dp),
+                colors = CardDefaults.cardColors(LiquidColors.GlassSurface),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp))
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Row(
@@ -113,16 +117,25 @@ fun ExtracurricularCard(
                         if(userId == null || userId == curUser)
                             CircularIconCard(Icons.Default.Add, { onAddClick(null) })
                     }
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(response.data) {
+                    if (response.data.isEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = if (userId == null || userId == curUser) "Add achievements, coding profiles, clubs, or activities." else "No activities added yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(response.data) {
 
-                            CodingProfileCard(
-                                it, { onAddClick(it) }
-                            )
+                                CodingProfileCard(
+                                    it, { onAddClick(it) }
+                                )
+                            }
+
+                            // to add + card
+
                         }
-
-                        // to add + card
-
                     }
                 }
             }
@@ -141,10 +154,11 @@ fun CodingProfileCard(extraActivity: ExtraActivity, onAddClick: () -> Unit) {
             .width(180.dp)
             .wrapContentHeight()
             .clickable { onAddClick() }
-            .padding(8.dp),
+            .padding(8.dp)
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant)
+        elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
     ) {
         Column(
             modifier = Modifier

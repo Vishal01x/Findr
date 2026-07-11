@@ -29,16 +29,7 @@ data class ProfileView(
      * Gets a formatted time string
      */
     fun getTimeAgo(): String {
-        val now = System.currentTimeMillis()
         val viewTime = viewedAt?.toDate()?.time ?: return "Unknown"
-        val diff = now - viewTime
-        
-        return when {
-            diff < 60 * 1000 -> "Just now"
-            diff < 60 * 60 * 1000 -> "${diff / (60 * 1000)} minutes ago"
-            diff < 24 * 60 * 60 * 1000 -> "${diff / (60 * 60 * 1000)} hours ago"
-            diff < 7 * 24 * 60 * 60 * 1000 -> "${diff / (24 * 60 * 60 * 1000)} days ago"
-            else -> "${diff / (7 * 24 * 60 * 60 * 1000)} weeks ago"
-        }
+        return com.exa.android.reflekt.loopit.core.utils.formatTimeAgo(viewTime)
     }
 }

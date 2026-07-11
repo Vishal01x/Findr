@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.webkit.WebView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +43,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.exa.android.reflekt.BuildConfig
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -84,29 +89,31 @@ fun HelpScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Help Center", color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Help Center", color = LiquidColors.TextPrimary, style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = LiquidColors.GlassSurface
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = LiquidColors.TextPrimary
                         )
                     }
                 }
             )
-        }
+        },
+        containerColor = LiquidColors.BgBase,
+        contentColor = LiquidColors.TextPrimary
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp)
-        ) {
+        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -122,7 +129,7 @@ fun HelpScreen(
                     text = "Frequently Asked Questions",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.primary
+                    color = LiquidColors.Primary
                 )
             }
 
@@ -132,43 +139,42 @@ fun HelpScreen(
                 Divider(modifier = Modifier.padding(vertical = 4.dp))
             }
 
-            // Contact Support Section
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "Still need help?",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.primary
+                    color = LiquidColors.Primary
                 )
 
-                OutlinedCard(
-                    onClick = onContactSupport,
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(LiquidColors.GlassSurface)
+                        .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(16.dp))
+                        .clickableWithNoIndication(onClick = onContactSupport)
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = null,
+                        tint = LiquidColors.Primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Contact Support",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = LiquidColors.TextPrimary
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = "Contact Support",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                text = "We typically respond within 24 hours",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
+                        Text(
+                            text = "We typically respond within 24 hours",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = LiquidColors.TextSecondary
+                        )
                     }
                 }
             }
@@ -179,10 +185,11 @@ fun HelpScreen(
                 Text(
                     text = "App Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    color = LiquidColors.TextSecondary,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
             }
+        }
         }
     }
 }
@@ -195,8 +202,10 @@ fun ExpandableFAQItem(faq: FAQ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
-            .padding(vertical = 12.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(LiquidColors.GlassSurface)
+            .clickableWithNoIndication { expanded = !expanded }
+            .padding(vertical = 12.dp, horizontal = 16.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -205,11 +214,13 @@ fun ExpandableFAQItem(faq: FAQ) {
             Text(
                 text = faq.question,
                 style = MaterialTheme.typography.bodyLarge,
+                color = LiquidColors.TextPrimary,
                 modifier = Modifier.weight(1f)
             )
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = if (expanded) "Collapse" else "Expand"
+                contentDescription = if (expanded) "Collapse" else "Expand",
+                tint = LiquidColors.TextPrimary
             )
         }
 
@@ -218,7 +229,7 @@ fun ExpandableFAQItem(faq: FAQ) {
                 text = faq.answer,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                color = LiquidColors.TextSecondary
             )
         }
     }
@@ -241,16 +252,16 @@ fun TermsPrivacyScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Terms & Privacy", color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Terms & Privacy", color = LiquidColors.TextPrimary, style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = LiquidColors.GlassSurface
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = LiquidColors.TextPrimary
                         )
                     }
                 }
@@ -277,15 +288,18 @@ fun TermsPrivacyScreen(
                     }
                 }
             }
-        }
+        },
+        containerColor = LiquidColors.BgBase,
+        contentColor = LiquidColors.TextPrimary
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
+        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .verticalScroll(scrollState)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
             Text(
                 text = "Terms of Service",
                 style = MaterialTheme.typography.headlineSmall,
@@ -343,9 +357,10 @@ fun TermsPrivacyScreen(
             Text(
                 text = "Last Updated: ${SimpleDateFormat("MMMM d, yyyy").format(Date())}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = LiquidColors.TextSecondary,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+        }
         }
     }
 }

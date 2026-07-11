@@ -25,8 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.exa.android.reflekt.R
+import androidx.compose.foundation.border
 import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExtraActivity
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.liquidTopBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,13 +80,10 @@ fun FullExtraCardScreen(
                     }
                 },
                 modifier = Modifier.shadow(elevation = 10.dp),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.primary
-                ),
+                colors = liquidTopBarColors(),
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onBackground,
         content = { padding ->
 //            Box(
@@ -111,10 +111,11 @@ fun FullExtraCardScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
                     shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
                 ) {
                     Column(
                         modifier = Modifier

@@ -54,7 +54,9 @@ data class CollegeInfo(
     val startDate: String = "",
     val endDate: String = "",
     val grade: String = "",
-    val year: String  = ""
+    val year: String  = "",
+    val semester: String = "",
+    val classWithSection: String = ""
 ): Parcelable
 
 @Parcelize

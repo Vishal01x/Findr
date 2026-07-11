@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.presentation.main.profile.components.sett
 
 import android.content.Context
 import android.util.Log
+import com.exa.android.reflekt.BuildConfig
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -10,12 +11,14 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.exa.android.reflekt.loopit.core.env.AppCollections
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,7 +49,7 @@ class SettingsViewModel @Inject constructor(
     val privacyEnabled: StateFlow<Boolean> = _privacyEnabled.asStateFlow()
 
     // App Info
-    private val _appVersion = MutableStateFlow("1.0.0")
+    private val _appVersion = MutableStateFlow("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
     val appVersion: StateFlow<String> = _appVersion.asStateFlow()
 
     // Data & Storage
@@ -72,12 +75,66 @@ class SettingsViewModel @Inject constructor(
     private val _emailUpdateError = MutableStateFlow<String?>(null)
     val emailUpdateError: StateFlow<String?> = _emailUpdateError.asStateFlow()
 
+    // Strict mode: current password re-verification (used by both change-password and update-email flows)
+    private val _currentPasswordVerified = MutableStateFlow(false)
+    val currentPasswordVerified: StateFlow<Boolean> = _currentPasswordVerified.asStateFlow()
+
+    private val _verifyingCurrentPassword = MutableStateFlow(false)
+    val verifyingCurrentPassword: StateFlow<Boolean> = _verifyingCurrentPassword.asStateFlow()
+
+    private val _currentPasswordError = MutableStateFlow<String?>(null)
+    val currentPasswordError: StateFlow<String?> = _currentPasswordError.asStateFlow()
+
+    private val _changingPassword = MutableStateFlow(false)
+    val changingPassword: StateFlow<Boolean> = _changingPassword.asStateFlow()
+
+    // Update email: verification-link flow (mirrors the sign up / login email verification)
+    private val _emailVerificationSent = MutableStateFlow(false)
+    val emailVerificationSent: StateFlow<Boolean> = _emailVerificationSent.asStateFlow()
+
+    private val _updatingEmail = MutableStateFlow(false)
+    val updatingEmail: StateFlow<Boolean> = _updatingEmail.asStateFlow()
+
     fun clearPasswordError() {
         _passwordChangeError.value = null
     }
 
     fun clearEmailError() {
         _emailUpdateError.value = null
+    }
+
+    /** Resets the strict-mode current-password verification, e.g. when a dialog is (re)opened. */
+    fun resetCurrentPasswordVerification() {
+        _currentPasswordVerified.value = false
+        _currentPasswordError.value = null
+        _passwordChangeSuccess.value = false
+    }
+
+    /** Resets the update-email flow, e.g. when the dialog is (re)opened. */
+    fun resetEmailUpdateFlow() {
+        _emailVerificationSent.value = false
+        _emailUpdateError.value = null
+        _emailUpdateSuccess.value = false
+        resetCurrentPasswordVerification()
+    }
+
+    /** Step 1 of strict mode: re-authenticate with the current password before allowing any change. */
+    fun verifyCurrentPassword(currentPassword: String) {
+        viewModelScope.launch {
+            _verifyingCurrentPassword.value = true
+            _currentPasswordError.value = null
+            try {
+                val user = auth.currentUser
+                val credential = EmailAuthProvider.getCredential(user?.email ?: "", currentPassword)
+                user?.reauthenticate(credential)?.await()
+                _currentPasswordVerified.value = true
+            } catch (e: Exception) {
+                _currentPasswordVerified.value = false
+                _currentPasswordError.value = "Current password is incorrect"
+            } finally {
+                _verifyingCurrentPassword.value = false
+            }
+        }
     }
 
 
@@ -152,35 +209,58 @@ class SettingsViewModel @Inject constructor(
 //        _privacyEnabled.value = enabled
 //    }
 
-    fun changePassword(currentPassword: String, newPassword: String) {
+    /** Step 2 of strict mode: only meant to be called once [currentPasswordVerified] is true. */
+    fun changePassword(newPassword: String) {
         viewModelScope.launch {
+            _changingPassword.value = true
             try {
                 val user = auth.currentUser
-                val credential = EmailAuthProvider.getCredential(
-                    user?.email ?: "",
-                    currentPassword
-                )
-                user?.reauthenticate(credential)?.await()
                 user?.updatePassword(newPassword)?.await()
                 _passwordChangeSuccess.value = true
                 _passwordChangeError.value = null
             } catch (e: Exception) {
                 _passwordChangeError.value = e.message
                 _passwordChangeSuccess.value = false
+            } finally {
+                _changingPassword.value = false
             }
         }
     }
 
-    fun updateEmail(newEmail: String) {
+    /**
+     * Step 2 of the update-email flow: sends a verification link to the NEW email address
+     * (same mechanism as sign-up email verification). The address on the account only changes
+     * once the user opens that link, so we don't flip [emailUpdateSuccess] here - callers should
+     * poll with [checkEmailUpdateVerification] instead.
+     */
+    fun requestEmailUpdate(newEmail: String) {
         viewModelScope.launch {
+            _updatingEmail.value = true
             try {
                 val user = auth.currentUser
-                user?.updateEmail(newEmail)?.await()
-                _emailUpdateSuccess.value = true
+                user?.verifyBeforeUpdateEmail(newEmail)?.await()
+                _emailVerificationSent.value = true
                 _emailUpdateError.value = null
             } catch (e: Exception) {
                 _emailUpdateError.value = e.message
-                _emailUpdateSuccess.value = false
+                _emailVerificationSent.value = false
+            } finally {
+                _updatingEmail.value = false
+            }
+        }
+    }
+
+    /** Polls until the account's email actually flips to [newEmail] after the link is clicked. */
+    fun checkEmailUpdateVerification(newEmail: String, onVerified: () -> Unit) {
+        viewModelScope.launch {
+            while (true) {
+                auth.currentUser?.reload()?.await()
+                if (auth.currentUser?.email?.equals(newEmail, ignoreCase = true) == true) {
+                    _emailUpdateSuccess.value = true
+                    onVerified()
+                    break
+                }
+                delay(3000)
             }
         }
     }
@@ -250,7 +330,7 @@ class SettingsViewModel @Inject constructor(
             val userId = user.uid
 
             // Step 2: Delete Firestore user document
-            FirebaseFirestore.getInstance().collection("users")
+            FirebaseFirestore.getInstance().collection(AppCollections.USERS)
                 .document(userId).delete().await()
 
 //            // Step 3: Delete profile picture in Firebase Storage if used

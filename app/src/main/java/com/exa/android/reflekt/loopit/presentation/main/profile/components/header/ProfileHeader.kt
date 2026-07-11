@@ -3,42 +3,52 @@ package com.exa.android.reflekt.loopit.presentation.main.profile.components.head
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.RemoveRedEye
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.post.components.UserAvatar
+import com.exa.android.reflekt.loopit.presentation.main.post.components.AvatarSize
 import com.exa.android.reflekt.loopit.presentation.main.profile.components.extra_card.openUrl
 import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 @Composable
 fun ProfileHeader(
     userId: String?,
     curUser: String?,
     profileHeaderData: ProfileHeaderData,
+    collegeInfo: CollegeInfo,
     openChat: () -> Unit,
     editProfileViewModel: EditProfileViewModel
 ) {
@@ -52,7 +62,7 @@ fun ProfileHeader(
     }
 
     ProfileContent(userId == null || userId == curUser,
-        profileHeaderData, profileViews, rating) {
+        profileHeaderData, collegeInfo, profileViews, rating) {
         openChat()
     }
 }
@@ -69,36 +79,35 @@ fun ImageHeader(
     Box(modifier = Modifier.fillMaxWidth()) {
         // Banner Image
 
-        ImageUsingCoil(
-            context, userProfileHeader.bannerImageUrl, R.drawable.placeholder,
-            Modifier
-                .height(150.dp)
-                .fillMaxWidth()
-                .clickable(userProfileHeader.bannerImageUrl.isNotEmpty()) {
-                    openImage(userProfileHeader.bannerImageUrl)
-//                    openImageIntent(
-//                        context,
-//                        userProfileHeader.bannerImageUrl
-//                    )
-                }
-        )
+        if (userProfileHeader.bannerImageUrl.isNotEmpty()) {
+            coil.compose.SubcomposeAsyncImage(
+                model = coil.request.ImageRequest.Builder(LocalContext.current)
+                    .data(userProfileHeader.bannerImageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .height(150.dp)
+                    .fillMaxWidth()
+                    .clickableWithNoIndication { openImage(userProfileHeader.bannerImageUrl) },
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                loading = { ProfileBannerPlaceholder() },
+                error = { ProfileBannerPlaceholder() }
+            )
+        } else {
+            ProfileBannerPlaceholder()
+        }
 
-        ImageUsingCoil(
-            context,
-            userProfileHeader.profileImageUrl,
-            R.drawable.placeholder,
-            Modifier
+        UserAvatar(
+            imageUrl = userProfileHeader.profileImageUrl.takeIf { it.isNotBlank() },
+            userName = userProfileHeader.name,
+            size = AvatarSize.Profile,
+            modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(4.dp)
-                .size(120.dp)
                 .offset(x = 4.dp, y = 60.dp)
-                .clip(CircleShape)
                 .border(2.dp, Color.White, CircleShape)
-                .clickable(userProfileHeader.profileImageUrl.isNotEmpty()) {
-//                    openImageIntent(
-//                        context,
-//                        userProfileHeader.profileImageUrl
-//                    )
+                .clickableWithNoIndication(enabled = userProfileHeader.profileImageUrl.isNotEmpty()) {
                     openImage(userProfileHeader.profileImageUrl)
                 }
         )
@@ -123,11 +132,13 @@ fun ImageHeader(
 private fun ProfileContent(
     isCurUser: Boolean,
     userProfileHeader: ProfileHeaderData,
+    collegeInfo: CollegeInfo,
     profileViews: Int,
     rating: Response<Pair<Int, Float>>,
     openChat: () -> Unit
 ) {
     val context = LocalContext.current
+    val educationSummary = remember(collegeInfo) { collegeInfo.toHeaderEducationSummary() }
 
     // Handle different rating states
     val ratingValue = when (rating) {
@@ -155,6 +166,12 @@ private fun ProfileContent(
                 RatingChip(ratingValue, Modifier.padding(top = 65.dp))
             }
 
+        }
+        if (educationSummary.isNotBlank()) {
+            EducationSummaryPill(
+                text = educationSummary,
+                modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 8.dp)
+            )
         }
         // Bio
         Text(
@@ -216,7 +233,7 @@ private fun ProfileContent(
                     elevation = ButtonDefaults.buttonElevation(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Chat,
+                        imageVector = Icons.AutoMirrored.Filled.Chat,
                         contentDescription = "Chat"
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -262,7 +279,7 @@ private fun ProfileContent(
                     fontSize = 18.sp,
                     fontStyle = FontStyle.Italic
                 ),
-                modifier = Modifier.clickable(!userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
+                modifier = Modifier.clickableWithNoIndication(enabled = !userProfileHeader.socialLinks.portfolio.isNullOrEmpty()) {
                     openUrl(context, userProfileHeader.socialLinks.portfolio!!)
                 }
             )
@@ -275,6 +292,86 @@ private fun ProfileContent(
 //            )
         }
     }
+}
+
+@Composable
+private fun EducationSummaryPill(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.widthIn(max = 320.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+        contentColor = MaterialTheme.colorScheme.primary
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.School,
+                contentDescription = null,
+                modifier = Modifier.size(15.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+private fun CollegeInfo.toHeaderEducationSummary(): String {
+    val hasEducationDetails = listOf(
+        instituteName,
+        endDate,
+        stream,
+        branch,
+        classWithSection
+    ).any { it.isNotBlank() }
+
+    if (!hasEducationDetails) return ""
+
+    val collegeShortName = instituteName.toCollegeInitials()
+    val classYear = endDate.toClassYear()
+    val classSection = classWithSection.ifBlank {
+        branch.ifBlank { stream }
+    }.toClassSectionLabel()
+
+    return listOfNotNull(
+        collegeShortName.takeIf { it.isNotBlank() },
+        classYear.takeIf { it.isNotBlank() }?.let { "Class of '$it" },
+        classSection.takeIf { it.isNotBlank() }
+    ).joinToString(" | ")
+}
+
+private fun String.toCollegeInitials(): String {
+    val ignoredWords = setOf("and", "of", "the", "for", "in", "at")
+    return trim()
+        .split(Regex("\\s+"))
+        .filter { word -> word.isNotBlank() && word.lowercase() !in ignoredWords }
+        .mapNotNull { word -> word.firstOrNull { it.isLetterOrDigit() }?.uppercaseChar() }
+        .joinToString("")
+        .ifBlank { trim().take(5).uppercase() }
+}
+
+private fun String.toClassYear(): String {
+    val fourDigitYear = Regex("(20\\d{2}|19\\d{2})").find(this)?.value
+    if (fourDigitYear != null) return fourDigitYear.takeLast(2)
+
+    val twoDigitYear = Regex("'?(\\d{2})\\b").find(this)?.groupValues?.getOrNull(1)
+    return twoDigitYear.orEmpty()
+}
+
+private fun String.toClassSectionLabel(): String {
+    return trim()
+        .replace(Regex("\\s*-\\s*"), " - ")
+        .replace(Regex("\\s+"), " ")
 }
 
 @Composable
@@ -341,8 +438,6 @@ fun RatingChip(
     val emptyStars = 5 - fullStars - if (hasHalfStar) 1 else 0
     val numUsersRated = rating.first  // The number of users who rated
 
-    Log.d("ProfileScreen", "$fullStars $hasHalfStar, $rating")
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -360,7 +455,7 @@ fun RatingChip(
         // Display half star if applicable
         if (hasHalfStar) {
             Icon(
-                imageVector = Icons.Filled.StarHalf,
+                imageVector = Icons.AutoMirrored.Filled.StarHalf,
                 contentDescription = null,
                 tint = Color(0xFFFFD700),
                 modifier = Modifier.size(20.dp)
@@ -380,165 +475,66 @@ fun RatingChip(
     }
 }
 
-
 @Composable
-fun Profile() {
-    /*Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Banner with Profile Photo
+fun ProfileBannerPlaceholder() {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val surface = if (isDark) Color(0xFF16262C) else Color(0xFFFFFFFF)
+    val bgBase = if (isDark) Color(0xFF101D22) else Color(0xFFF1F5F9)
+    val dotColor = if (isDark) Color(0x2613B6EC) else Color(0x3513B6EC)
+    val primary = LiquidColors.Primary
+    val icon = Icons.Rounded.Wallpaper
+
+    Box(modifier = Modifier
+        .height(150.dp)
+        .fillMaxWidth()) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-        ) {
-            // Banner Image
-            Image(
-                painter = painterResource(R.drawable.chat_img3), // Replace with your banner
-                contentDescription = "Profile banner",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            )
-
-            // Profile Photo
-            Image(
-                painter = painterResource(R.drawable.chat_img3), // Replace with your image
-                contentDescription = "Profile photo",
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.White, CircleShape)
-                    .align(Alignment.BottomCenter)
-                    .offset(y = 30.dp) // Half overlaps the banner
-            )
-        }
-
-        Spacer(modifier = Modifier.height(40.dp)) // Space for profile photo overlap
-
-        // Name and Rating
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "John Doe",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Star Rating
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                repeat(5) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = null,
-                        tint = Color(0xFFFFD700),
-                        modifier = Modifier.size(20.dp)
+                .fillMaxSize()
+                .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(surface, bgBase)))
+        )
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            val spacing = 18.dp.toPx()
+            val radius = 1.dp.toPx()
+            val cols = (size.width / spacing).toInt() + 2
+            val rows = (size.height / spacing).toInt() + 2
+            repeat(cols) { col ->
+                repeat(rows) { row ->
+                    drawCircle(
+                        color = dotColor,
+                        radius = radius,
+                        center = androidx.compose.ui.geometry.Offset(col * spacing, row * spacing)
                     )
                 }
-                Text(
-                    text = "5.0",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Headline/Bio
-        Text(
-            text = "Android Developer | Building awesome apps with Jetpack Compose",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-            textAlign = TextAlign.Center,
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = primary.copy(alpha = 0.07f),
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .size(100.dp)
+                .align(Alignment.CenterEnd)
+                .offset(x = 14.dp, y = 14.dp)
+                .rotate(-15f)
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Social Links and Chat Button
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly,
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+                .align(Alignment.Center)
+                .size(56.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                .background(
+                    androidx.compose.ui.graphics.Brush.linearGradient(
+                        colors = listOf(primary, androidx.compose.ui.graphics.Color(0xFF67E8F9))
+                    )
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = { /* LinkedIn action */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Person, // Replace with LinkedIn icon
-                    contentDescription = "LinkedIn",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            IconButton(onClick = { /* YouTube action */ }) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow, // Replace with YouTube icon
-                    contentDescription = "YouTube",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            IconButton(onClick = { /* Email action */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Email,
-                    contentDescription = "Email",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = { /* Chat action */ },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Chat,
-                    contentDescription = "Chat",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Chat")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // About Section
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Text(
-                text = "About",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Experienced Android developer with 5+ years of experience...", // Add your bio
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = androidx.compose.ui.graphics.Color.White,
+                modifier = Modifier.size(28.dp)
             )
         }
-    }*/
+    }
 }

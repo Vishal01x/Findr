@@ -1,7 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.feedback
 
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,8 @@ import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
 import com.exa.android.reflekt.loopit.core.utils.showToast
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.graphics.Color
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 
 @Composable
@@ -112,15 +115,12 @@ fun TrustedBySection(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = LocalIndication.current
-            ) { onClick() },
-        elevation = CardDefaults.cardElevation(4.dp),
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp))
+            .clickableWithNoIndication { onClick() },
+        elevation = CardDefaults.cardElevation(0.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            //contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            containerColor = LiquidColors.GlassSurface,
         )
     ) {
         Row(
@@ -208,19 +208,23 @@ fun VerifyAndRating(
     onRate: (Int) -> Unit
 ) {
     Card(
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
     ) {
         Column(Modifier.padding(16.dp)) {
             // Verify Button
             if (!isVerified) {
                 Button(
                     onClick = { onVerifyClick() },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White
                     )
                 ) {
                     Icon(
@@ -229,7 +233,7 @@ fun VerifyAndRating(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Verify Profile", style = MaterialTheme.typography.labelLarge)
+                    Text("Verify Profile", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -240,7 +244,6 @@ fun VerifyAndRating(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* Show rating dialog */ }
             ) {
                 Text(
                     text = "Rate this profile:",
@@ -262,15 +265,15 @@ fun VerifyAndRating(
 // StarRatingBar.kt
 @Composable
 fun StarRatingBar(rating: Int, onRate: (Int) -> Unit) {
-    Row {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         for (i in 1..5) {
             Icon(
                 imageVector = (if (i <= rating) Icons.Default.Star else Icons.Default.StarOutline),
                 contentDescription = "Rating",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = Color(0xFFFFB300), // Amber/Gold color
                 modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onRate(i) }
+                    .size(28.dp)
+                    .clickableWithNoIndication { onRate(i) }
             )
         }
     }

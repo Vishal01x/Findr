@@ -1,7 +1,12 @@
+@file:OptIn(ExperimentalLayoutApi::class)
+
 package com.exa.android.reflekt.loopit.presentation.main.profile.components.education
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
 
 @Composable
@@ -35,10 +42,12 @@ fun ExperienceCard(
     onEditExperience: () -> Unit
 ) {
     Card(
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -109,6 +118,13 @@ fun ExperienceCard(
                         }
                     }
                 }
+            } else {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "No experience details added yet.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
         }
@@ -123,10 +139,12 @@ fun EducationCard(
     onEditEducation: () -> Unit
 ) {
     Card(
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -180,6 +198,34 @@ fun EducationCard(
                             )
                         }
 
+                        val academicDetails = listOfNotNull(
+                            collegeInfo.year.takeIf { it.isNotBlank() }?.let { "Year: $it" },
+                            collegeInfo.semester.takeIf { it.isNotBlank() }?.let { "Semester: $it" },
+                            collegeInfo.classWithSection.takeIf { it.isNotBlank() }?.let { "Class: $it" }
+                        )
+
+                        if (academicDetails.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                academicDetails.forEach { detail ->
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                                    ) {
+                                        Text(
+                                            text = detail,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         val duration = if (collegeInfo.endDate.isNullOrBlank()) {
                             "${collegeInfo.startDate} - Present"
                         } else {
@@ -204,6 +250,13 @@ fun EducationCard(
 
                     }
                 }
+            } else {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = if (isCurUser) "Add your college, class year, semester, and section." else "No education details added yet.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

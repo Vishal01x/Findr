@@ -1,6 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.profile.feedback
 
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,6 +27,11 @@ import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
 import com.exa.android.reflekt.loopit.core.utils.showToast
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,24 +58,28 @@ fun VerifierScreen(
                 title = {
                     Text(
                         if(isVerifier)"Verifier Users" else "Profile Viewers",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        color = LiquidColors.TextPrimary
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { onBackClick() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = LiquidColors.TextPrimary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = LiquidColors.GlassSurface
                 )
             )
-        }
+        },
+        containerColor = LiquidColors.BgBase,
+        contentColor = LiquidColors.TextPrimary
     ) { paddingValues ->
+        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
 
         val error = if(isVerifier)"Verifiers" else "Viewers"
 
@@ -110,6 +119,7 @@ fun VerifierScreen(
                 }
             }
         }
+        }
     }
 }
 
@@ -122,7 +132,11 @@ fun UserProfileItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp, horizontal = 16.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(LiquidColors.GlassSurface)
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(16.dp))
+            .clickableWithNoIndication(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -144,7 +158,7 @@ fun UserProfileItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = LiquidColors.TextPrimary
             )
 
             // Headline
@@ -154,7 +168,7 @@ fun UserProfileItem(
                 maxLines = 1,
                 fontWeight = FontWeight.Medium,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = LiquidColors.TextSecondary
             )
         }
     }

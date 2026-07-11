@@ -26,6 +26,8 @@ import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.CollegeInfo
 import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
 import java.text.SimpleDateFormat
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -45,6 +47,9 @@ fun EditEducationScreen(
     var school by rememberSaveable { mutableStateOf(initialData.instituteName) }
     var stream by rememberSaveable { mutableStateOf(initialData.stream) }
     var grade by rememberSaveable { mutableStateOf(initialData.grade) }
+    var year by rememberSaveable { mutableStateOf(initialData.year) }
+    var semester by rememberSaveable { mutableStateOf(initialData.semester) }
+    var classWithSection by rememberSaveable { mutableStateOf(initialData.classWithSection) }
 
     var startDate by rememberSaveable { mutableStateOf(initialData.startDate ?: "") }
     var endDate by rememberSaveable { mutableStateOf(initialData.endDate ?: "") }
@@ -72,21 +77,22 @@ fun EditEducationScreen(
                         "Edit Education",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = LiquidColors.TextPrimary
                         )
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Back")
+                        Icon(Icons.Default.Close, contentDescription = "Back", tint = LiquidColors.TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = LiquidColors.GlassSurface
                 )
             )
         },
+        containerColor = LiquidColors.BgBase,
+        contentColor = LiquidColors.TextPrimary,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Box(Modifier.fillMaxSize()) {
@@ -116,6 +122,27 @@ fun EditEducationScreen(
                         stream = it
                         if (streamError) streamError = false
                     }
+                )
+
+                EducationTextField(
+                    label = "Year (optional)",
+                    hint = "Ex: 3rd Year",
+                    value = year,
+                    onValueChange = { year = it }
+                )
+
+                EducationTextField(
+                    label = "Semester (optional)",
+                    hint = "Ex: Semester 5",
+                    value = semester,
+                    onValueChange = { semester = it }
+                )
+
+                EducationTextField(
+                    label = "Class with section (optional)",
+                    hint = "Ex: CSE-A",
+                    value = classWithSection,
+                    onValueChange = { classWithSection = it }
                 )
 
                 DatePickerField(
@@ -165,10 +192,11 @@ fun EditEducationScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = { navController.popBackStack() }) {
-                        Text("Cancel")
+                        Text("Cancel", color = LiquidColors.TextSecondary)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
+                    Button(
+                        onClick = {
                         val areDatesValid = try {
                             val start = YearMonth.parse(startDate, formatter)
                             val end = YearMonth.parse(endDate, formatter)
@@ -193,11 +221,22 @@ fun EditEducationScreen(
 
                         if (isValid) {
                             editProfileViewModel.updateUserEducation(
-                                CollegeInfo(school, stream, startDate, endDate, grade)
+                                CollegeInfo(
+                                    instituteName = school,
+                                    stream = stream,
+                                    startDate = startDate,
+                                    endDate = endDate,
+                                    grade = grade,
+                                    year = year,
+                                    semester = semester,
+                                    classWithSection = classWithSection
+                                )
                             )
                         }
-                    }) {
-                        Text("Save")
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LiquidColors.Primary)
+                    ) {
+                        Text("Save", color = androidx.compose.ui.graphics.Color.White)
                     }
                 }
             }
@@ -256,7 +295,7 @@ fun DatePickerField(
                 Icon(
                     Icons.Default.DateRange,
                     contentDescription = "Select date",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = LiquidColors.Primary
                 )
             }
         },

@@ -37,6 +37,8 @@ import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
 import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,19 +104,20 @@ fun EditProfileHeader(
                 title = { Text("Edit Profile",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = LiquidColors.TextPrimary
                     )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Back")
+                        Icon(Icons.Default.Close, contentDescription = "Back", tint = LiquidColors.TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = LiquidColors.GlassSurface
                 )
             )
         },
+        containerColor = LiquidColors.BgBase,
+        contentColor = LiquidColors.TextPrimary,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -190,18 +193,21 @@ fun EditProfileHeader(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = { navController.popBackStack() }) {
-                        Text("Cancel")
+                        Text("Cancel", color = LiquidColors.TextSecondary)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        if (viewModel.name.isNullOrEmpty()) {
-                            nameError = true
-                        } else {
-                            nameError = false
-                            viewModel.saveProfile(newProfileData.value,mediaSharingViewModel)
-                        }
-                    }) {
-                        Text("Save")
+                    Button(
+                        onClick = {
+                            if (viewModel.name.isNullOrEmpty()) {
+                                nameError = true
+                            } else {
+                                nameError = false
+                                viewModel.saveProfile(newProfileData.value,mediaSharingViewModel)
+                            }
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LiquidColors.Primary)
+                    ) {
+                        Text("Save", color = androidx.compose.ui.graphics.Color.White)
                     }
                 }
             }
@@ -234,11 +240,11 @@ private fun ImageSelectionGroup(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable { onSelectImage() }
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(LiquidColors.GlassSurface)
                 ,
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, contentDescription = title)
+                Icon(Icons.Default.Person, contentDescription = title, tint = LiquidColors.Primary)
             }
         }
 
@@ -252,15 +258,15 @@ private fun ImageSelectionGroup(
                     .align(Alignment.BottomEnd)
                     .offset(y = 18.dp) // Half out of image
                     .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = LiquidColors.GlassSurface,
                         shape = CircleShape
                     )
-                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                    .border(2.dp, LiquidColors.GlassBorder, CircleShape)
             ) {
                 Icon(
                     imageVector = Icons.Default.PhotoCamera,
                     contentDescription = "Add logo",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = LiquidColors.Primary
                 )
             }
         }
@@ -340,7 +346,8 @@ private fun SocialLinksGroup(
         Text(
             text = "Social Links",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
+            color = LiquidColors.Primary
         )
 
         IconTextField(

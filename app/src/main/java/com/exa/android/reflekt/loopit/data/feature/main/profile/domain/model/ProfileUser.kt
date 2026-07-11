@@ -11,6 +11,7 @@ data class profileUser(
 //    val lastName: String = "",
     val name : String = "",
     val role: String = "",
+    val headline: String? = null,
     val profilePicture : String = "",
     val isStudent: Boolean = false,
     val createdAt: Timestamp? = null,
@@ -22,7 +23,11 @@ data class profileUser(
     val companyName: String = "",
     val ctc: String = "",
     val experience: String = "",
-    val rating: Float = 0f
+    val rating: Float = 0f,
+    // Enriched from profileData.collegeInfo when read for post display
+    val branch: String? = null,
+    val section: String? = null,
+    val passoutYear: String? = null  // Last 2 digits of endDate, e.g. "26" from "May 2026"
 ) {
     // Custom getter for Firestore deserialization
     constructor() : this(
@@ -30,6 +35,7 @@ data class profileUser(
         email = "",
         name = "",
         role = "",
+        headline = null,
         profilePicture = "",
         isStudent = false,
         createdAt = null,
@@ -64,7 +70,8 @@ data class profileUser(
                 companyName = map["companyName"] as? String ?: "",
                 ctc = map["ctc"] as? String ?: "",
                 experience = map["experience"] as? String ?: "",
-                rating = (map["rating"] as? Number)?.toFloat() ?: 0f
+                rating = (map["rating"] as? Number)?.toFloat() ?: 0f,
+                headline = map["headline"] as? String
             )
         }
         val Saver: Saver<profileUser?, *> = Saver(
@@ -75,6 +82,7 @@ data class profileUser(
                         it.email,
                         it.name,
                         it.role,
+                        it.headline,
                         it.profilePicture,
                         it.isStudent,
                         it.collegeName,
@@ -90,23 +98,24 @@ data class profileUser(
                 }
             },
             restore = { data ->
-                if (data is List<*> && data.size >= 14) {
+                if (data is List<*> && data.size >= 16) {
                     profileUser(
                         uid = data[0] as String,
                         email = data[1] as String,
                         name = data[2] as String,
                         role = data[3] as String,
-                        profilePicture = data[4] as String,
-                        isStudent = data[5] as Boolean,
-                        collegeName = data[6] as? String,
-                        year = data[7] as String,
-                        lat = data[8] as Double,
-                        lng = data[9] as Double,
-                        location = data[10] as String,
-                        companyName = data[11] as String,
-                        ctc = data[12] as String,
-                        experience = data[13] as String,
-                        rating = data[14] as Float
+                        headline = data[4] as String,
+                        profilePicture = data[5] as String,
+                        isStudent = data[6] as Boolean,
+                        collegeName = data[7] as? String,
+                        year = data[8] as String,
+                        lat = data[9] as Double,
+                        lng = data[10] as Double,
+                        location = data[11] as String,
+                        companyName = data[12] as String,
+                        ctc = data[13] as String,
+                        experience = data[14] as String,
+                        rating = (data[15] as Number).toFloat()
                     )
                 } else null
             }

@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.data.feature.main.profile.data.repository
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.UserRepository.ProfileDataWrapper
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
+import com.exa.android.reflekt.loopit.core.env.AppCollections
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -12,7 +13,7 @@ class ProfileRepository @Inject constructor(
 ) {
     suspend fun getUserProfile(userId: String): profileUser {
         return try {
-            val document = firestore.collection("users").document(userId).get().await()
+            val document = firestore.collection(AppCollections.USERS).document(userId).get().await()
             if (document.exists()) {
                 val profileWrapper = document.toObject(ProfileDataWrapper::class.java)
                 val profileData = profileWrapper?.profileData ?: ProfileData()
@@ -41,7 +42,7 @@ class ProfileRepository @Inject constructor(
         }
     }
     suspend fun getAllUserEmails(): List<String> {
-        val userCollection = firestore.collection("users")
+        val userCollection = firestore.collection(AppCollections.USERS)
         return try {
             userCollection.get().await().documents.mapNotNull { document ->
                 document.toObject(ProfileDataWrapper::class.java)

@@ -22,8 +22,10 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.border
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 
 @Composable
@@ -39,10 +41,13 @@ fun ProfileViews(userId: String?, viewModel: EditProfileViewModel) {
     if(profileViews > 0) {
 
         Card(
-            elevation = CardDefaults.cardElevation(4.dp),
+            elevation = CardDefaults.cardElevation(0.dp),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
+            colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
         ) {
             Column(Modifier.padding(16.dp)) {
                 // Title + Edit Icon

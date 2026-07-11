@@ -26,6 +26,8 @@ import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ExperienceInfo
 import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -69,19 +71,20 @@ fun EditExperienceScreen(
                 title = { Text("Edit Experience",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = LiquidColors.TextPrimary
                     )) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Back")
+                        Icon(Icons.Default.Close, contentDescription = "Back", tint = LiquidColors.TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = LiquidColors.GlassSurface
                 )
             )
         },
+        containerColor = LiquidColors.BgBase,
+        contentColor = LiquidColors.TextPrimary,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -181,7 +184,7 @@ fun EditExperienceScreen(
                             if (it) endDateError = null
                         }
                     )
-                    Text("Currently working here")
+                    Text("Currently working here", color = LiquidColors.TextPrimary)
                 }
 
                 AppTextField(
@@ -202,7 +205,7 @@ fun EditExperienceScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = { navController.popBackStack() }) {
-                        Text("Cancel")
+                        Text("Cancel", color = LiquidColors.TextSecondary)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
@@ -257,9 +260,10 @@ fun EditExperienceScreen(
                                     )
                                 )
                             }
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = LiquidColors.Primary)
                     ) {
-                        Text("Save")
+                        Text("Save", color = androidx.compose.ui.graphics.Color.White)
                     }
                 }
             }

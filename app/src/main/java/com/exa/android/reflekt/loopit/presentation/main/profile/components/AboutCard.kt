@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.feature.main.profile.data.viewmodel.EditProfileViewModel
 import com.exa.android.reflekt.loopit.core.network.Response
+import androidx.compose.foundation.border
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 @Composable
 fun AboutCard(
@@ -60,10 +62,12 @@ fun AboutCard(
     }
 
     Card(
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(LiquidColors.GlassSurface)
     ) {
         Column(Modifier.padding(16.dp)) {
             // Title + Edit Icon
@@ -170,12 +174,17 @@ fun AboutCard(
                 }
             } else {
                 // Normal about text with Show more/less
+                val emptyAboutText = if (isCurUser) {
+                    "Add a short intro about your goals, interests, and what you are building."
+                } else {
+                    "No about details added yet."
+                }
                 Text(
-                    text = content.ifBlank { if(isCurUser) "Describe who you are, what you do, and what you're passionate about" else "" },
+                    text = content.ifBlank { emptyAboutText },
                     maxLines = if (expanded) Int.MAX_VALUE else 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = if (content.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     )
                 )
 
