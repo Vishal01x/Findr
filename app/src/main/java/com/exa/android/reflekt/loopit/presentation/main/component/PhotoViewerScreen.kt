@@ -218,3 +218,14 @@ fun ZoomableImage( // animated double tap, two finger no pager
         )
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun PhotoViewerScreenPreview() {
+    MaterialTheme {
+        PhotoViewerScreen(
+            imageUrl = "https://picsum.photos/400",
+            onBack = {}
+        )
+    }
+}

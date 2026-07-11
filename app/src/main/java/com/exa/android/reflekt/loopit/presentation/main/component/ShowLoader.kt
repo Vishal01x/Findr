@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.component
 
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,5 +46,13 @@ fun showLoader(message: String = "Saving Changes...", modifier: Modifier = Modif
                 color = MaterialTheme.colorScheme.onTertiary
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ShowLoaderPreview() {
+    MaterialTheme {
+        showLoader()
     }
 }

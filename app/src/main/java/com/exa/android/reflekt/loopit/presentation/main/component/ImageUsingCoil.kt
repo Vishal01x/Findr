@@ -47,8 +47,10 @@ fun ImageUsingCoil(
         model = ImageRequest.Builder(context)
             .data(imageUrl)
             .crossfade(true)
-            .placeholder(placeholder) // shown while loading
-            .error(errorImage) // shown on load failure
+            .apply {
+                if (placeholder != 0) placeholder(placeholder)
+                if (errorImage != 0) error(errorImage)
+            }
             .build(),
         contentDescription = "Image message",
         modifier = modifier,
@@ -144,4 +146,15 @@ fun TrackableImage(
 //    if (error) {
 //        Text("⚠️ Failed to load image", modifier = Modifier.padding(4.dp))
 //    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ImageUsingCoilPreview() {
+    androidx.compose.material3.MaterialTheme {
+        ImageUsingCoil(
+            imageUrl = "https://picsum.photos/200",
+            modifier = Modifier.size(100.dp)
+        )
+    }
 }
