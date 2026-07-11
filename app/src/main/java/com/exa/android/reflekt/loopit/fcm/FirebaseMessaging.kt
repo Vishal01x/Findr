@@ -144,12 +144,15 @@ class FirebaseService : FirebaseMessagingService() {
         val senderId = data["senderId"] ?: ""
         if (senderId == Firebase.auth.currentUser?.uid) return
 
+        val linkStr = data["link"]
+        val deepLinkUri = if (!linkStr.isNullOrBlank()) Uri.parse(linkStr) else Uri.parse("findr://project/$projectId")
+
         notificationHelper.showNotification(
             NotificationData(
                 type = NotificationType.PROJECT_UPDATE,
                 title = data["title"] ?: "Project",
                 body = data["body"] ?: "New project update",
-                deepLink = Uri.parse("findr://project/$projectId"),
+                deepLink = deepLinkUri,
                 actions = actions,
                 largeIcon = data["imageUrl"]?.let { Uri.parse(it) },
                 groupKey = projectId,
@@ -170,12 +173,15 @@ class FirebaseService : FirebaseMessagingService() {
         val senderId = data["senderId"] ?: ""
         if (senderId == Firebase.auth.currentUser?.uid) return
 
+        val linkStr = data["link"]
+        val deepLinkUri = if (!linkStr.isNullOrBlank()) Uri.parse(linkStr) else Uri.parse("findr://project/$projectId")
+
         notificationHelper.showNotification(
             NotificationData(
                 type = NotificationType.POST,
                 title = data["title"] ?: "Post",
                 body = data["body"] ?: "New Post",
-                deepLink = Uri.parse("findr://project/$projectId"),
+                deepLink = deepLinkUri,
                 actions = actions,
                 largeIcon = data["imageUrl"]?.let { Uri.parse(it) },
                 groupKey = projectId,
@@ -195,8 +201,10 @@ class FirebaseService : FirebaseMessagingService() {
 
         //Log.d("FCM", "category - $category")
 
+        val linkStr = data["link"]
         val deepLink =
-            if (category == "viewer") Uri.parse("findr://profile_views/$senderId") else Uri.parse("findr://profile/$senderId")
+            if (!linkStr.isNullOrBlank()) Uri.parse(linkStr)
+            else if (category == "viewer") Uri.parse("findr://profile_views/$senderId") else Uri.parse("findr://profile/$senderId")
 
         notificationHelper.showNotification(
             NotificationData(

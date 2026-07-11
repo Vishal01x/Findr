@@ -16,7 +16,8 @@ fun sendProjectNotification(
     title: String,
     projectId: String?,
     senderId: String,
-    imageUrl: String?
+    imageUrl: String?,
+    link: String? = null
 ) {
     val projectNotification = NotificationContent(
         type = NotificationType.PROJECT_UPDATE,
@@ -25,6 +26,7 @@ fun sendProjectNotification(
         imageUrl = imageUrl, // user enrolled in project
         targetId = projectId ?: "Not Found",
         senderId = senderId, // the person enrolled in project
+        link = link,
 //            metadata = mapOf(
 //                "messageId" to message.messageId,
 //                "isMedia" to (message.media != null).toString()
@@ -38,7 +40,7 @@ fun sendProjectNotification(
     )
 }
 
-fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, profile: profileUser, action : String){
+fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, profile: profileUser, action : String, link: String? = null){
 
     val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
 
@@ -49,6 +51,7 @@ fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, 
             imageUrl = imageUrl, // post or creator of project
             targetId = project.id ?: "Not Found",
             senderId = "", // the person enrolled in project
+            link = link,
 //            metadata = mapOf(
 //                "messageId" to message.messageId,
 //                "isMedia" to (message.media != null).toString()
@@ -63,7 +66,7 @@ fun sendRequestUpdate(context: Context, receiverToken: String?, project : Post, 
 }
 
 
-fun sendComment(context: Context, receiverToken: String?, postId : String, profile: profileUser, comment : String){
+fun sendComment(context: Context, receiverToken: String?, postId : String, profile: profileUser, comment : String, link: String? = null){
 
     val imageUrl =  profile.profilePicture //if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
 
@@ -74,6 +77,7 @@ fun sendComment(context: Context, receiverToken: String?, postId : String, profi
         imageUrl = imageUrl, // post or creator of project
         targetId = postId,
         senderId = "", // the person enrolled in project
+        link = link,
 //            metadata = mapOf(
 //                "messageId" to message.messageId,
 //                "isMedia" to (message.media != null).toString()
@@ -87,7 +91,7 @@ fun sendComment(context: Context, receiverToken: String?, postId : String, profi
     )
 }
 
-fun sendReply(context: Context, receiverToken: String?, postId : String, profile: profileUser, reply : String){
+fun sendReply(context: Context, receiverToken: String?, postId : String, profile: profileUser, reply : String, link: String? = null){
 
     val imageUrl =  profile.profilePicture //if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
 
@@ -98,6 +102,7 @@ fun sendReply(context: Context, receiverToken: String?, postId : String, profile
         imageUrl = imageUrl, // post or creator of project
         targetId = postId ?: "Not Found",
         senderId = "", // the person enrolled in project
+        link = link,
 //            metadata = mapOf(
 //                "messageId" to message.messageId,
 //                "isMedia" to (message.media != null).toString()
@@ -127,8 +132,6 @@ fun sendPostNotification(context: Context, topic:Topics, project: Post, profile 
 //        body
 //    }
 
-    val imageUrl =  if(project.imageUrls.isNotEmpty())project.imageUrls[0] else profile.profilePicture
-
     val postNotification = NotificationContent(
         type = NotificationType.POST,
         title = title,  //"${profile.name} has posted ${project.type}",//type -> Post,Bug
@@ -149,7 +152,7 @@ fun sendPostNotification(context: Context, topic:Topics, project: Post, profile 
 
 }
 
-fun sendProfileNotification(context: Context, fcm : String?, userId : String, viewCount : Int, profileImageUrl: String){
+fun sendProfileNotification(context: Context, fcm : String?, userId : String, viewCount : Int, profileImageUrl: String, link: String? = null){
     val viewerNotification = NotificationContent(
         type = NotificationType.PROFILE,
         title = "You're getting noticed! 👀",  //"${profile.name} has posted ${project.type}",//type -> Post,Bug
@@ -157,7 +160,8 @@ fun sendProfileNotification(context: Context, fcm : String?, userId : String, vi
         imageUrl = profileImageUrl, // post else user who post
         targetId = userId,
         senderId = userId, // the person post
-        postcategory = "viewer"
+        postcategory = "viewer",
+        link = link
     )
 
     NotificationSender(context).sendNotification(
@@ -189,7 +193,36 @@ fun sendVerifyNotification(context: Context, fcm: String?, verifierUserId: Strin
 
 
 
-    fun getPostNotificationText(type: PostType): Pair<String, String> = when (type) {
+    fun sendProjectInvitation(
+    context: Context,
+    receiverToken: String?,
+    projectTitle: String,
+    inviterName: String,
+    roleName: String?,
+    postId: String,
+    link: String? = null
+) {
+    val body = if (roleName != null)
+        "$inviterName invited you to join \"$projectTitle\" as $roleName"
+    else
+        "$inviterName invited you to join \"$projectTitle\""
+    val notification = NotificationContent(
+        type = NotificationType.PROJECT_UPDATE,
+        title = "You've been invited!",
+        body = body,
+        imageUrl = null,
+        targetId = postId,
+        senderId = "",
+        link = link
+    )
+    NotificationSender(context).sendNotification(
+        deviceToken = receiverToken ?: "",
+        topics = Topics.NULL,
+        content = notification
+    )
+}
+
+fun getPostNotificationText(type: PostType): Pair<String, String> = when (type) {
     PostType.PROJECT -> "A new project needs your skills!" to "Build, collaborate, and innovate—check out the latest project post."
     PostType.HELP -> "Bug spotted in the system!" to "A bug is affecting project progress—see what’s up."
     PostType.COLLABORATION -> "Let’s team up!" to "Help build something great—join this collaboration."

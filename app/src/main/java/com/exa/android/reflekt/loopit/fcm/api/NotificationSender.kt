@@ -31,6 +31,17 @@ class NotificationSender(private val context: Context) {
 
                 if (response.isSuccessful) {
                     logNotificationSuccess(content)
+                } else if (response.code() == 401) {
+                    // Token expired — clear cache and retry once
+                    Log.w("FCM", "Token expired (401), refreshing and retrying...")
+                    com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.clearCachedToken()
+                    val newToken = getFcmAccessToken()
+                    val retryResponse = api.sendNotification("Bearer $newToken", fcmRequest).execute()
+                    if (retryResponse.isSuccessful) {
+                        logNotificationSuccess(content)
+                    } else {
+                        handleNotificationError(retryResponse, content)
+                    }
                 } else {
                     handleNotificationError(response, content)
                 }
