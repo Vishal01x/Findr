@@ -1,20 +1,23 @@
 package com.exa.android.letstalk.presentation.Main.Home.ChatDetail.components.media.docs
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,170 +51,111 @@ fun DocumentMessageItem(
         }
     }
 
-    Card(
+    val iconBoxColor = if (isSendByCurUser) Color.White.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+    val iconTint = if (isSendByCurUser) Color.White else MaterialTheme.colorScheme.primary
+    val titleColor = if (isSendByCurUser) Color.White else MaterialTheme.colorScheme.onSurface
+    val subtitleColor = if (isSendByCurUser) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .clickable(enabled = uploadStatus == UploadStatus.SUCCESS) {
+            .padding(4.dp)
+            .clickableWithNoIndication(enabled = uploadStatus == UploadStatus.SUCCESS) {
                 when (downloadState) {
                     is DownloadState.Completed -> viewModel.openFile(context, fileName)
                     is DownloadState.Failed, is DownloadState.NotStarted -> viewModel.downloadFile(context, fileUrl, fileName)
                     else -> Unit
                 }
             },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(
+        // File icon box
+        Box(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconBoxColor),
+            contentAlignment = Alignment.Center
         ) {
-            Text(text = "📄", fontSize = 30.sp)
+            Icon(
+                imageVector = Icons.Default.Description,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(24.dp)
+            )
+        }
 
-            Spacer(modifier = Modifier.width(10.dp))
+        // File name + status
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = fileName,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = titleColor
+            )
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = fileName,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    maxLines = 1
-                )
+            val statusText = when (uploadStatus) {
+                UploadStatus.UPLOADING -> "Uploading…"
+                UploadStatus.FAILED -> "Upload failed"
+                UploadStatus.NOTSUPPORTED -> "Not supported"
+                UploadStatus.SUCCESS -> when (downloadState) {
+                    is DownloadState.NotStarted -> "Tap to download"
+                    is DownloadState.Downloading -> "${((downloadState as DownloadState.Downloading).progress * 100).toInt()}%"
+                    is DownloadState.Completed -> "Downloaded"
+                    is DownloadState.Failed -> "Download failed"
+                    else -> ""
+                }
+                else -> ""
+            }
+            Text(
+                text = statusText,
+                fontSize = 12.sp,
+                color = subtitleColor
+            )
 
-                when (uploadStatus) {
-                    UploadStatus.FAILED -> Text(
-                        text = "Upload Failed. Tap to Retry",
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp
+            if (uploadStatus == UploadStatus.UPLOADING ||
+                (uploadStatus == UploadStatus.SUCCESS && downloadState is DownloadState.Downloading)) {
+                val progress = if (downloadState is DownloadState.Downloading)
+                    (downloadState as DownloadState.Downloading).progress else null
+                if (progress != null) {
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        color = iconTint
                     )
-
-                    UploadStatus.UPLOADING -> {
-                        Text(
-                            text = "Uploading...",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 12.sp
-                        )
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp)
-                        )
-                    }
-
-                    UploadStatus.NOTSUPPORTED -> showToast(
-                        context,
-                        "This file type is not supported"
+                } else {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        color = iconTint
                     )
-
-                    UploadStatus.SUCCESS -> {
-                        when (val state = downloadState) {
-                            is DownloadState.NotStarted -> Text(
-                                text = "Tap to download",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp
-                            )
-
-                            is DownloadState.Downloading -> Text(
-                                //text = "${(downloadState as DownloadState.Downloading).progress.times(100).toInt()}% downloaded",
-                                text = "${(state.progress * 100).toInt()}% downloaded",
-                                color = Color.Blue,
-                                fontSize = 12.sp
-                            )
-
-                            is DownloadState.Completed -> Text(
-                                text = "Downloaded",
-                                color = SuccessColor,
-                                fontSize = 12.sp
-                            )
-
-                            is DownloadState.Failed -> Text(
-                                text = "Download failed. Tap to Retry.",
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 12.sp
-                            )
-                        }
-                        if (downloadState is DownloadState.Downloading) {
-                            LinearProgressIndicator(
-                                progress = {
-                                    (downloadState as DownloadState.Downloading).progress // Directly access progress
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                            )
-                        }
-
-                    }
-
-                    else -> {}
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.width(10.dp))
-            Card(
-                elevation = CardDefaults.cardElevation(4.dp),
-                shape = CircleShape,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                when {
-                    uploadStatus == UploadStatus.FAILED -> {
-                        IconButton(onClick = { onRetry() }) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Retry Upload",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-
-                    uploadStatus == UploadStatus.SUCCESS -> {
-                        when (downloadState) {
-                            is DownloadState.NotStarted -> {
-                                IconButton(onClick = { viewModel.downloadFile(context,fileUrl,fileName) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Download,
-                                        contentDescription = "Download",
-                                        tint = Color.DarkGray
-                                    )
-                                }
-                            }
-
-                            is DownloadState.Failed -> {
-                                IconButton(onClick = {
-                                    viewModel.downloadFile(
-                                        context,
-                                        fileUrl,
-                                        fileName
-                                    )
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = "Download or Retry",
-                                        tint = Color.Red
-                                    )
-                                }
-                            }
-
-                            is DownloadState.Completed -> {
-                                IconButton(onClick = { viewModel.openFile(context, fileName) }) {
-                                    Text("📂", fontSize = 18.sp)
-                                }
-                            }
-
-                            is DownloadState.Downloading -> {
-                                CircularProgressIndicator(
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.Blue
-                                )
-                            }
-                        }
-                    }
+        // Action icon (retry / download indicator)
+        when {
+            uploadStatus == UploadStatus.FAILED -> {
+                IconButton(onClick = onRetry, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Retry", tint = subtitleColor)
                 }
+            }
+            uploadStatus == UploadStatus.SUCCESS && downloadState is DownloadState.NotStarted -> {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = "Download",
+                    tint = subtitleColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            uploadStatus == UploadStatus.SUCCESS && downloadState is DownloadState.Downloading -> {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(20.dp),
+                    color = iconTint
+                )
             }
         }
     }

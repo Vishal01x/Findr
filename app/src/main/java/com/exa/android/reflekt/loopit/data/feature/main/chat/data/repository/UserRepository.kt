@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.exa.android.reflekt.loopit.core.env.AppCollections
 import com.exa.android.reflekt.loopit.fcm.NotificationRepository
 import com.exa.android.reflekt.loopit.fcm.sendProfileNotification
 import com.exa.android.reflekt.loopit.fcm.sendVerifyNotification
@@ -17,6 +18,8 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.Pro
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Status
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.model.NotificationCategory
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.model.NotificationType
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -58,8 +61,8 @@ class UserRepository @Inject constructor(
 
     val currentUser = auth.currentUser?.uid
 
-    private val userCollection = db.collection("users")
-    private val chatCollection = db.collection("chats")
+    private val userCollection get() = db.collection(AppCollections.USERS)
+    private val chatCollection get() = db.collection(AppCollections.CHATS)
     private val userStatusRef = rdb.getReference("/status/$currentUser")
 
 
@@ -106,6 +109,15 @@ class UserRepository @Inject constructor(
         }
     }
 
+    suspend fun isUserOnline(userId: String): Boolean {
+        return try {
+            val snapshot = rdb.getReference("/status/$userId/isOnline").get().await()
+            snapshot.getValue(Boolean::class.java) ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     suspend fun updateUserStatus(curUser: String, isOnline: Boolean) {
         val data = mapOf(
             "isOnline" to if (isOnline) true else false,
@@ -133,7 +145,7 @@ class UserRepository @Inject constructor(
     private suspend fun fetchEnabledTopics(): List<String> = withContext(Dispatchers.IO) {
         try {
             val snapshot = FirebaseFirestore.getInstance()
-                .collection("topics")
+                .collection(AppCollections.TOPICS)
                 .whereEqualTo("enabled", true)
                 .get()
                 .await()
@@ -419,7 +431,7 @@ class UserRepository @Inject constructor(
         try {
             val doc = userCollection
                 .document(viewedUserId)
-                .collection("notifications")
+                .collection(AppCollections.NOTIFICATIONS)
                 .document("lastProfileViewNotification")
                 .get()
                 .await()
@@ -470,9 +482,24 @@ class UserRepository @Inject constructor(
         val viewersLimit = 3
 
         if (newViewsCount >= viewersLimit) {
-            // TODO: Send notification here (off main thread)
             val fcm = getUserFcm(viewedUserId)
-            sendProfileNotification(context,fcm, viewedUserId, newViewsCount, profileImageUrl)
+            val deepLink = "findr://profile_views/$viewedUserId"
+            sendProfileNotification(context, fcm, viewedUserId, newViewsCount, profileImageUrl, link = deepLink)
+            
+            com.exa.android.reflekt.loopit.data.feature.main.notification.domain.InAppNotificationHelper.sendNotification(
+                firestore = Firebase.firestore,
+                recipientId = viewedUserId,
+                type = NotificationType.VIEW,
+                category = NotificationCategory.SOCIAL,
+                title = "You're getting noticed! 👀",
+                message = "Your profile is gaining attention – $newViewsCount new views! \nTap to see your viewers.",
+                senderName = "Findr",
+                senderImageUrl = profileImageUrl,
+                senderId = viewedUserId,
+                targetId = viewedUserId,
+                route = "profile_views/$viewedUserId"
+            )
+            
             updateLastProfileViewNotificationTime(viewedUserId)
         }
     }
@@ -711,6 +738,13 @@ class UserRepository @Inject constructor(
 
         val id: String = if (userId == null && currentUser != null) currentUser else userId ?: ""
 
+        // Guard: Firestore requires a non-empty document ID
+        if (id.isBlank()) {
+            trySend(Response.Error("Invalid user ID"))
+            close()
+            return@callbackFlow
+        }
+
         val docRef = userCollection.document(id)
 
         val listener = docRef.addSnapshotListener { snapshot, error ->
@@ -733,6 +767,13 @@ class UserRepository @Inject constructor(
         trySend(Response.Loading)
 
         val userIdToUse = userId ?: currentUser ?: ""
+
+        // Guard: Firestore requires a non-empty document ID
+        if (userIdToUse.isBlank()) {
+            trySend(Response.Error("Invalid user ID"))
+            close()
+            return@callbackFlow
+        }
 
         val collectionRef = userCollection
             .document(userIdToUse)
@@ -1062,12 +1103,26 @@ class UserRepository @Inject constructor(
             withContext(Dispatchers.IO) {
                 val snapshot = userCollection.document(userId).get().await()
                 if (snapshot.exists()) {
-                    val user = snapshot.toObject(profileUser::class.java)
-                    if (user != null) {
-                        Result.success(user)
-                    } else {
-                        Result.failure(Exception("Failed to parse user data"))
-                    }
+                    val header = snapshot.get("profileData.profileHeader") as? Map<*, *>
+                    val college = snapshot.get("profileData.collegeInfo") as? Map<*, *>
+                    val user = profileUser(
+                        uid = snapshot.id,
+                        name = (header?.get("name") as? String)?.takeIf { it.isNotBlank() }
+                               ?: snapshot.getString("name") ?: "",
+                        email = header?.get("email") as? String ?: "",
+                        role = header?.get("role") as? String ?: "",
+                        headline = (header?.get("headline") as? String)?.takeIf { it.isNotBlank() },
+                        profilePicture = (header?.get("profileImageUrl") as? String)?.takeIf { it.isNotBlank() }
+                                         ?: snapshot.getString("profilePicture") ?: "",
+                        isStudent = header?.get("isStudent") as? Boolean ?: false,
+                        year = (header?.get("year") as? String)?.takeIf { it.isNotBlank() }
+                               ?: (college?.get("year") as? String)?.takeIf { it.isNotBlank() },
+                        branch = (college?.get("stream") as? String)?.takeIf { it.isNotBlank() }
+                                 ?: (header?.get("branch") as? String)?.takeIf { it.isNotBlank() },
+                        section = (college?.get("classWithSection") as? String)?.takeIf { it.isNotBlank() },
+                        passoutYear = extractPassoutYear(college?.get("endDate") as? String)
+                    )
+                    Result.success(user)
                 } else {
                     Result.failure(Exception("User not found: $userId"))
                 }
@@ -1082,6 +1137,56 @@ class UserRepository @Inject constructor(
      * Optimized for enriching multiple posts/comments at once
      * Uses Firestore's whereIn query (max 10 per query, batches if more)
      */
+    suspend fun searchUsersByQuery(query: String): Result<List<profileUser>> {
+        return try {
+            if (query.isBlank()) return Result.success(emptyList())
+            val trimmed = query.trim()
+            val lowerTrimmed = trimmed.lowercase()
+            withContext(Dispatchers.IO) {
+                // Query multiple case variants in parallel for case-insensitive prefix search
+                val nameVariants = buildSet {
+                    add(trimmed)
+                    add(lowerTrimmed)
+                    add(trimmed.uppercase())
+                    add(trimmed.replaceFirstChar { it.uppercase() })
+                    add(lowerTrimmed.replaceFirstChar { it.uppercase() })
+                }
+                val nameDocs = nameVariants.map { variant ->
+                    async {
+                        userCollection
+                            .whereGreaterThanOrEqualTo("name", variant)
+                            .whereLessThanOrEqualTo("name", variant + "\uf8ff")
+                            .limit(20)
+                            .get().await()
+                            .documents
+                    }
+                }.awaitAll().flatten()
+
+                val emailDocs = if (trimmed.contains("@")) {
+                    userCollection
+                        .whereEqualTo("email", trimmed)
+                        .limit(5)
+                        .get().await()
+                        .documents
+                } else emptyList()
+
+                val combined = (nameDocs + emailDocs)
+                    .distinctBy { it.id }
+                    .filter { it.id != auth.currentUser?.uid }
+                    .mapNotNull { doc ->
+                        doc.toObject(profileUser::class.java)?.copy(uid = doc.id)
+                    }
+                    .filter { user ->
+                        user.name.lowercase().startsWith(lowerTrimmed) ||
+                        user.email.lowercase() == lowerTrimmed
+                    }
+                Result.success(combined)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getUsersInfoByIds(userIds: List<String>): Result<Map<String, profileUser>> {
         return try {
             if (userIds.isEmpty()) {
@@ -1105,10 +1210,26 @@ class UserRepository @Inject constructor(
                                 .documents
                                 .mapNotNull { doc ->
                                     try {
-                                        val user = doc.toObject(profileUser::class.java)
-                                        if (user != null) {
-                                            doc.id to user
-                                        } else null
+                                        val header = doc.get("profileData.profileHeader") as? Map<*, *>
+                                        val college = doc.get("profileData.collegeInfo") as? Map<*, *>
+                                        val user = profileUser(
+                                            uid = doc.id,
+                                            name = (header?.get("name") as? String)?.takeIf { it.isNotBlank() }
+                                                   ?: doc.getString("name") ?: "",
+                                            email = header?.get("email") as? String ?: "",
+                                            role = header?.get("role") as? String ?: "",
+                                            headline = (header?.get("headline") as? String)?.takeIf { it.isNotBlank() },
+                                            profilePicture = (header?.get("profileImageUrl") as? String)?.takeIf { it.isNotBlank() }
+                                                             ?: doc.getString("profilePicture") ?: "",
+                                            isStudent = header?.get("isStudent") as? Boolean ?: false,
+                                            year = (header?.get("year") as? String)?.takeIf { it.isNotBlank() }
+                                                   ?: (college?.get("year") as? String)?.takeIf { it.isNotBlank() },
+                                            branch = (college?.get("stream") as? String)?.takeIf { it.isNotBlank() }
+                                                     ?: (header?.get("branch") as? String)?.takeIf { it.isNotBlank() },
+                                            section = (college?.get("classWithSection") as? String)?.takeIf { it.isNotBlank() },
+                                            passoutYear = extractPassoutYear(college?.get("endDate") as? String)
+                                        )
+                                        doc.id to user
                                     } catch (e: Exception) {
                                         null
                                     }
@@ -1132,6 +1253,9 @@ class UserRepository @Inject constructor(
         }
     }
 
-
+    private fun extractPassoutYear(endDate: String?): String? {
+        if (endDate.isNullOrBlank()) return null
+        return Regex("\\d{4}").find(endDate)?.value?.takeLast(2)
+    }
 }
 

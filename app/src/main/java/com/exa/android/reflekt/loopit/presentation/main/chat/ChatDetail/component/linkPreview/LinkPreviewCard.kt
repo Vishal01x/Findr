@@ -7,7 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Patterns
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -151,7 +151,7 @@ fun LinkPreviewCard(
                 .fillMaxWidth()
                 .height(120.dp)
                 .clip(MaterialTheme.shapes.medium)
-                .clickable(enabled = selectedMessagesSize <= 0) { onClick() }
+                .clickableWithNoIndication(enabled = selectedMessagesSize <= 0) { onClick() }
         )
         Spacer(modifier = Modifier.height(4.dp))
     }
@@ -159,12 +159,11 @@ fun LinkPreviewCard(
     Column(
         modifier = Modifier
             .background(
-                if (isSentByMe) Color.White.copy(alpha = .1f) else Color.White.copy(
-                    alpha = .4f
-                )
+                if (isSentByMe) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
             )
             .padding(4.dp)
-            .clickable(enabled = selectedMessagesSize <= 0) { onClick() }
+            .clickableWithNoIndication(enabled = selectedMessagesSize <= 0) { onClick() }
     ) {
 
         Text(

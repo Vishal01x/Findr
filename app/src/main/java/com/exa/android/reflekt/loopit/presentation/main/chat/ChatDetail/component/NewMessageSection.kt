@@ -72,7 +72,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
 import com.exa.android.reflekt.loopit.core.utils.AudioWaveForm
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
@@ -93,7 +92,7 @@ fun NewMessageSection(
     typingTo: String,
     replyTo: Message?,
     isOtherUserBlocked: Boolean,
-    viewModel: UserViewModel,
+    onTypingStatusChange: (message: String) -> Unit,
     editMessage: Message?,
     focusRequester: FocusRequester,
     onTextMessageSend: (String, Message?) -> Unit,
@@ -102,7 +101,12 @@ fun NewMessageSection(
     onUnblockClick: () -> Unit,
     onSendOrDiscard: () -> Unit,
     onDone: () -> Unit,
-    onFocusChange: (FocusState) -> Unit
+    onFocusChange: (FocusState) -> Unit,
+    requestInputState: RequestInputState = RequestInputState.NORMAL,
+    otherUserName: String = "",
+    onApproveRequest: () -> Unit = {},
+    onDeclineRequest: () -> Unit = {},
+    onAllowMessages: () -> Unit = {}
 ) {
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
@@ -140,31 +144,51 @@ fun NewMessageSection(
     }
 
     if (!isRecording) {
-        // Text Input UI
-        SendTFMessage(
-            curUser,
-            members,
-            editMessage,
-            replyTo,
-            isOtherUserBlocked,
-            focusRequester,
-            onSendClick = { message, replyTo ->
-                onSendOrDiscard()
-                onTextMessageSend(message, replyTo)
-            },
-            onAddClick = onAddClick,
-            onMicClick = { isRecording = true },
-            onTyping = { message ->
-                if (message.isEmpty())
-                    viewModel.setTypingStatus(curUser, "")
-                else
-                    viewModel.setTypingStatus(curUser, typingTo)
-            },
-            onUnblockClick = onUnblockClick,
-            onDiscardReply = onSendOrDiscard,
-            onDone = onDone,
-            onFocusChange = onFocusChange
-        )
+        // Request-gated bottom bar states
+        when (requestInputState) {
+            RequestInputState.SENDER_PENDING ->
+                SenderPendingBar(receiverName = otherUserName)
+            RequestInputState.SENDER_REJECTED ->
+                SenderRejectedBar(receiverName = otherUserName)
+            RequestInputState.RECEIVER_PENDING ->
+                ReceiverRequestCard(
+                    senderName = otherUserName,
+                    senderProfileUrl = null,
+                    onAccept = onApproveRequest,
+                    onDecline = onDeclineRequest
+                )
+            RequestInputState.RECEIVER_DECLINED ->
+                ReceiverDeclinedBar(
+                    senderName = otherUserName,
+                    onAllowMessages = onAllowMessages
+                )
+            else -> {
+                // NORMAL or SENDER_HINT — show regular input
+                SendTFMessage(
+                    curUser,
+                    members,
+                    editMessage,
+                    replyTo,
+                    isOtherUserBlocked,
+                    focusRequester,
+                    onSendClick = { message, replyTo ->
+                        onSendOrDiscard()
+                        onTextMessageSend(message, replyTo)
+                    },
+                    onAddClick = onAddClick,
+                    onMicClick = { isRecording = true },
+                    onTyping = { message -> onTypingStatusChange(message) },
+                    onUnblockClick = onUnblockClick,
+                    onDiscardReply = onSendOrDiscard,
+                    onDone = onDone,
+                    onFocusChange = onFocusChange,
+                    topHint = if (requestInputState == RequestInputState.SENDER_HINT) {
+                        { msgsUsed -> SenderRemainingHint(msgsUsed) }
+                    } else null,
+                    senderMessageCount = 0
+                )
+            }
+        }
     } else {
         // Audio Recording UI
 //        SendAudioMessage(
@@ -200,7 +224,9 @@ fun SendTFMessage(
     onUnblockClick: () -> Unit,
     onDiscardReply: () -> Unit,
     onDone: () -> Unit,
-    onFocusChange: (FocusState) -> Unit
+    onFocusChange: (FocusState) -> Unit,
+    topHint: (@Composable (messagesUsed: Int) -> Unit)? = null,
+    senderMessageCount: Int = 0
 ) {
     var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -217,7 +243,7 @@ fun SendTFMessage(
     }
 
     val hasText = textFieldValue.text.isNotEmpty()
-    val inputBg = MaterialTheme.colorScheme.surface
+    val inputBg = MaterialTheme.colorScheme.surfaceVariant
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val sendBtnBg =
         if (hasText) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
@@ -228,8 +254,8 @@ fun SendTFMessage(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 5.dp,
-        tonalElevation = 2.dp,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
@@ -288,40 +314,44 @@ fun SendTFMessage(
                     }
                 }
 
-                // ── Main bar ─────────────────────────────────────────────────
-                // Matches reference: [◉+]  [────── pill input ──────]  [◉↑]
+                // ── Remaining-messages hint (sits just above system nav) ────
+                topHint?.invoke(senderMessageCount)
+
+                // ── Main bar: single outer pill [+ | text… | ↑] ─────────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(inputBg)
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    // ── + circular button ──────────────────────────────────
+                    // ── + button (darker accent circle inside pill) ────────
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(inputBg)
+                            .background(MaterialTheme.colorScheme.surface)
                     ) {
                         IconButton(onClick = onAddClick) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Add attachment",
                                 tint = onSurfaceColor,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
 
-                    // ── Pill-shaped text input ────────────────────────────
+                    // ── Text input (transparent, flexible) ────────────────
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(30.dp))
-                            .background(inputBg)
-                            .padding(horizontal = 18.dp, vertical = 12.dp),
+                            .padding(horizontal = 8.dp)
+                            .heightIn(min = 20.dp, max = 120.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         if (textFieldValue.text.isEmpty()) {
@@ -339,7 +369,6 @@ fun SendTFMessage(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 20.dp, max = 120.dp)
                                 .focusRequester(focusRequester)
                                 .onFocusChanged { onFocusChange(it) },
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
@@ -361,13 +390,13 @@ fun SendTFMessage(
                         )
                     }
 
-                    // ── Send circular button ──────────────────────────────
+                    // ── Send circle (primary bg inside pill) ──────────────
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(sendBtnBg)
+                            .background(MaterialTheme.colorScheme.primary)
                     ) {
                         IconButton(
                             onClick = {
@@ -382,8 +411,8 @@ fun SendTFMessage(
                             Icon(
                                 imageVector = Icons.Default.Send,
                                 contentDescription = "Send message",
-                                tint = sendIconTint,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }

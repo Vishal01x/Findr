@@ -12,7 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,10 +68,13 @@ import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.componen
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.DeleteMessageDialog
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.dialog.ReportUserDialog
 import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.post.components.UserAvatar
+import com.exa.android.reflekt.loopit.presentation.main.post.components.AvatarSize
 import com.exa.android.reflekt.loopit.core.utils.formatTimestamp
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Status
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.*
 
 
 @Composable
@@ -100,9 +105,10 @@ fun ChatHeader(
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
-        color = colorScheme.surface,
-        shadowElevation = 2.dp
+        color = LiquidColors.GlassSurface,
+        shadowElevation = 0.dp
     ) {
+        Column {
         AnimatedVisibility(
             visible = selectedMessages.isNotEmpty(),
             enter = fadeIn(tween(200)),
@@ -141,6 +147,11 @@ fun ChatHeader(
                 onBlockClick = { onBlockClick() },
                 onReportClick = onReportClick
             )
+        }
+        HorizontalDivider(
+            color = LiquidColors.GlassBorder,
+            thickness = 0.5.dp
+        )
         }
     }
 }
@@ -240,8 +251,8 @@ fun PlaceIcons(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
-            .background(colorScheme.surface)
-            .clickable(false) { }
+            .background(LiquidColors.GlassSurface)
+            .clickableWithNoIndication(enabled = false) { }
             .padding(vertical = Spacing.extraSmall, horizontal = Spacing.small),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -255,7 +266,7 @@ fun PlaceIcons(
 
             Text(
                 text = selectedMessages.toString(),
-                color = colorScheme.onSurface,
+                color = LiquidColors.TextPrimary,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -285,7 +296,7 @@ fun ShowIcon(iconData: IconData, rotationAngle: Float = 0f) {
                     modifier = Modifier
                         .rotate(rotationAngle)
                         .size(24.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = LiquidColors.TextPrimary
                 )
             }
 
@@ -296,7 +307,7 @@ fun ShowIcon(iconData: IconData, rotationAngle: Float = 0f) {
                     modifier = Modifier
                         .rotate(rotationAngle)
                         .size(24.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = LiquidColors.TextPrimary
                 )
             }
         }
@@ -339,7 +350,7 @@ fun HeaderWithProfile(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Back",
-                    tint = colorScheme.onSurface,
+                    tint = LiquidColors.TextPrimary,
                     modifier = Modifier.size(30.dp)
                 )
             }
@@ -353,16 +364,14 @@ fun HeaderWithProfile(
                 } else {
                     Brush.linearGradient(listOf(colorScheme.outline, colorScheme.outline))
                 }
-                ImageUsingCoil(
-                    context = context,
-                    imageUrl = if (isCurUserBlock) "" else otherUser?.profilePicture,
-                    placeholder = R.drawable.placeholder,
-                    errorImage = R.drawable.placeholder,
+                val imgUrl = if (isCurUserBlock) "" else otherUser?.profilePicture
+                UserAvatar(
+                    imageUrl = imgUrl?.takeIf { it.isNotBlank() },
+                    userName = otherUser?.name ?: "Unknown",
+                    size = AvatarSize.ChatHeader,
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
                         .border(2.dp, borderBrush, CircleShape)
-                        .clickable { onProfileClick() }
+                        .clickableWithNoIndication { onProfileClick() }
                 )
 
                 // Animated online dot
@@ -394,14 +403,14 @@ fun HeaderWithProfile(
             // Name and Status
             Column(
                 modifier = Modifier
-                    .clickable(!isSelected) { onProfileClick() }
+                    .clickableWithNoIndication(enabled = !isSelected) { onProfileClick() }
                     .weight(1f)
                     .padding(vertical = 4.dp)
             ) {
                 Text(
                     text = otherUser?.name ?: "---",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = colorScheme.onPrimaryContainer,
+                    color = LiquidColors.TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -448,18 +457,6 @@ fun HeaderWithProfile(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
         ) {
-            IconButton(
-                onClick = { expanded.value = true },
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "More options",
-                    tint = colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
             var showBlockDialog by remember { mutableStateOf(false) }
             var showReportDialog by remember { mutableStateOf(false) }
 
@@ -488,7 +485,7 @@ fun HeaderWithProfile(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More options",
-                        tint = colorScheme.onPrimaryContainer,
+                        tint = LiquidColors.TextPrimary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -496,7 +493,7 @@ fun HeaderWithProfile(
                     expanded = expanded.value,
                     onDismissRequest = { expanded.value = false },
                     modifier = Modifier
-                        .background(colorScheme.surface)
+                        .background(LiquidColors.GlassSurface)
                         .clip(RoundedCornerShape(16.dp))
                 ) {
                     DropdownMenuItem(

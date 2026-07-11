@@ -2,12 +2,8 @@ package com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository
 
 import android.content.Context
 import android.util.Log
-//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.FCMRequest
-//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.MessageData
+import com.exa.android.reflekt.loopit.core.env.AppCollections
 import com.exa.android.reflekt.loopit.fcm.api.NotificationContent
-//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.NotificationData
-//import com.exa.android.reflekt.loopit.data.remote.main.api.fcm.RetrofitInstance
-//import com.exa.android.reflekt.loopit.fcm.FirebaseAuthHelper.getAccessToken
 import com.exa.android.reflekt.loopit.fcm.api.NotificationSender
 import com.exa.android.reflekt.loopit.fcm.NotificationType
 import com.exa.android.reflekt.loopit.fcm.Topics
@@ -19,6 +15,12 @@ import com.exa.android.reflekt.loopit.core.utils.generateChatId
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ChatList
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Media
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest.Companion.MAX_REQUEST_MESSAGES
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest.Companion.STATUS_ACCEPTED
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest.Companion.STATUS_NONE
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest.Companion.STATUS_PENDING
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest.Companion.STATUS_REJECTED
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -28,6 +30,10 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.InAppNotificationHelper
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.UserRepository
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.model.NotificationType as AppNotificationType
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.model.NotificationCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,12 +61,12 @@ import javax.inject.Inject
 class ChatRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
-    //private val userRepository: UserRepository,
+    private val userRepository: UserRepository,
     @ApplicationContext private val context: Context
 ) {
-    private val userCollection = db.collection("users")
-    private val chatCollection = db.collection("chats")
-    val currentUser = auth.currentUser?.uid
+    private val userCollection get() = db.collection(AppCollections.USERS)
+    private val chatCollection get() = db.collection(AppCollections.CHATS)
+    val currentUser get() = auth.currentUser?.uid
 
     suspend fun getCurUser(): User? {
         val user = userCollection.document(currentUser!!).get().await()
@@ -81,7 +87,7 @@ class ChatRepository @Inject constructor(
     fun updateToken(token: String?) {
         if (token == null || currentUser.isNullOrEmpty()) return
 
-        val userRef = userCollection.document(currentUser)
+        val userRef = userCollection.document(currentUser!!)
 
         val data = mapOf("fcmToken" to token)
 
@@ -106,7 +112,6 @@ class ChatRepository @Inject constructor(
     ): String? {
         val userId1 = auth.currentUser?.uid ?: return null
         val chatId = generateChatId(userId1, userId2)
-        // val curUserFcm = userRepository.getUserFcm(currentUser!!)
         val finalMessageId = messageId ?: UUID.randomUUID().toString()
 
         val members = if (isCurUserBlocked) listOf(userId1) else listOf(userId1, userId2)
@@ -138,31 +143,40 @@ class ChatRepository @Inject constructor(
 
         try {
             withContext(Dispatchers.IO) {
-
-                val messageRef = chatCollection.document(chatId).collection("messages")
-                messageRef.document(finalMessageId).set(encryptedMessage).await()
-
                 val chatDoc = chatCollection.document(chatId)
                 val snapshot = chatDoc.get().await()
 
-                val text =
-                    if (message.media != null) message.media.mediaType.name else message.message
+                // ── Message Request enforcement ──────────────────────────────
+                val requestMap = snapshot.get("messageRequest") as? Map<*, *>
+                val reqStatus = requestMap?.get("status") as? String ?: STATUS_NONE
+                val reqSenderId = requestMap?.get("senderId") as? String ?: ""
+                val reqCount = (requestMap?.get("senderMessageCount") as? Long)?.toInt() ?: 0
 
+                // Block sender if request is pending/rejected and they are the initiator
+                val isInitiator = reqSenderId == userId1 || reqSenderId.isEmpty()
+                if (isInitiator && reqStatus == STATUS_PENDING) return@withContext
+                if (isInitiator && reqStatus == STATUS_REJECTED) return@withContext
+
+                // Write message
+                val messageRef = chatCollection.document(chatId).collection("messages")
+                messageRef.document(finalMessageId).set(encryptedMessage).await()
+
+                val displayText = if (message.media != null) message.media.mediaType.name else message.message
+
+                // ── Chat-level metadata ──────────────────────────────────────
                 if (snapshot.exists()) {
                     chatDoc.update(
                         mapOf(
-                            "lastMessage" to text,
+                            "lastMessage" to displayText,
                             "lastMessageTimestamp" to message.timestamp,
-                            "unreadMessages.$userId2" to if (!isCurUserBlocked) FieldValue.increment(
-                                1
-                            ) else FieldValue.increment(0),
+                            "unreadMessages.$userId2" to if (!isCurUserBlocked) FieldValue.increment(1) else FieldValue.increment(0),
                             "unreadMessages.$userId1" to 0
                         )
                     ).await()
                 } else {
                     chatDoc.set(
                         mapOf(
-                            "lastMessage" to text,
+                            "lastMessage" to displayText,
                             "lastMessageTimestamp" to message.timestamp,
                             "unreadMessages" to mapOf(userId1 to 0, userId2 to 1)
                         )
@@ -173,16 +187,113 @@ class ChatRepository @Inject constructor(
 
                 chatCollection.document(chatId)
                     .set(mapOf("users" to listOf(userId1, userId2)), SetOptions.merge()).await()
+
+                // ── Update request tracking (only if not already accepted) ──
+                if (reqStatus != STATUS_ACCEPTED) {
+                    val newCount = reqCount + 1
+                    val newStatus = when {
+                        newCount >= MAX_REQUEST_MESSAGES -> STATUS_PENDING
+                        else -> STATUS_NONE
+                    }
+                    chatDoc.set(
+                        mapOf(
+                            "messageRequest" to mapOf(
+                                "status" to newStatus,
+                                "senderId" to userId1,
+                                "receiverId" to userId2,
+                                "senderMessageCount" to newCount,
+                                "timestamp" to Timestamp.now()
+                            )
+                        ),
+                        SetOptions.merge()
+                    ).await()
+                }
             }
 
             if (!receiverToken.isNullOrEmpty()) {
-                sendPushNotification(receiverToken,message, curUser)
+                sendPushNotification(receiverToken, message, curUser)
+            }
+            if (!userRepository.isUserOnline(userId2)) {
+                InAppNotificationHelper.sendNotification(
+                    firestore = db,
+                    recipientId = userId2,
+                    type = AppNotificationType.MESSAGE,
+                    category = NotificationCategory.SOCIAL,
+                    title = curUser?.name ?: "User",
+                    message = if (message.media != null) message.media.mediaType.name else message.message,
+                    senderName = curUser?.name,
+                    senderImageUrl = curUser?.profilePicture,
+                    senderId = userId1,
+                    targetId = message.chatId,
+                    route = "chat_detail/$userId1"
+                )
             }
 
             return finalMessageId
         } catch (e: Exception) {
             // Log.e("FirestoreService", "Error sending message: ${e.localizedMessage}", e)
             return null
+        }
+    }
+
+    // ── Message Request API ──────────────────────────────────────────────────
+
+    fun observeMessageRequest(chatId: String): Flow<Response<MessageRequest>> = callbackFlow {
+        trySend(Response.Loading)
+        val listener = chatCollection.document(chatId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Response.Error(error.message ?: "Unknown error"))
+                    return@addSnapshotListener
+                }
+                if (snapshot == null || !snapshot.exists()) {
+                    trySend(Response.Success(MessageRequest()))
+                    return@addSnapshotListener
+                }
+                val map = snapshot.get("messageRequest") as? Map<*, *>
+                val req = if (map == null) MessageRequest() else MessageRequest(
+                    status = map["status"] as? String ?: STATUS_NONE,
+                    senderId = map["senderId"] as? String ?: "",
+                    receiverId = map["receiverId"] as? String ?: "",
+                    senderMessageCount = (map["senderMessageCount"] as? Long)?.toInt() ?: 0,
+                    timestamp = map["timestamp"] as? Timestamp ?: Timestamp.now()
+                )
+                trySend(Response.Success(req))
+            }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun approveMessageRequest(chatId: String): Response<Boolean> {
+        return try {
+            chatCollection.document(chatId)
+                .set(mapOf("messageRequest" to mapOf("status" to STATUS_ACCEPTED)), SetOptions.merge())
+                .await()
+            Response.Success(true)
+        } catch (e: Exception) {
+            Response.Error(e.localizedMessage ?: "Failed to approve request")
+        }
+    }
+
+    suspend fun rejectMessageRequest(chatId: String): Response<Boolean> {
+        return try {
+            chatCollection.document(chatId)
+                .set(mapOf("messageRequest" to mapOf("status" to STATUS_REJECTED)), SetOptions.merge())
+                .await()
+            Response.Success(true)
+        } catch (e: Exception) {
+            Response.Error(e.localizedMessage ?: "Failed to reject request")
+        }
+    }
+
+    suspend fun reEnableMessageRequest(chatId: String): Response<Boolean> {
+        // Receiver explicitly allows messaging again after rejection
+        return try {
+            chatCollection.document(chatId)
+                .set(mapOf("messageRequest" to mapOf("status" to STATUS_ACCEPTED)), SetOptions.merge())
+                .await()
+            Response.Success(true)
+        } catch (e: Exception) {
+            Response.Error(e.localizedMessage ?: "Failed to re-enable messaging")
         }
     }
 
@@ -211,8 +322,8 @@ class ChatRepository @Inject constructor(
     private fun updateUserList(currentUser: String, newUser: String) {
         val userRef = userCollection.document(currentUser)
         userRef.update("user_list", FieldValue.arrayUnion(newUser))
-            .addOnSuccessListener { println("User chats updated successfully") }
-            .addOnFailureListener { e -> println("Error updating user chats: ${e.message}") }
+            .addOnSuccessListener { }
+            .addOnFailureListener { }
     }
 
     suspend fun updateMessage(message: Message, newText: String) {
@@ -228,6 +339,18 @@ class ChatRepository @Inject constructor(
         } catch (e: Exception) {
             // Log.d("FireStore Operation", "Error in Message Edition - ${e.message}")
         }
+    }
+
+    suspend fun toggleReaction(chatId: String, messageId: String, userId: String, emoji: String) {
+        val messageRef = chatCollection.document(chatId).collection("messages").document(messageId)
+        try {
+            val existing = messageRef.get().await().getString("reactions.$userId")
+            if (existing == emoji) {
+                messageRef.update("reactions.$userId", FieldValue.delete()).await()
+            } else {
+                messageRef.update("reactions.$userId", emoji).await()
+            }
+        } catch (_: Exception) {}
     }
 
     suspend fun updateMediaMessage(messageId: String, otherUserId: String, media: Media?) {
@@ -254,23 +377,41 @@ class ChatRepository @Inject constructor(
         val chatRef = chatCollection.document(chatId).collection("messages")
 
         try {
-            coroutineScope {
-                messages.map { messageId ->
-                    async {
-                        val messageRef = chatRef.document(messageId)
-                        if (deleteFor == 2) {
-                            messageRef.update("message", "deleted").await()
-                        } else {
-                            messageRef.update("members", FieldValue.arrayRemove(currentUser)).await()
-                            val members = messageRef.get().await().get("members") as? List<*> ?: emptyList<Any>()
-                            if (members.isEmpty())messageRef.delete().await() else {}
-                        }
-                    }
-                }.awaitAll()
+            val batch = db.batch()
+            for (messageId in messages) {
+                val messageRef = chatRef.document(messageId)
+                if (deleteFor == 2) {
+                    batch.update(
+                        messageRef,
+                        "message", "deleted",
+                        "reactions", emptyMap<String, String>()
+                    )
+                } else {
+                    batch.update(messageRef, "members", FieldValue.arrayRemove(currentUser))
+                }
             }
+            batch.commit().await()
             onCleared()
+
+            // For delete for me, we also want to clean up documents that have empty members.
+            // We do this after the batch commit to ensure consistency.
+            if (deleteFor == 1) {
+                coroutineScope {
+                    messages.map { messageId ->
+                        async {
+                            try {
+                                val messageRef = chatRef.document(messageId)
+                                val members = messageRef.get().await().get("members") as? List<*> ?: emptyList<Any>()
+                                if (members.isEmpty()) messageRef.delete().await()
+                            } catch (e: Exception) {
+                                // Ignore cleanup failures
+                            }
+                        }
+                    }.awaitAll()
+                }
+            }
         } catch (e: Exception) {
-            // Log.e("Firestore", "Error in parallel message deletion: ${e.message}")
+            // Log.e("Firestore", "Error in message deletion: ${e.message}")
         }
     }
 
@@ -368,7 +509,7 @@ class ChatRepository @Inject constructor(
                             val encryptedMessages =
                                 snapshot?.toObjects(Message::class.java) ?: emptyList()
 
-                            val decryptedMessages = encryptedMessages.map { msg ->
+                            val decryptedMessages = encryptedMessages.filter { it.members.contains(currentUser) }.map { msg ->
                                 try {
                                     if (msg.media != null) {
                                         val decryptedMedia = msg.media?.copy(
@@ -712,21 +853,22 @@ class ChatRepository @Inject constructor(
                         val isCurUserBlocked = blockedUserIds.contains(currentUser)
                         val isOtherUserBlocked = blockedUserIds.contains(otherUserId)
 
-                        //Log.d("FireStore Service", "$blockUsersMap  $blockedUserIds $isOtherUserBlocked $isCurUserBlocked")
+                        val reqMap = snapshot.get("messageRequest") as? Map<*, *>
+                        val reqStatus = reqMap?.get("status") as? String ?: STATUS_NONE
+                        val reqSenderId = reqMap?.get("senderId") as? String ?: ""
 
                         val chat = ChatList(
                             userId = otherUserId,
                             name = profileData.name,
                             profilePicture = if (isCurUserBlocked) "" else profileData.profilePicture,
-                            lastMessage = if (isOtherUserBlocked) "" else lastMessage, // Important change
-                            lastMessageTimestamp = if (isOtherUserBlocked) Timestamp(
-                                0,
-                                0
-                            ) else timestamp,
+                            lastMessage = if (isOtherUserBlocked) "" else lastMessage,
+                            lastMessageTimestamp = if (isOtherUserBlocked) Timestamp(0, 0) else timestamp,
                             unreadMessages = if (isOtherUserBlocked) 0 else unread,
                             fcmToken = profileData.fcmToken,
                             isCurUserBlock = isCurUserBlocked,
-                            isOtherBlock = isOtherUserBlocked
+                            isOtherBlock = isOtherUserBlocked,
+                            requestStatus = reqStatus,
+                            requestSenderId = reqSenderId
                         )
 
                         // Only update if the chat data has changed

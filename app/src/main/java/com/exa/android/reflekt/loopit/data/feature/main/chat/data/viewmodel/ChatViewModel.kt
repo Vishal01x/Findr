@@ -10,6 +10,7 @@ import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ChatList
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Media
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -43,6 +44,9 @@ class ChatViewModel @Inject constructor(
 
     private val _unreadCount = mutableStateOf(0)
     val unreadCount: State<Int> = _unreadCount
+
+    private val _pendingRequestCount = mutableStateOf(0)
+    val pendingRequestCount: State<Int> = _pendingRequestCount
 
     val curUserId = MutableStateFlow("")
     val curUser = MutableStateFlow<User?>(null)
@@ -133,7 +137,10 @@ class ChatViewModel @Inject constructor(
     }
 
 
-    fun getChatList() {
+    fun getChatList(forceRefresh: Boolean = false) {
+        if (!forceRefresh && _chatList.value is Response.Success) {
+            return
+        }
         viewModelScope.launch {
             repo.getChatList(curUserId.value)
                 .flowOn(Dispatchers.IO)
@@ -145,6 +152,13 @@ class ChatViewModel @Inject constructor(
                     if (response is Response.Success) {
                         val totalUnreadChats = response.data.count { it.unreadMessages > 0 }
                         _unreadCount.value = totalUnreadChats
+
+                        val totalPendingRequests = response.data.count { chat ->
+                            chat.requestStatus == "pending" &&
+                            chat.requestSenderId != curUserId.value &&
+                            chat.requestSenderId.isNotEmpty()
+                        }
+                        _pendingRequestCount.value = totalPendingRequests
                     }
 
                 }
@@ -164,6 +178,13 @@ class ChatViewModel @Inject constructor(
     fun updateMessage(message: Message, newText: String) {
         viewModelScope.launch {
             repo.updateMessage(message, newText)
+        }
+    }
+
+    fun toggleReaction(chatId: String, messageId: String, emoji: String) {
+        val userId = curUserId.value.ifEmpty { return }
+        viewModelScope.launch {
+            repo.toggleReaction(chatId, messageId, userId, emoji)
         }
     }
 
@@ -213,5 +234,26 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    // ── Message Request ────────────────────────────────────────────────────
 
+    private val _messageRequest = MutableStateFlow<Response<MessageRequest>>(Response.Loading)
+    val messageRequest: StateFlow<Response<MessageRequest>> = _messageRequest.asStateFlow()
+
+    fun observeMessageRequest(chatId: String) {
+        viewModelScope.launch {
+            repo.observeMessageRequest(chatId).collect { _messageRequest.value = it }
+        }
+    }
+
+    fun approveMessageRequest(chatId: String) {
+        viewModelScope.launch { repo.approveMessageRequest(chatId) }
+    }
+
+    fun rejectMessageRequest(chatId: String) {
+        viewModelScope.launch { repo.rejectMessageRequest(chatId) }
+    }
+
+    fun reEnableMessageRequest(chatId: String) {
+        viewModelScope.launch { repo.reEnableMessageRequest(chatId) }
+    }
 }

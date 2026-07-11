@@ -25,7 +25,8 @@ data class Message(
     val timestamp: Timestamp = Timestamp.now(),
     val status: String = "sent", // Status could be "sent", "delivered", or "read"
     val replyTo: Message? = null,
-    val members: List<String?> = emptyList()
+    val members: List<String?> = emptyList(),
+    val reactions: Map<String, String>? = null
 )
 
 data class Media(
@@ -61,8 +62,28 @@ data class ChatList(
     val unreadMessages : Long = 0,
     val fcmToken : String? = "",
     val isCurUserBlock : Boolean = false,
-    val isOtherBlock: Boolean = false
+    val isOtherBlock: Boolean = false,
+    // Message request fields
+    val requestStatus: String = "none",   // "none" | "pending" | "accepted" | "rejected"
+    val requestSenderId: String = ""       // userId of who initiated the conversation
 )
+
+// Tracks the message-request lifecycle stored inside chats/{chatId}.messageRequest
+data class MessageRequest(
+    val status: String = "none",           // "none" | "pending" | "accepted" | "rejected"
+    val senderId: String = "",
+    val receiverId: String = "",
+    val senderMessageCount: Int = 0,
+    val timestamp: Timestamp = Timestamp.now()
+) {
+    companion object {
+        const val STATUS_NONE = "none"
+        const val STATUS_PENDING = "pending"
+        const val STATUS_ACCEPTED = "accepted"
+        const val STATUS_REJECTED = "rejected"
+        const val MAX_REQUEST_MESSAGES = 3
+    }
+}
 
 data class Status(
     val isOnline: Boolean = false,

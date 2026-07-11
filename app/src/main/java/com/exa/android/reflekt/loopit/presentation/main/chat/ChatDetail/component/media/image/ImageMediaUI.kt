@@ -52,12 +52,17 @@ fun ImageMessageContent(
     }
 
     Box(modifier = Modifier
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.LightGray)
-        .clickable { onImageClick() /*viewModel.openFile(context, fileName)*/ }) {
+        .clip(RoundedCornerShape(20.dp))
+        .clickable { onImageClick() }) {
+
+        val placeholderRes = if (uploadStatus == UploadStatus.UPLOADING) {
+            R.drawable.ic_chat_image_placeholder
+        } else {
+            0
+        }
 
         ImageUsingCoil(
-            context,imageUrl, R.drawable.placeholder, Modifier
+            context, imageUrl, placeholderRes, Modifier
             .fillMaxWidth()
             .height(200.dp)
         )

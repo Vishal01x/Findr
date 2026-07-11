@@ -2,40 +2,25 @@ package com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail
 
 import android.content.Context
 import android.net.Uri
-//import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.BlendMode.Companion.Color
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,412 +28,302 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.ChatViewModel
-import com.exa.android.reflekt.loopit.data.feature.main.media.viewmodel.MediaSharingViewModel
-import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
-import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.ChatHeader
-import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.MessageList
-import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.NewMessageSection
-import com.exa.android.reflekt.loopit.core.utils.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.core.network.Response
+import com.exa.android.reflekt.loopit.core.notification.clearChatNotifications
+import com.exa.android.reflekt.loopit.core.utils.CurChatManager.activeChatId
 import com.exa.android.reflekt.loopit.core.utils.generateChatId
+import com.exa.android.reflekt.loopit.core.utils.showToast
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.ChatViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.UserViewModel
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
+import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MessageRequest
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.data.feature.main.media.viewmodel.MediaSharingViewModel
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.getMediaTypeFromUri
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.isFileTooLarge
 import com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail.component.media.mediaSelectionSheet.MediaPickerHandler
-import com.exa.android.reflekt.loopit.presentation.main.component.showLoader
 import com.exa.android.reflekt.loopit.presentation.navigation.component.PhotoRoute
 import com.exa.android.reflekt.loopit.presentation.navigation.component.ProfileRoute
-import com.exa.android.reflekt.loopit.core.notification.clearChatNotifications
-import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.MediaType
-import com.exa.android.reflekt.loopit.core.utils.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-
+/**
+ * Data-orchestration layer for the chat detail screen.
+ *
+ * Responsibilities:
+ *  - Observe ViewModels and build [ChatDetailUiState]
+ *  - Handle side effects (lifecycle, status bar, media picker, back press)
+ *  - Translate user events from [ChatDetailCallbacks] into ViewModel calls
+ *  - Delegate all rendering to [ChatDetailContent]
+ *
+ * Has no UI of its own.
+ */
 @Composable
 fun DetailChat(
     navController: NavController,
     otherUserId: String,
+    eventTitle: String? = null,
     onVideoCallClick: (List<String>) -> Unit
 ) {
     val chatViewModel: ChatViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
-//    val lobbyVM: LobbyViewModel = hiltViewModel()
     val mediaSharingViewModel: MediaSharingViewModel = hiltViewModel()
 
-    val responseChatMessages by remember { chatViewModel.messages }.collectAsState() // all the chats of cur and other User
-    val curUserId by chatViewModel.curUserId.collectAsState()  // cur User Id
-    val chatMessages: MutableState<List<Message>> = remember { mutableStateOf(emptyList()) }
-    val responseOtherUserDetailMap by remember { userViewModel.userDetail }.collectAsState()
-    val responseOtherUserDetail = responseOtherUserDetailMap[otherUserId]
-    val otherUserDetail: MutableState<User?> = remember { mutableStateOf(User()) }
+    // ── Collect ViewModel state ─────────────────────────────────────────────
+    val curUserId by chatViewModel.curUserId.collectAsState()
+    val messagesResponse by chatViewModel.messages.collectAsState()
+    val userDetailMap by userViewModel.userDetail.collectAsState()
     val userStatus by userViewModel.userStatus.observeAsState()
-    val blockUsers by chatViewModel.blockDetails.collectAsState()
-    val responseState = remember { chatViewModel.responseState.value }
+    val blockResponse by chatViewModel.blockDetails.collectAsState()
+    val messageRequestResponse by chatViewModel.messageRequest.collectAsState()
 
-    var replyMessage by remember { mutableStateOf<Message?>(null) } // to track is message replied
-    var editMessage by remember { mutableStateOf<Message?>(null) } // to edit message
-    var selectedMessages by remember { mutableStateOf<Set<Message>>(emptySet()) } // to track the Id's of messages selected to operate HeaderWithOptions
+    // ── Derive clean values ─────────────────────────────────────────────────
+    val messages = remember(messagesResponse) {
+        (messagesResponse as? Response.Success)?.data ?: emptyList()
+    }
+    val isLoadingMessages = messagesResponse is Response.Loading
+
+    val otherUser: User? = remember(userDetailMap, otherUserId) {
+        val resp = userDetailMap[otherUserId]
+        // Firebase doesn't always embed userId in the document; set it explicitly.
+        if (resp is Response.Success) resp.data?.also { it.userId = otherUserId } else null
+    }
+
     var isCurUserBlocked by remember { mutableStateOf(false) }
     var isOtherUserBlocked by remember { mutableStateOf(false) }
+    LaunchedEffect(blockResponse) {
+        if (blockResponse is Response.Success) {
+            val blocked = (blockResponse as Response.Success<Set<String>>).data
+            isCurUserBlocked = blocked.contains(curUserId)
+            isOtherUserBlocked = blocked.contains(otherUserId)
+        }
+    }
 
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val focusRequester = remember { FocusRequester() } // to request focus of keyboard
-    val focusManager = LocalFocusManager.current // handling focus like show or not show keyboard
-    val isFocused = remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
+    val messageRequest = remember(messageRequestResponse) {
+        (messageRequestResponse as? Response.Success)?.data ?: MessageRequest()
+    }
+
+    // ── Local interaction state ─────────────────────────────────────────────
+    var replyMessage by remember { mutableStateOf<Message?>(null) }
+    var editMessage by remember { mutableStateOf<Message?>(null) }
+    var selectedMessages by remember { mutableStateOf<Set<Message>>(emptySet()) }
+    var showEventBanner by remember { mutableStateOf(eventTitle != null) }
+
+    val chatId = remember(curUserId, otherUserId) { generateChatId(curUserId, otherUserId) }
+
+    // ── Build unified UI state ──────────────────────────────────────────────
+    val uiState = ChatDetailUiState(
+        messages = messages,
+        isLoadingMessages = isLoadingMessages,
+        otherUser = otherUser,
+        curUserId = curUserId,
+        isCurUserBlocked = isCurUserBlocked,
+        isOtherUserBlocked = isOtherUserBlocked,
+        messageRequest = messageRequest,
+        userStatus = userStatus,
+        replyMessage = replyMessage,
+        editMessage = editMessage,
+        selectedMessages = selectedMessages,
+        eventTitle = eventTitle,
+        showEventBanner = showEventBanner
+    )
+
+    // ── Plumbing ────────────────────────────────────────────────────────────
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    var isLastMessageSelected by remember { mutableStateOf(false) }
-    val chatIdState = rememberUpdatedState(generateChatId(curUserId, otherUserId))
-    val coroutineScope =
-        rememberCoroutineScope() // to handle asynchronous here for calling viewMode.delete
+    val scope = rememberCoroutineScope()
+    val clipboardManager = LocalClipboardManager.current
+    val focusRequester = remember { FocusRequester() }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            launchMediaUpload(
-                coroutineScope,
-                context,
-                uri,
-                otherUserId,
-                isCurUserBlocked,
-                replyMessage,
-                otherUserDetail.value?.fcmToken,
-                getMediaTypeFromUri(context, uri),
-                null,
-                chatViewModel,
-                mediaSharingViewModel
-            )
-        }
+    // ── Back handler ────────────────────────────────────────────────────────
+    BackHandler {
+        if (selectedMessages.isEmpty()) navController.popBackStack()
+        else selectedMessages = emptySet()
     }
 
-    BackHandler(true) {
-//       if (isFocused.value) {
-//           focusManager.clearFocus()
-//           replyMessage = null
-//       } else {
-        if (selectedMessages.isEmpty()) {
-            navController.popBackStack()
-        } else {
-            selectedMessages = emptySet()
-        }
-    }
-    //}
-//    val otherUserId = otherUser.userId
-
-    LaunchedEffect(otherUserId) {
+    // ── Data loading ────────────────────────────────────────────────────────
+    LaunchedEffect(otherUserId, curUserId) {
+        if (curUserId.isBlank()) return@LaunchedEffect
         coroutineScope {
-            launch { chatViewModel.getBlockDetails(chatIdState.value) }
+            launch { chatViewModel.getBlockDetails(chatId) }
             launch { userViewModel.getUserDetail(otherUserId) }
             launch { chatViewModel.getMessages(curUserId, otherUserId) }
             launch { userViewModel.observeUserStatus(otherUserId) }
             launch { userViewModel.updateUnreadMessages(curUserId, otherUserId) }
             launch { userViewModel.updateOnlineStatus(curUserId, true) }
-            // launch { clearChatNotifications(context, chatIdState.value) } // if needed later
-        }
-        // activeChatId = generateChatId(curUserId,otherUserId)
-//        clearChatNotifications(context, chatIdState.value)
-    }
-
-    when (val response = responseOtherUserDetail) {
-        is Response.Loading -> {
-            Text("---")
-        }
-
-        is Response.Success -> {
-            // Log.d("Detail Chat", "Success in userDetail")
-            otherUserDetail.value = response.data
-        }
-
-        else -> {
-            // Log.d("Detail Chat", "Error in userDetail")
+            launch { chatViewModel.observeMessageRequest(chatId) }
         }
     }
 
-    when (val response = responseChatMessages) {
-        is Response.Success -> chatMessages.value = response.data
-        is Response.Error -> Text(text = response.message)
-        else -> {}
-    }
-
-    when (val response = blockUsers) {
-        is Response.Error -> {}
-        Response.Loading -> {}
-        is Response.Success -> {
-            isCurUserBlocked = if (response.data.contains(curUserId)) true else false
-            isOtherUserBlocked = if (response.data.contains(otherUserId)) true else false
-        }
-    }
-
-    when (responseState) {
-        is Response.Loading -> {
-            showLoader("Please wait a moment")
-        }
-
-        is Response.Success -> {
-            //showToast(context,"Successfully Done")
-        }
-
-        is Response.Error -> {
-            val errorMsg = (responseState).message
-            showToast(context, "Successfully Done")
-        }
-    }
-
-
-// ✅ Lifecycle Observer: Ensures activeChatId updates when app resumes
+    // ── Lifecycle: activeChatId + seen status ───────────────────────────────
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    activeChatId = chatIdState.value // Update chat ID when app resumes
-                    clearChatNotifications(context, chatIdState.value)
-                    chatViewModel.updateMessageStatusToSeen(
-                        generateChatId(curUserId, otherUserId),
-                        chatMessages.value
-                    )
-                    //Log.d("ChatScreen", "App Resumed: ActiveChatId updated to $activeChatId")
+                    activeChatId = chatId
+                    clearChatNotifications(context, chatId)
+                    chatViewModel.updateMessageStatusToSeen(chatId, messages)
                 }
-
-                Lifecycle.Event.ON_STOP -> {
-                    activeChatId = null // Reset chat when app goes to background
-                    //Log.d("ChatScreen", "App in Background: ActiveChatId Cleared")
-                }
-
+                Lifecycle.Event.ON_STOP -> activeChatId = null
                 else -> {}
             }
         }
-
         lifecycleOwner.lifecycle.addObserver(observer)
-
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             userViewModel.setTypingStatus(curUserId, "")
-            activeChatId = null // Reset when leaving chat screen
-
-            //keyboardController?.hide()
+            activeChatId = null
         }
     }
 
+    // ── Status bar colour ───────────────────────────────────────────────────
+    val view = LocalView.current
+    val statusBarColor = MaterialTheme.colorScheme.background
+    val isDarkTheme = isSystemInDarkTheme()
+    DisposableEffect(isDarkTheme) {
+        val window = (view.context as? android.app.Activity)?.window
+            ?: return@DisposableEffect onDispose {}
+        val prevColor = window.statusBarColor
+        window.statusBarColor = android.graphics.Color.argb(
+            (statusBarColor.alpha * 255).toInt(),
+            (statusBarColor.red   * 255).toInt(),
+            (statusBarColor.green * 255).toInt(),
+            (statusBarColor.blue  * 255).toInt()
+        )
+        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
+        onDispose { window.statusBarColor = prevColor }
+    }
 
-
-    //if (showMediaPickerSheet) {
+    // ── Media picker (sheet) ────────────────────────────────────────────────
     MediaPickerHandler(
         showAll = true,
         onLaunch = { uri ->
             launchMediaUpload(
-                context = context,
-                uri = uri,
-                mediaType = getMediaTypeFromUri(context, uri),
-                otherUserId = otherUserId,
-                isCurUserBlocked = isCurUserBlocked,
-                replyTo = replyMessage,
-                fcmToken = otherUserDetail.value?.fcmToken,
-                chatViewModel = chatViewModel,
-                coroutineScope = coroutineScope,
-                messageId = null,
-                mediaSharingViewModel = mediaSharingViewModel
+                scope, context, uri, otherUserId, isCurUserBlocked,
+                replyMessage, otherUser?.fcmToken, getMediaTypeFromUri(context, uri),
+                null, chatViewModel, mediaSharingViewModel
             )
         }
     )
 
-    // --- Status bar: use direct window API (accompanist is deprecated & unreliable) ---
-    val view = androidx.compose.ui.platform.LocalView.current
-    val statusBarColor = Color(0xFFFFFF) //MaterialTheme.colorScheme.background
-    val isDarkTheme = isSystemInDarkTheme()
-    DisposableEffect(isDarkTheme) {
-        val window = (view.context as? android.app.Activity)?.window ?: return@DisposableEffect onDispose {}
-        val prevColor = window.statusBarColor
-        window.statusBarColor = statusBarColor.copy(alpha = 1f).hashCode().let {
-            android.graphics.Color.argb(
-                (statusBarColor.alpha * 255).toInt(),
-                (statusBarColor.red   * 255).toInt(),
-                (statusBarColor.green * 255).toInt(),
-                (statusBarColor.blue  * 255).toInt()
+    // ── Media picker (system fallback) ─────────────────────────────────────
+    rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            launchMediaUpload(
+                scope, context, uri, otherUserId, isCurUserBlocked,
+                replyMessage, otherUser?.fcmToken, getMediaTypeFromUri(context, uri),
+                null, chatViewModel, mediaSharingViewModel
             )
-        }
-        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
-        onDispose {
-            window.statusBarColor = prevColor
         }
     }
 
-    Scaffold(
-        modifier = Modifier.imePadding(),
-        topBar = {
-            ChatHeader(
-                otherUserDetail.value, userStatus, curUserId, selectedMessages,
-                isCurUserBlocked,
-                isOtherUserBlocked,
-                onProfileClick = {
-                    if (!isCurUserBlocked) {
-                        navController.navigate(ProfileRoute.UserProfile.createRoute(otherUserId))
-                    }
-                },
-                onBackClick = { navController.popBackStack() },
-                onVoiceCallClick = { },
-                onVideoCallClick = { },
-                onUnselectClick = { selectedMessages = emptySet() },
-                onCopyClick = {
-                    copyMessages(selectedMessages, clipboardManager, coroutineScope)
-                    selectedMessages = emptySet()
-                },
-                onEditClick = { message ->
-                    editMessage = message
-                    selectedMessages = emptySet()
-                },
-                onReplyClick = { message ->
-                    message?.let { replyMessage = it; focusRequester.requestFocus() }
-                    selectedMessages = emptySet()
-                },
-                onForwardClick = {},
-                onDeleteClick = { deleteFor ->
-                    deleteMessages(
-                        chatViewModel,
-                        selectedMessages,
-                        generateChatId(curUserId, otherUserId),
-                        deleteFor,
-                        coroutineScope,
-                        isLastMessageSelected
+    // ── Render ──────────────────────────────────────────────────────────────
+    ChatDetailContent(
+        uiState = uiState,
+        focusRequester = focusRequester,
+        callbacks = ChatDetailCallbacks(
+            onBackClick = { navController.popBackStack() },
+            onProfileClick = {
+                if (!isCurUserBlocked)
+                    navController.navigate(ProfileRoute.UserProfile.createRoute(otherUserId))
+            },
+            onSendMessage = { text, replyTo ->
+                if (editMessage != null) {
+                    chatViewModel.updateMessage(editMessage!!, text)
+                    editMessage = null
+                } else {
+                    chatViewModel.createChatAndSendMessage(
+                        otherUserId, isCurUserBlocked, text, replyTo, otherUser?.fcmToken, null
                     )
-                    isLastMessageSelected = false
-                    selectedMessages = emptySet()
-                },
-                onClearChatClick = {
-                    val chatId = generateChatId(curUserId, otherUserId)
-                    chatViewModel.deleteAllMessages(chatId)
-                },
-                onBlockClick = {
-                    val chatId = chatIdState.value
-                    if (isOtherUserBlocked) {
-                        chatViewModel.unblockUser(chatId, otherUserId)
-                    } else {
-                        chatViewModel.blockUser(chatId, otherUserId)
-                        showToast(context, "User is unblocked")
-                    }
-                },
-                onReportClick = { reason, proofText, proofImageUri ->
-                    coroutineScope.launch {
-                        var imageUrl: String? = null
-                        if (proofImageUri != null) {
-                            val file = mediaSharingViewModel.createTempFileFromUri(context, proofImageUri)
-                            val uploadResult = mediaSharingViewModel.uploadFileToCloudinary(file)
-                            imageUrl = uploadResult?.mediaUrl
-                        }
-                        chatViewModel.sendReportToAdmin(
-                            curUserId = curUserId,
-                            reportedUserId = otherUserId,
-                            reason = reason,
-                            proofText = proofText,
-                            proofImageUrl = imageUrl
-                        )
-                    }
-                    showToast(context, "Report is successfully submitted")
                 }
-            )
-        },
-        bottomBar = {
-            val otherUser = otherUserDetail.value
-            if (otherUser != null) {
-                otherUser.userId = otherUserId
-            }
-            val members = listOf(
-                otherUser,
-                User(userId = curUserId)
-            )
-            NewMessageSection(
-                curUserId, members, otherUserId,
-                replyMessage,
-                isOtherUserBlocked,
-                userViewModel, editMessage,
-                focusRequester,
-                onTextMessageSend = { text, replyTo ->
-                    if (editMessage != null) {
-                        chatViewModel.updateMessage(editMessage!!, text)
-                        editMessage = null
-                    } else {
-                        chatViewModel.createChatAndSendMessage(
-                            otherUserId,
-                            isCurUserBlocked,
-                            text,
-                            replyTo,
-                            otherUserDetail.value?.fcmToken,
-                            null
-                        )
-                    }
-                },
-                onRecordingSend = { /*TODO*/ },
-                onAddClick = {
-//                    filePickerLauncher.launch("*/*")
-                    mediaSharingViewModel.showMediaPickerSheet = true
-                    //Log.d("Storage Cloudinary", "mediaPicker - $mediaSharingViewModel.showMediaPickerSheet")
-                },
-                onUnblockClick = {
-                    chatViewModel.unblockUser(chatIdState.value, otherUserId)
-                },
-                onSendOrDiscard = { replyMessage = null },
-                onDone = { focusManager.clearFocus() },
-                onFocusChange = { isFocused.value = it.isFocused }
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
-        ) {
-            val otherUser = otherUserDetail.value
-            if (otherUser != null) {
-                otherUser.userId = otherUserId
-            }
-            val members = listOf(
-                otherUser,
-                User(userId = curUserId)
-            )
-            MessageList(
-                chatMessages.value,
-                curUserId,
-                members,
-                0,
-                selectedMessages,
-                updateMessages = { updatedMessages, isLastMessage ->
-                    selectedMessages = updatedMessages
-                    isLastMessageSelected = isLastMessage
-                },
-                onReply = { replyMessage = it; focusRequester.requestFocus() },
-                onRetry = { message ->
-                    val uri = Uri.parse(message.media?.uri)
-                    launchMediaUpload(
-                        coroutineScope,
-                        context,
-                        uri,
-                        otherUserId,
-                        isCurUserBlocked,
-                        replyMessage,
-                        otherUserDetail?.value?.fcmToken,
-                        getMediaTypeFromUri(context, uri),
-                        message.messageId,
-                        chatViewModel,
-                        mediaSharingViewModel
-                    )
-                    //showToast(context, "Retry File Upload")
-                },
-                openImage = {
-                    navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(it))
+            },
+            onReply = { msg ->
+                replyMessage = msg
+                focusRequester.requestFocus()
+            },
+            onCancelReply = { replyMessage = null },
+            onEditClick = { msg ->
+                editMessage = msg
+                selectedMessages = emptySet()
+            },
+            onCancelEdit = { editMessage = null },
+            onReplyFromHeader = { msg ->
+                msg?.let { replyMessage = it; focusRequester.requestFocus() }
+                selectedMessages = emptySet()
+            },
+            onTypingStatusChange = { message ->
+                if (message.isEmpty()) userViewModel.setTypingStatus(curUserId, "")
+                else userViewModel.setTypingStatus(curUserId, otherUserId)
+            },
+            onUpdateSelection = { updatedSet, _ -> selectedMessages = updatedSet },
+            onDeselectAll = { selectedMessages = emptySet() },
+            onCopyMessages = {
+                val textToCopy = selectedMessages.joinToString("\n") { it.message }
+                selectedMessages = emptySet()
+                scope.launch {
+                    clipboardManager.setText(AnnotatedString(textToCopy))
                 }
-            )
-        }
-    }
+            },
+            onDeleteMessages = { deleteFor ->
+                val messagesToDelete = selectedMessages.map { it.messageId }
+                selectedMessages = emptySet()
+                scope.launch {
+                    chatViewModel.deleteMessages(
+                        messagesToDelete, chatId, deleteFor
+                    ) {}
+                }
+            },
+            onAddMedia = { mediaSharingViewModel.showMediaPickerSheet = true },
+            onRetryMedia = { message ->
+                val uri = Uri.parse(message.media?.uri)
+                launchMediaUpload(
+                    scope, context, uri, otherUserId, isCurUserBlocked,
+                    replyMessage, otherUser?.fcmToken, getMediaTypeFromUri(context, uri),
+                    message.messageId, chatViewModel, mediaSharingViewModel
+                )
+            },
+            onOpenImage = { url ->
+                navController.navigate(PhotoRoute.ViewPhotoUsingUrl.createRoute(url))
+            },
+            onReact = { messageId, emoji ->
+                chatViewModel.toggleReaction(chatId, messageId, emoji)
+            },
+            onBlockClick = {
+                if (isOtherUserBlocked) chatViewModel.unblockUser(chatId, otherUserId)
+                else chatViewModel.blockUser(chatId, otherUserId)
+            },
+            onUnblockClick = { chatViewModel.unblockUser(chatId, otherUserId) },
+            onReportClick = { reason, proofText, proofImageUri ->
+                scope.launch {
+                    var imageUrl: String? = null
+                    if (proofImageUri != null) {
+                        val file = mediaSharingViewModel.createTempFileFromUri(context, proofImageUri)
+                        imageUrl = mediaSharingViewModel.uploadFileToCloudinary(file)?.mediaUrl
+                    }
+                    chatViewModel.sendReportToAdmin(curUserId, otherUserId, reason, proofText, imageUrl)
+                }
+                showToast(context, "Report submitted successfully")
+            },
+            onClearChat = { chatViewModel.deleteAllMessages(chatId) },
+            onApproveRequest = { chatViewModel.approveMessageRequest(chatId) },
+            onDeclineRequest = { chatViewModel.rejectMessageRequest(chatId) },
+            onAllowMessages = { chatViewModel.reEnableMessageRequest(chatId) },
+            onDismissEventBanner = { showEventBanner = false },
+            onSayHi = {
+                chatViewModel.createChatAndSendMessage(
+                    otherUserId, isCurUserBlocked, "Hi! 👋", null, otherUser?.fcmToken, null
+                )
+            }
+        )
+    )
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 fun launchMediaUpload(
-    coroutineScope: CoroutineScope,
+    scope: CoroutineScope,
     context: Context,
     uri: Uri?,
     otherUserId: String,
@@ -460,13 +335,11 @@ fun launchMediaUpload(
     chatViewModel: ChatViewModel,
     mediaSharingViewModel: MediaSharingViewModel
 ) {
-
     if (uri != null && isFileTooLarge(context, uri)) {
         showToast(context, "File too large. Maximum allowed size is 10MB.")
         return
     }
-
-    coroutineScope.launch {
+    scope.launch {
         mediaSharingViewModel.uploadAndSendMediaMessage(
             context = context,
             uri = uri,
@@ -478,58 +351,9 @@ fun launchMediaUpload(
             chatViewModel = chatViewModel,
             messageId = messageId,
             onError = { e ->
-                val errorMessage = mediaSharingViewModel.getUploadErrorMessage(e)
-                showToast(context, errorMessage)
+                showToast(context, mediaSharingViewModel.getUploadErrorMessage(e))
             },
-            onProgress = {
-                // Optional: Handle UI progress updates
-            }
+            onProgress = {}
         )
-    }
-}
-
-//data class Message(val isSentByCurrentUser : Boolean, val message : String)
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewDashedCircle() {
-//    DetailChat()
-//}
-
-private fun copyMessages(
-    selectedMessages: Set<Message>,
-    clipboardManager: ClipboardManager,
-    coroutineScope: CoroutineScope
-) {
-    coroutineScope.launch {
-        val formattedMessages = selectedMessages.joinToString("\n") {
-            it.message
-        }
-        clipboardManager.setText(AnnotatedString(formattedMessages))
-    }
-}
-//
-//private fun forwardMessages(selectedMessages: Set<Message>, navController: NavController) {
-//    val messagesText = selectedMessages.map { it.message }
-//    val jsonString = Gson().toJson(messagesText)
-//    navController.navigate(HomeRoute.AllUserScreen.createRoute(ScreenPurpose.FORWARD_MESSAGES, jsonString))
-//    // navigate to forward screen where we have all users
-//}
-
-private fun deleteMessages(
-    viewModel: ChatViewModel,
-    selectedMessages: Set<Message>,
-    chatId: String,
-    deleteFor: Int,
-    coroutineScope: CoroutineScope,
-    isLastMessageSelected : Boolean
-) {
-    coroutineScope.launch {
-        viewModel.deleteMessages(
-            selectedMessages.map { it.messageId }, chatId,
-            deleteFor
-        ) {
-//            emptySelectedMessages()
-        }
-        //viewModel.clearLastMessage(chatId)
     }
 }

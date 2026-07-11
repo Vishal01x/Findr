@@ -1,184 +1,198 @@
 package com.exa.android.reflekt.loopit.presentation.main.chat
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.NotificationsOff
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.exa.android.reflekt.loopit.theme.*
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.exa.android.reflekt.R
-import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
 import com.exa.android.reflekt.loopit.core.utils.formatTimestamp
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.ChatList
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.User
+import com.exa.android.reflekt.loopit.presentation.main.component.ImageUsingCoil
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.*
+import com.exa.android.reflekt.loopit.presentation.main.post.components.UserAvatar
+import com.exa.android.reflekt.loopit.presentation.main.post.components.AvatarSize
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.Timestamp
 
 @Composable
-fun ChatListItem(chat: ChatList, openImage: (String?) -> Unit, openChat: (user : User) -> Unit) {
-
-    Card(modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant),
-        shape = CircleShape) {
-
+fun ChatListItem(chat: ChatList, currentUserId: String = "", openImage: (String?) -> Unit, openChat: (user: User) -> Unit) {
+    val isIncomingRequest = chat.requestStatus == "pending" && chat.requestSenderId != currentUserId && chat.requestSenderId.isNotEmpty()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(LiquidColors.GlassSurface)
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(16.dp))
+            .clickableWithNoIndication {
+                openChat(User(userId = chat.userId, name = chat.name, fcmToken = chat.fcmToken))
+            }
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    openChat(
-                        User(
-                            userId = chat.userId,
-                            name = chat.name,
-                            fcmToken = chat.fcmToken
-                        )
-                    )
-                }
-                .padding(4.dp)
-                .padding(horizontal = 4.dp, vertical = 8.dp)
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val context = LocalContext.current
+            val profilePic = if (chat.isCurUserBlock) "" else chat.profilePicture
 
-            val profilePic = if(chat.isCurUserBlock)"" else chat.profilePicture
+            UserAvatar(
+                imageUrl = profilePic?.takeIf { it.isNotBlank() },
+                userName = chat.name,
+                size = AvatarSize.Large,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.clickableWithNoIndication(enabled = !profilePic.isNullOrEmpty()) { openImage(chat.profilePicture) }
+            )
 
-            ImageUsingCoil(context,profilePic,R.drawable.placeholder,Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .clickable(!profilePic.isNullOrEmpty()) {
-                    openImage(chat.profilePicture)
-                    /*openImageIntent(context,chat.profilePicture!!)*/
-                })
-
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.SpaceAround
-            ) {
-                Text(
-                    chat.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    chat.lastMessage,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Column(horizontalAlignment = Alignment.End , modifier = Modifier.padding(end = 4.dp)) {
-                val timestampInMillis = chat.lastMessageTimestamp.seconds * 1000L
-                if(timestampInMillis > 0) {
-                    Text(
-                        if (chat.isOtherBlock) "" else formatTimestamp(timestampInMillis),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 13.sp
-                    )
-                }
-                if (chat.unreadMessages > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(
-                                MaterialTheme.colorScheme.primary
-                            )
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.weight(1f, fill = false)
                     ) {
                         Text(
-                            "${chat.unreadMessages}",
+                            chat.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = LiquidColors.TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (chat.isOtherBlock) {
+                            Icon(
+                                Icons.Rounded.NotificationsOff,
+                                contentDescription = null,
+                                tint = LiquidColors.TextMuted,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                    }
+                    val ts = chat.lastMessageTimestamp.seconds * 1000L
+                    if (ts > 0) {
+                        Text(
+                            formatTimestamp(ts),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 12.sp
+                            color = LiquidColors.TextMuted,
+                            fontSize = 11.sp
                         )
                     }
+                }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    if (isIncomingRequest) "Sent you a message request" else chat.lastMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isIncomingRequest) LiquidColors.Primary else LiquidColors.TextSecondary,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = if (isIncomingRequest) FontWeight.Medium else FontWeight.Normal
+                )
+            }
+
+            if (isIncomingRequest) {
+                // Amber "Request" badge
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFF59E0B))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        "Request",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else if (chat.unreadMessages > 0) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(LiquidColors.Primary)
+                ) {
+                    Text(
+                        if (chat.unreadMessages > 99) "99+" else "${chat.unreadMessages}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     }
 }
 
+@Preview(showBackground = true, backgroundColor = 0xFF121212)
 @Composable
-fun StoryItem(image: Int, name: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Image(
-            painter = painterResource(image),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+fun ChatListItemPreview() {
+    MaterialTheme   {
+        Column(
             modifier = Modifier
-                .size(58.dp)
-                .clip(CircleShape)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            name,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun ZoomPhoto(modifier: Modifier = Modifier, imageId: Int, onBack: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .height(240.dp)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(painter = painterResource(id = R.drawable.arrow_back),
-            contentDescription = "to pop back stack",
-            tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .align(alignment = Alignment.TopStart)
-                .size(24.dp)
-                .clickable {
-                    onBack()
-                }
-        )
-        Image(
-            painter = painterResource(id = imageId), contentDescription = "ZoomedImage",
-            contentScale = ContentScale.Crop
-        )
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Normal chat
+            ChatListItem(
+                chat = ChatList(
+                    userId = "1",
+                    name = "Alice",
+                    lastMessage = "Hey, how are you?",
+                    lastMessageTimestamp = Timestamp.now(),
+                    profilePicture = "",
+                    unreadMessages = 2,
+                    requestStatus = "accepted"
+                ),
+                currentUserId = "0",
+                openImage = {},
+                openChat = {}
+            )
+            
+            // Incoming request
+            ChatListItem(
+                chat = ChatList(
+                    userId = "2",
+                    name = "Bob",
+                    lastMessage = "Let's connect!",
+                    lastMessageTimestamp = Timestamp.now(),
+                    profilePicture = "",
+                    unreadMessages = 0,
+                    requestStatus = "pending",
+                    requestSenderId = "2"
+                ),
+                currentUserId = "0",
+                openImage = {},
+                openChat = {}
+            )
+        }
     }
 }

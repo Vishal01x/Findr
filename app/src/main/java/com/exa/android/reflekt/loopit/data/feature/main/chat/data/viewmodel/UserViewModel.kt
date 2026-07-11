@@ -113,6 +113,10 @@ class UserViewModel @Inject constructor(
 
 
     fun getProfileData(userId: String?) {
+        val current = _userProfileData.value
+        if (current is Response.Success && current.data.profileHeader.uid == userId) {
+            return
+        }
         viewModelScope.launch {
             if (curUser != null) {
                 userRepository.getProfileData(userId)

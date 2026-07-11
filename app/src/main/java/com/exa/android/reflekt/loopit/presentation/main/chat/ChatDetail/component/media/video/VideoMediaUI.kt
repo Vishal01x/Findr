@@ -67,7 +67,7 @@ fun VideoMessageItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(Color.Black)
     ) {
         AsyncImage(
@@ -79,6 +79,13 @@ fun VideoMessageItem(
             contentDescription = "Video Thumbnail",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
+        )
+
+        // dark overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f))
         )
 
         when (uploadStatus) {
@@ -130,12 +137,12 @@ fun VideoMessageItem(
                             onClick = { viewModel.downloadFile(context, videoUrl, fileName) },
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .background(Color.White.copy(alpha = 0.6f), CircleShape)
+                                .background(Color.White.copy(alpha = 0.25f), CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Download",
-                                tint = Color.Black
+                                tint = Color.White
                             )
                         }
                     }
@@ -168,12 +175,12 @@ fun VideoMessageItem(
                             },
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .background(Color.White.copy(alpha = 0.8f), CircleShape)
+                                .background(Color.White.copy(alpha = 0.25f), CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
                                 contentDescription = "Play",
-                                tint = Color.Black
+                                tint = Color.White
                             )
                         }
                     }
