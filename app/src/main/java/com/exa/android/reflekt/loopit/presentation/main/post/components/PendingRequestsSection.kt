@@ -1,6 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.components
 
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -165,7 +165,7 @@ fun EnrollmentRequestItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onViewProfile)
+                .clickableWithNoIndication(onClick = onViewProfile)
                 .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -200,11 +200,19 @@ fun EnrollmentRequestItem(
                         )
                     }
                     
-                    Text(
-                        text = formatTimestamp(request.requestedAt),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(
+                            Icons.Rounded.Schedule,
+                            contentDescription = "Time",
+                            modifier = Modifier.size(11.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = com.exa.android.reflekt.loopit.core.utils.formatTimeAgo(request.requestedAt),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             
@@ -244,25 +252,6 @@ fun EnrollmentRequestItem(
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * Format timestamp to relative time
- */
-private fun formatTimestamp(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-    
-    return when {
-        diff < 60_000 -> "Just now"
-        diff < 3600_000 -> "${diff / 60_000}m ago"
-        diff < 86400_000 -> "${diff / 3600_000}h ago"
-        diff < 604800_000 -> "${diff / 86400_000}d ago"
-        else -> {
-            val sdf = SimpleDateFormat("MMM d", Locale.getDefault())
-            sdf.format(Date(timestamp))
         }
     }
 }

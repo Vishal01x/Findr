@@ -12,6 +12,9 @@ data class PostUserInfo(
     val username: String = "", // Derived from name or email if not available
     val avatarUrl: String? = null,
     val bio: String? = null,
+    val branch: String? = null,
+    val year: String? = null,
+    val section: String? = null,
     val isVerified: Boolean = false // Can be extended later
 )
 
@@ -24,9 +27,23 @@ fun profileUser.toPostUserInfo(): PostUserInfo {
         name = this.name,
         username = generateUsername(this.name, this.email),
         avatarUrl = this.profilePicture.ifEmpty { null },
-        bio = null, // Bio not currently in profileUser model
-        isVerified = false // Can be extended later
+        bio = this.headline?.ifBlank { null },
+        branch = this.branch?.ifBlank { null } ?: this.role.ifBlank { null },
+        year = this.passoutYear?.ifBlank { null } ?: this.year?.ifBlank { null },
+        section = this.section?.ifBlank { null },
+        isVerified = false
     )
+}
+
+fun abbreviateStream(value: String): String {
+    val trimmed = value.trim()
+    if (trimmed.length <= 10) return trimmed
+    val words = trimmed.split(Regex("\\s+")).filter { it.isNotBlank() }
+    return if (words.size > 1) {
+        words.joinToString("") { it[0].uppercaseChar().toString() }
+    } else {
+        trimmed.take(5)
+    }
 }
 
 /**

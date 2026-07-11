@@ -2,13 +2,14 @@ package com.exa.android.reflekt.loopit.presentation.main.post.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -17,27 +18,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.exa.android.reflekt.loopit.core.utils.formatTimestamp
+import androidx.compose.ui.unit.sp
+import com.exa.android.reflekt.loopit.core.utils.formatTimeAgo
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostUserInfo
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.abbreviateStream
 import com.exa.android.reflekt.loopit.theme.*
-import com.google.firebase.Timestamp
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import com.exa.android.reflekt.R
 
-/**
- * Enhanced user info header with better layout and verified badge
- * Integrated with PostUserInfo from Firestore
- */
 @Composable
 fun UserInfoHeader(
     userInfo: PostUserInfo,
     postViews: Int,
     timestamp: Long,
+    isAnonymous: Boolean = false,
     postType: String? = null,
+    tagBadge: String? = null,
     showBio: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
@@ -45,163 +46,184 @@ fun UserInfoHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(top = Spacing.medium, start = Spacing.medium , end = Spacing.medium),
+            .then(if (!isAnonymous) Modifier.clickableWithNoIndication(onClick = onClick) else Modifier)
+            .padding(top = Spacing.medium, start = Spacing.medium, end = Spacing.medium),
         verticalAlignment = Alignment.Top
     ) {
-        // User Avatar with gradient border
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                // THIS ONE CAN BE USED FOR SHOWING TOP PROFILES OR LIVE IN FUTURE
-//                .border(
-//                    width = 2.dp,
-//                    brush = Brush.linearGradient(
-//                        colors = listOf(
-//                            GradientPurpleStart,
-//                            GradientPinkStart
-//                        )
-//                    ),
-                //                   shape = CircleShape
-                //              )
-                .padding(3.dp)
-        ) {
-
-//            if (userInfo.avatarUrl != null) {
-//                AsyncImage(
-//                    model = userInfo.avatarUrl ?: "https://i.pravatar.cc/150?u=${userInfo.uid}",
-//                    contentDescription = "${userInfo.name}'s avatar",
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .clip(CircleShape)
-//                        .background(MaterialTheme.colorScheme.surfaceVariant),
-//                    contentScale = ContentScale.Crop
-//                )
-//            } else {
-//                // Placeholder with initials
-//                Text(
-//                    text = getInitials(userInfo.name),
-//                    style = MaterialTheme.typography.titleSmall,
-//                    fontWeight = FontWeight.Bold,
-//                    color = Color.White,
-//                    modifier = Modifier.align(Alignment.Center)
-//                )
-//            }
-
-            UserAvatar(userInfo.avatarUrl, userInfo.name, AvatarSize.Large)
-
+        // Avatar
+        Box(modifier = Modifier.size(52.dp).padding(3.dp)) {
+            if (isAnonymous) {
+                AnonymousAvatar()
+            } else {
+                UserAvatar(userInfo.avatarUrl, userInfo.name, AvatarSize.Large)
+            }
         }
 
         Spacer(modifier = Modifier.width(Spacing.medium))
 
-        // User Info Column
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            // Name and verified badge
+        Column(modifier = Modifier.weight(1f)) {
+            // Name row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = userInfo.name.ifEmpty { "Anonymous" },
+                    text = if (isAnonymous) "Anonymous" else userInfo.name.ifEmpty { "Anonymous" },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = if (isAnonymous) LiquidColors.TextSecondary else LiquidColors.TextPrimary
                 )
-
-                // Verified badge
-                if (userInfo.isVerified) {
+                if (!isAnonymous && userInfo.isVerified) {
                     Icon(
                         imageVector = Icons.Rounded.Verified,
                         contentDescription = "Verified",
-                        tint = Color(0xFF1DA1F2), // Twitter-like blue
+                        tint = Color(0xFF1DA1F2),
                         modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
-            // Course, year- STATIC FOR NOW
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-               modifier = Modifier.padding(top = Spacing.verySmall)
-            ) {
-                // Static college info as requested
+            // Academic chips (branch / year / section) or "Identity hidden" for anonymous
+            if (isAnonymous) {
                 Text(
-                    text = "Computer Science", //Computer Science • 3rd Year",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Identity hidden",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LiquidColors.TextSecondary,
+                    modifier = Modifier.padding(top = Spacing.verySmall)
                 )
+            } else {
+                val chips = listOfNotNull(
+                    userInfo.branch?.ifBlank { null }?.let { abbreviateStream(it) },
+                    userInfo.section?.ifBlank { null },
+                    userInfo.year?.ifBlank { null }
+                )
+                if (chips.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        chips.forEach { chip ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(LiquidColors.Primary.copy(alpha = 0.10f))
+                                    .border(1.dp, LiquidColors.Primary.copy(alpha = 0.20f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = chip,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 9.sp,
+                                    color = LiquidColors.Primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
-            // date, views, post type
+            // Timestamp · views · type
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-               modifier = Modifier.padding(top = Spacing.verySmall)
+                modifier = Modifier.padding(top = Spacing.verySmall)
             ) {
-//                Text(
-//                    text = "@${userInfo.username}",
-//                    style = MaterialTheme.typography.bodyMedium,
-//                    color = MaterialTheme.colorScheme.onSurfaceVariant
-//                )
-
-
-                Text(
-                    text = formatTimestamp(timestamp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (postViews > 0) {
-                    Text(
-                        text = " • ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(
-                        Icons.Rounded.Visibility,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        contentDescription = "Views",
-                        modifier = Modifier.size(16.dp)
+                        Icons.Rounded.Schedule,
+                        contentDescription = "Time",
+                        modifier = Modifier.size(13.dp),
+                        tint = LiquidColors.TextSecondary
                     )
-
-                    Spacer(modifier.size(1.dp))
-
                     Text(
-                        text = formatCount(postViews),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = formatTimeAgo(timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = LiquidColors.TextSecondary
                     )
                 }
 
-                if (postType != null && postType.isNotBlank()) {
-                    Text(
-                        text = " • ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+//                if (postViews > 0) {
+//                    Text(
+//                        text = " • ",
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = LiquidColors.TextSecondary
+//                    )
+//                    Icon(
+//                        Icons.Rounded.Visibility,
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+//                        contentDescription = "Views",
+//                        modifier = Modifier.size(14.dp)
+//                    )
+//                    Spacer(modifier = Modifier.size(1.dp))
+//                    Text(
+//                        text = formatCount(postViews),
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = LiquidColors.TextSecondary
+//                    )
+//                }
 
-                    Text(
-                        text = postType,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+//                if (postType != null && postType.isNotBlank()) {
+//                    Text(
+//                        text = " • ",
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = LiquidColors.TextSecondary
+//                    )
+//                    Text(
+//                        text = postType,
+//                        style = MaterialTheme.typography.bodySmall,
+//                        fontWeight = FontWeight.SemiBold,
+//                        color = MaterialTheme.colorScheme.primary
+//                    )
+//                }
             }
 
-            // Optional bio
-            if (showBio && userInfo.bio != null) {
+            if (showBio && !isAnonymous && userInfo.bio != null) {
                 Text(
                     text = userInfo.bio,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LiquidColors.TextSecondary.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 4.dp),
                     maxLines = 2
                 )
             }
         }
+
+        // Trailing tag badge (first post tag, shown like project type badge)
+        if (tagBadge != null) {
+            Spacer(modifier = Modifier.width(Spacing.small))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(99.dp))
+                    .background(LiquidColors.Primary.copy(alpha = 0.08f))
+                    .border(1.dp, LiquidColors.Primary.copy(alpha = 0.25f), RoundedCornerShape(99.dp))
+                    .padding(horizontal = 9.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "Post", //tagBadge.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LiquidColors.Primary,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.4.sp
+                )
+            }
+        }
+    }
+}
+
+/** Gray incognito avatar shown for anonymous posts. */
+@Composable
+fun AnonymousAvatar(size: androidx.compose.ui.unit.Dp = 46.dp) {
+    val bg = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF101D22) else Color(0xFFD1D5DB)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(bg),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_anonymous_avatar),
+            contentDescription = "Anonymous",
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 

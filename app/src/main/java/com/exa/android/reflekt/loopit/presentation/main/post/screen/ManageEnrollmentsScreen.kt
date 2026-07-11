@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -294,11 +295,19 @@ private fun EnrollmentRequestCard(
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
-                    Text(
-                        text = formatTimeAgo(enrollment.requestedAt?.toDate() ?: Date()),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(
+                            Icons.Rounded.Schedule,
+                            contentDescription = "Time",
+                            modifier = Modifier.size(11.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = com.exa.android.reflekt.loopit.core.utils.formatTimeAgo(enrollment.requestedAt?.toDate()?.time ?: System.currentTimeMillis()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             
@@ -332,18 +341,3 @@ private fun EnrollmentRequestCard(
     }
 }
 
-private fun formatTimeAgo(date:Date): String {
-    val now = Date()
-    val diff = now.time - date.time
-    val seconds = diff / 1000
-    val minutes = seconds / 60
-    val hours = minutes / 60
-    val days = hours / 24
-    
-    return when {
-        days > 0 -> "${days}d ago"
-        hours > 0 -> "${hours}h ago"
-        minutes > 0 -> "${minutes}m ago"
-        else -> "Just now"
-    }
-}

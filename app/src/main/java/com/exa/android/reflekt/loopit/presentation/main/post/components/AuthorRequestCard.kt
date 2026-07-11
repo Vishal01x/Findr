@@ -18,8 +18,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.border
 import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EnrollmentStatus
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventRegistration
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.RoleEnrollment
 import com.exa.android.reflekt.loopit.theme.Spacing
@@ -41,9 +43,9 @@ fun AuthorRequestCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = LiquidColors.GlassSurface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(Spacing.medium)
@@ -223,9 +225,9 @@ fun AuthorEventRegistrationCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = LiquidColors.GlassSurface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(Spacing.medium)

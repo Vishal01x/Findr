@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails
 import com.exa.android.reflekt.loopit.presentation.main.component.textfield.AppTextField
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 import com.exa.android.reflekt.loopit.theme.Spacing
 import java.text.SimpleDateFormat
 import java.util.*
@@ -40,10 +42,11 @@ fun EventRegistrationDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight(),
+                .wrapContentHeight()
+                .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(24.dp)),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
+            tonalElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier
@@ -60,15 +63,14 @@ fun EventRegistrationDialog(
                         text = "Register for Event",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = LiquidColors.TextPrimary
                     )
-                    
                     if (!isLoading) {
                         IconButton(onClick = onDismiss) {
                             Icon(
                                 Icons.Rounded.Close,
                                 contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = LiquidColors.TextSecondary
                             )
                         }
                     }

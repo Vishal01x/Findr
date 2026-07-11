@@ -1,14 +1,18 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
@@ -16,11 +20,16 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostTy
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole
 import com.exa.android.reflekt.loopit.theme.Spacing
 
-/**
- * Section showing enrollment/registration options based on post type
- * For PROJECT: Shows roles with enroll buttons
- * For EVENT: Shows event details with register button
- */
+private val SectionBg    = Color(0xFF1B2024)
+private val SectionBorder = Color(0xFF3D484F)
+private val CyanPrimary  = Color(0xFF71D2FF)
+private val CyanAccent   = Color(0xFF13B6EC)
+private val DarkSurface  = Color(0xFF252B2E)
+private val TextMain     = Color(0xFFDEE3E8)
+private val TextMuted    = Color(0xFFBCC8D0)
+private val WarningAmber = Color(0xFFEAB308)
+private val ErrorRed     = Color(0xFFFFB4AB)
+
 @Composable
 fun PostActionSection(
     post: Post,
@@ -30,15 +39,13 @@ fun PostActionSection(
     modifier: Modifier = Modifier
 ) {
     val postType = PostType.fromDisplayName(post.type)
-    
-    // Check if user has already applied/enrolled in project
     val hasAppliedToProject = post.hasUserRequested(currentUserId) || post.isUserEnrolled(currentUserId)
-    
+
     when (postType) {
         PostType.PROJECT -> {
             if (post.projectRoles.isNotEmpty()) {
                 ProjectRolesPreview(
-                    roles = post.projectRoles.take(2), // Show max 2 roles in preview
+                    roles = post.projectRoles.take(2),
                     totalRoles = post.projectRoles.size,
                     onEnrollClick = onEnrollInRole,
                     hasAppliedToProject = hasAppliedToProject,
@@ -55,15 +62,10 @@ fun PostActionSection(
                 )
             }
         }
-        else -> {
-            // No special action section for other types
-        }
+        else -> {}
     }
 }
 
-/**
- * Preview of project roles with enroll buttons
- */
 @Composable
 private fun ProjectRolesPreview(
     roles: List<ProjectRole>,
@@ -79,12 +81,12 @@ private fun ProjectRolesPreview(
         verticalArrangement = Arrangement.spacedBy(Spacing.small)
     ) {
         Text(
-            text = "Roles Needed",
-            style = MaterialTheme.typography.titleSmall,
+            text = "Open Roles",
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            color = CyanPrimary,
+            modifier = Modifier.padding(bottom = 2.dp)
         )
-        
         roles.forEach { role ->
             RoleCard(
                 role = role,
@@ -92,21 +94,17 @@ private fun ProjectRolesPreview(
                 hasAppliedToProject = hasAppliedToProject
             )
         }
-        
         if (totalRoles > 2) {
             Text(
                 text = "+${totalRoles - 2} more roles",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = CyanPrimary,
                 modifier = Modifier.padding(start = Spacing.small)
             )
         }
     }
 }
 
-/**
- * Individual role card with enroll button
- */
 @Composable
 private fun RoleCard(
     role: ProjectRole,
@@ -114,179 +112,170 @@ private fun RoleCard(
     hasAppliedToProject: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 1.dp
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(DarkSurface)
+            .border(1.dp, SectionBorder.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.small),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = role.roleName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                if (!role.technology.isNullOrBlank()) {
-                    Text(
-                        text = role.technology,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = role.roleName,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = TextMain
+            )
+            if (!role.technology.isNullOrBlank()) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = "${role.positionsFilled}/${role.positionsNeeded} filled",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (role.positionsFilled >= role.positionsNeeded) 
-                            MaterialTheme.colorScheme.error 
-                        else 
-                            MaterialTheme.colorScheme.primary
-                    )
-                    
-                    if (role.isManuallyClosed) {
-                        Text(
-                            text = "Closed",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
+                    role.technology.split(",").take(3).forEach { tech ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(9999.dp))
+                                .background(CyanAccent.copy(alpha = 0.15f))
+                                .border(1.dp, CyanPrimary.copy(alpha = 0.25f), RoundedCornerShape(9999.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = tech.trim(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = CyanPrimary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
-            
-            // Hide button if closed, full, or already applied
-            if (!role.isManuallyClosed && role.positionsFilled < role.positionsNeeded && !hasAppliedToProject) {
-                Button(
-                    onClick = onEnrollClick,
-                    modifier = Modifier.padding(start = Spacing.small),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PersonAdd,
-                        contentDescription = "Enroll",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Enroll")
-                }
+            Text(
+                text = "${role.positionsFilled}/${role.positionsNeeded} filled",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (role.positionsFilled >= role.positionsNeeded) ErrorRed else CyanPrimary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+        if (!role.isManuallyClosed && role.positionsFilled < role.positionsNeeded && !hasAppliedToProject) {
+            Button(
+                onClick = onEnrollClick,
+                modifier = Modifier.padding(start = Spacing.small),
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = CyanAccent)
+            ) {
+                Text(
+                    text = "Enroll",
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF003547),
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
         }
     }
 }
 
-/**
- * Event details preview with register button
- */
 @Composable
 private fun EventPreview(
     eventDetails: com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails,
     onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        tonalElevation = 2.dp
+            .padding(horizontal = Spacing.medium, vertical = Spacing.small)
+            .clip(RoundedCornerShape(16.dp))
+            .background(SectionBg)
+            .border(1.dp, SectionBorder.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+            .padding(Spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.small)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.medium),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Event,
-                        contentDescription = "Event",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Event Details",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(Spacing.extraSmall))
-                
-                eventDetails.eventTime?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                
-                val locationText = if (eventDetails.isVirtual) {
-                    "Virtual Event"
-                } else {
-                    eventDetails.location ?: "Location TBA"
-                }
-                
-                Text(
-                    text = locationText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                )
-
-                if (eventDetails.isManuallyClosed) {
-                     Text(
-                        text = "Registration Closed",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                } else if (eventDetails.isFull()) {
-                    Text(
-                        text = "Event Full",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+            eventDetails.eventTime?.let { time ->
+                MetaChip(icon = Icons.Default.Schedule, text = time, tint = WarningAmber)
             }
-            
-            // Hide if closed, full, or registration closed
-            if (!eventDetails.isManuallyClosed && eventDetails.isRegistrationOpen()) {
-                Button(
-                    onClick = onRegisterClick,
-                    modifier = Modifier.padding(start = Spacing.small),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Register")
-                }
+            val locationText = if (eventDetails.isVirtual) "Virtual"
+            else eventDetails.venue ?: eventDetails.location
+            locationText?.let {
+                MetaChip(
+                    icon = if (eventDetails.isVirtual) Icons.Default.Videocam else Icons.Default.LocationOn,
+                    text = it,
+                    tint = TextMuted
+                )
+            }
+            val remaining = eventDetails.remainingCapacity()
+            when {
+                eventDetails.isManuallyClosed -> MetaChip(Icons.Default.Block, "Closed", ErrorRed)
+                eventDetails.isFull()         -> MetaChip(Icons.Default.Block, "Full", ErrorRed)
+                remaining != null && remaining <= 5 -> MetaChip(Icons.Default.Warning, "$remaining left", WarningAmber)
             }
         }
+
+        val canRegister = !eventDetails.isManuallyClosed && eventDetails.isRegistrationOpen()
+        Button(
+            onClick = onRegisterClick,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            enabled = canRegister,
+            colors = if (canRegister)
+                ButtonDefaults.buttonColors(containerColor = CyanAccent)
+            else
+                ButtonDefaults.buttonColors(
+                    disabledContainerColor = DarkSurface,
+                    disabledContentColor = TextMuted
+                )
+        ) {
+            if (canRegister) {
+                Icon(
+                    imageVector = Icons.Default.PersonAdd,
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp),
+                    tint = Color(0xFF003547)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "Register for Event",
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF003547)
+                )
+            } else {
+                Text(
+                    text = when {
+                        eventDetails.isManuallyClosed -> "Registration Closed"
+                        eventDetails.isFull()         -> "Event Full"
+                        else                          -> "Registration Closed"
+                    },
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetaChip(
+    icon: ImageVector,
+    text: String,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(9999.dp))
+            .background(DarkSurface)
+            .border(1.dp, tint.copy(alpha = 0.25f), RoundedCornerShape(9999.dp))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(13.dp))
+        Text(text = text, style = MaterialTheme.typography.labelSmall, color = tint, fontWeight = FontWeight.SemiBold)
     }
 }

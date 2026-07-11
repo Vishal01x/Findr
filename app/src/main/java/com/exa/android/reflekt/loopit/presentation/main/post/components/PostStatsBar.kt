@@ -1,11 +1,11 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.components
 
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -14,9 +14,11 @@ import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.theme.LikeColorActive
 import com.exa.android.reflekt.loopit.theme.Spacing
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.NotificationPermissionHandler
 
 /**
- * Post statistics bar showing like, comment, and share counts with clickable actions
+ * Post statistics bar showing like, comment, and share counts with clickable actions.
+ * Triggers the notification-permission flow on Like and Comment taps.
  */
 @Composable
 fun PostStatsBar(
@@ -28,7 +30,13 @@ fun PostStatsBar(
     modifier: Modifier = Modifier
 ) {
     val isLiked = post.isLikedBy(currentUserId)
-    
+
+    // Notification permission trigger — set true on like or comment action
+    var notifPermissionTrigger by remember { mutableStateOf(false) }
+    NotificationPermissionHandler(trigger = notifPermissionTrigger) {
+        notifPermissionTrigger = false
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -39,23 +47,29 @@ fun PostStatsBar(
         // Like Action
         PostStatAction(
             icon = if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-            count = post.likesCount,
+            count = maxOf(0, post.likesCount),
             label = "Like",
             isActive = isLiked,
             activeColor = LikeColorActive,
-            onClick = onLikeClick,
+            onClick = {
+                notifPermissionTrigger = true
+                onLikeClick()
+            },
             modifier = Modifier.weight(1f)
         )
-        
+
         // Comment Action
         PostStatAction(
             icon = Icons.Rounded.ChatBubbleOutline,
             count = post.commentsCount,
             label = "Comment",
-            onClick = onCommentClick,
+            onClick = {
+                notifPermissionTrigger = true
+                onCommentClick()
+            },
             modifier = Modifier.weight(1f)
         )
-        
+
         // Share Action
         PostStatAction(
             icon = Icons.Rounded.Share,
@@ -84,7 +98,7 @@ private fun PostStatAction(
     
     Column(
         modifier = modifier
-            .clickable(onClick = onClick)
+            .clickableWithNoIndication(onClick = onClick)
             .padding(vertical = Spacing.small),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)

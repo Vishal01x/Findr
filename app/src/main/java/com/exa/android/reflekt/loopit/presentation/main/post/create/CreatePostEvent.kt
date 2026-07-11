@@ -43,6 +43,17 @@ sealed class CreatePostEvent {
     data object OnDismissEventDetailsDialog : CreatePostEvent()
     data class OnSaveEventDetails(val eventDetails: EventDetails) : CreatePostEvent()
     
+    // Poll option management (max 5 options)
+    data class OnPollOptionChanged(val index: Int, val text: String) : CreatePostEvent()
+    data object OnAddPollOption : CreatePostEvent()
+    data class OnRemovePollOption(val index: Int) : CreatePostEvent()
+
+    // Identity
+    data object OnToggleAnonymous : CreatePostEvent()
+
+    // Edit mode
+    data class OnLoadPost(val postId: String) : CreatePostEvent()
+
     // Post actions
     data object OnCreatePost : CreatePostEvent()
     data object OnDismissError : CreatePostEvent()
@@ -51,4 +62,5 @@ sealed class CreatePostEvent {
     data object OnBackPressed : CreatePostEvent()
     data object OnConfirmDiscard : CreatePostEvent()
     data object OnCancelDiscard : CreatePostEvent()
+    data object OnClearState : CreatePostEvent()
 }

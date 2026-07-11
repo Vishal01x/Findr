@@ -15,6 +15,7 @@ data class EventDetails(
     val registrationDeadline: Timestamp? = null,
     val isVirtual: Boolean = false,
     val meetingLink: String? = null,            // For virtual events
+    val locationLink: String? = null,           // Optional map/directions URL for physical events
     val registeredCount: Int = 0,               // Current registrations
     val isManuallyClosed: Boolean = false       // Manual closure by author
 ) {

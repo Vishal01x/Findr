@@ -1,1077 +1,1016 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.screen
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.rounded.Article
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import com.exa.android.reflekt.loopit.presentation.main.post.components.MarkdownText
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EnrollmentStatus
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.abbreviateStream
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.DiscardDialog
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.ReportContentDialog
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.SuccessDialog
+import com.exa.android.reflekt.loopit.presentation.main.component.sheet.AppOptionsSheet
+import com.exa.android.reflekt.loopit.presentation.main.component.sheet.AppShareSheet
+import com.exa.android.reflekt.loopit.presentation.main.component.sheet.BottomSheetOption
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 import com.exa.android.reflekt.loopit.presentation.main.post.components.*
 import com.exa.android.reflekt.loopit.theme.Spacing
-import androidx.activity.compose.BackHandler
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventDetails
-import com.exa.android.reflekt.loopit.presentation.main.component.dialog.DiscardDialog
-import com.exa.android.reflekt.loopit.theme.CommentColor
-import com.exa.android.reflekt.loopit.theme.LikeColorActive
-import com.exa.android.reflekt.loopit.theme.ShareColor
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Modern social media-style Post Detail Screen
- * - Compact header with user info
- * - Text before images
- * - Better image sizing
- * - Tabs for Project/Event details
- * - Comments section
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun PostDetailScreen(
     postId: String,
+    scrollTo: String = "",
     onBackClick: () -> Unit,
     onUserClick: (String) -> Unit = {},
-    onEditClick: (String) -> Unit = {},
+    onChatClick: (userId: String, eventTitle: String) -> Unit = { _, _ -> },
+    onEditClick: (String, String) -> Unit = { _, _ -> },
     onManageRequestsClick: (String) -> Unit = {},
+    onInviteClick: (postId: String, title: String) -> Unit = { _, _ -> },
+    onViewAllCollaborators: (postId: String, title: String) -> Unit = { _, _ -> },
+    onViewAllParticipants: (postId: String, title: String) -> Unit = { _, _ -> },
     postViewModel: PostDetailViewModel = hiltViewModel(),
-    commentViewModel : CommentViewModel = hiltViewModel()
+    commentViewModel: CommentViewModel = hiltViewModel()
 ) {
     val postState by postViewModel.uiState.collectAsState()
     val commentState by commentViewModel.state.collectAsState()
     val currentUserId = postViewModel.currentUserId
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val listState = rememberLazyListState()
-
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    
     var showDiscardDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val handleBack = {
-        if (commentViewModel.hasUnsavedChanges()) {
-            showDiscardDialog = true
-        } else {
-            onBackClick()
+        if (commentViewModel.hasUnsavedChanges()) showDiscardDialog = true
+        else onBackClick()
+    }
+
+    BackHandler { handleBack() }
+
+    // ── Dialogs ───────────────────────────────────────────────────────────────
+    if (postState.showEnrollmentDialog && postState.selectedRoleForEnrollment != null) {
+        EnrollmentRequestDialog(
+            roles = postState.post?.projectRoles ?: emptyList(),
+            initialSelectedRoleId = postState.selectedRoleForEnrollment!!.id,
+            postTitle = postState.post?.title ?: "",
+            onDismiss = { postViewModel.closeEnrollmentDialog() },
+            onSubmit = { roleId, message -> postViewModel.enrollInRole(roleId, message) },
+            isLoading = postState.isProcessingEnrollment
+        )
+    }
+
+    if (postState.showEventRegDialog && postState.post?.eventDetails != null) {
+        EventRegistrationDialog(
+            eventDetails = postState.post!!.eventDetails!!,
+            eventTitle = postState.post!!.title,
+            onDismiss = { postViewModel.closeEventRegistrationDialog() },
+            onSubmit = { _ ->
+                postViewModel.registerForEvent()
+                postViewModel.closeEventRegistrationDialog()
+            },
+            isLoading = postState.isProcessingEnrollment
+        )
+    }
+
+    if (postState.showDeleteDialog && postState.post != null) {
+        DeleteConfirmationDialog(
+            postTitle = postState.post!!.title,
+            onDismiss = { postViewModel.dismissDeleteDialog() },
+            onConfirm = { postViewModel.deletePost() },
+            isDeleting = postState.isDeleting
+        )
+    }
+
+    if (showDiscardDialog) {
+        DiscardDialog(
+            title = "Discard comment?",
+            message = "You have an unsaved comment. Do you want to leave without posting?",
+            discardText = "Discard",
+            keepText = "Keep editing",
+            onDiscard = {
+                if (commentState.replyingToComment != null) commentViewModel.onEvent(CommentEvent.CancelReply)
+                if (commentState.newCommentText.isNotEmpty()) commentViewModel.onEvent(CommentEvent.UpdateCommentText(""))
+                showDiscardDialog = false
+                onBackClick()
+            },
+            onKeep = { showDiscardDialog = false }
+        )
+    }
+
+    if (postState.showImageViewer) {
+        ImageViewer(
+            images = postState.selectedImages,
+            initialPage = postState.selectedImageIndex,
+            user = postState.selectedImageUser,
+            caption = postState.selectedImageCaption,
+            onDismiss = postViewModel::onDismissImageViewer
+        )
+    }
+
+    // ── Post Options Sheet ────────────────────────────────────────────────────
+    if (postState.showPostOptionsSheet) {
+        val postLink = com.exa.android.reflekt.loopit.core.utils.ShareUtils.buildFdlUrl(postState.post?.id ?: "")
+        val authorOptions = if (postState.isAuthor) listOf(
+            BottomSheetOption(
+                icon = Icons.Rounded.Edit,
+                label = "Edit Post",
+                onClick = { postState.post?.let { onEditClick(it.id, it.type) } }
+            ),
+            BottomSheetOption(
+                icon = Icons.Rounded.Delete,
+                label = "Delete Post",
+                isDestructive = true,
+                onClick = { postViewModel.showDeleteConfirmation() }
+            )
+        ) else emptyList()
+        val sharedOptions = listOf(
+            BottomSheetOption(
+                icon = Icons.Rounded.ContentCopy,
+                label = "Copy Link",
+                onClick = {
+                    scope.launch {
+                        val shortLink = com.exa.android.reflekt.loopit.core.utils.ShareUtils.buildShortFdlUrl(context, postState.post?.id ?: "")
+                        clipboardManager.setText(AnnotatedString(shortLink))
+                        postViewModel.clearToast()
+                    }
+                }
+            )
+        )
+        val reportOption = if (!postState.isAuthor) listOf(
+            BottomSheetOption(
+                icon = Icons.Rounded.Flag,
+                label = "Report Post",
+                isDestructive = true,
+                onClick = { postViewModel.openReportSheet() }
+            )
+        ) else emptyList()
+
+        AppOptionsSheet(
+            title = "Post Options",
+            options = authorOptions + sharedOptions + reportOption,
+            onDismiss = { postViewModel.dismissPostOptions() }
+        )
+    }
+
+    // ── Share Sheet ───────────────────────────────────────────────────────────
+    if (postState.showShareSheet) {
+        // Kick off background prep (short-link + bitmap) as soon as the sheet
+        // is visible so that "Share via…" fires the intent without any delay.
+        LaunchedEffect(Unit) { postViewModel.prepareShare(context) }
+        AppShareSheet(
+            onCopyLink = {
+                scope.launch {
+                    val shortLink = com.exa.android.reflekt.loopit.core.utils.ShareUtils.buildShortFdlUrl(context, postState.post?.id ?: "")
+                    clipboardManager.setText(AnnotatedString(shortLink))
+                    postViewModel.dismissShareSheet()
+                }
+            },
+            onSystemShare = { postViewModel.sharePost(context) },
+            onDismiss = { postViewModel.dismissShareSheet() }
+        )
+    }
+
+    // ── Report Dialog ─────────────────────────────────────────────────────────
+    if (postState.showReportSheet) {
+        ReportContentDialog(
+            onDismissRequest = { postViewModel.dismissReportSheet() },
+            onSubmit = { _ ->
+                postViewModel.dismissReportSheet()
+                postViewModel.dismissPostOptions()
+            }
+        )
+    }
+
+    // ── Registration Success Dialog ───────────────────────────────────────────
+    if (postState.showRegistrationSuccess) {
+        SuccessDialog(
+            title = "Registration Confirmed!",
+            message = "You're all set. We've sent a confirmation to your student address.",
+            actionText = "View Event",
+            onAction = { postViewModel.dismissRegistrationSuccess() },
+            onDismissRequest = { postViewModel.dismissRegistrationSuccess() }
+        )
+    }
+
+
+    // PROJECT posts → dedicated full-screen layout
+    val currentPost = postState.post
+    if (!postState.isLoading && currentPost?.type == PostType.PROJECT.displayName) {
+        Box(Modifier.fillMaxSize()) {
+            ProjectDetailContent(
+                post = currentPost,
+                currentUserId = currentUserId,
+                isAuthor = postState.isAuthor,
+                enrollmentStatuses = postState.enrollmentStatuses,
+                commentState = commentState,
+                commentViewModel = commentViewModel,
+                postViewModel = postViewModel,
+                onBackClick = { handleBack() },
+                onUserClick = onUserClick,
+                onManageClick = { onManageRequestsClick(currentPost.id) },
+                onShareClick = { postViewModel.openShareSheet() },
+                onLikeClick = { postViewModel.onLikeClick(currentPost.id, currentPost.likes.contains(currentUserId)) },
+                onImageClick = { index ->
+                    postViewModel.onImageClick(currentPost.imageUrls, index, currentPost.userInfo, currentPost.description)
+                },
+                onInviteClick = { onInviteClick(currentPost.id, currentPost.title) },
+                onViewAllCollaborators = { onViewAllCollaborators(currentPost.id, currentPost.title) },
+                onOptionsClick = { postViewModel.openPostOptions() }
+            )
         }
+        return
     }
 
-    BackHandler(enabled = true) {
-        handleBack()
-    }
-
-    // Pager state for tabs (if PROJECT or EVENT)
-    //val pagerState = rememberPagerState(pageCount = { 2 })
-
-    var curTab by rememberSaveable { mutableIntStateOf(0) }
-    val showTabs = postState.post?.type == PostType.PROJECT.displayName ||
-            postState.post?.type == PostType.EVENT.displayName
-
-    // Show toast messages
     LaunchedEffect(postState.toastMessage) {
-        postState.toastMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+        postState.toastMessage?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
             postViewModel.clearToast()
         }
     }
-
     LaunchedEffect(Unit) {
-        commentViewModel.uiEvents.collect {event ->
-            when(event){
-                is CommentUiEvent.FocusInput ->{
-                    focusRequester.requestFocus()
-                    keyboardController?.show()
-                }
-                else ->{}
+        commentViewModel.uiEvents.collect { event ->
+            if (event is CommentUiEvent.FocusInput) {
+                focusRequester.requestFocus()
+                keyboardController?.show()
             }
-
         }
     }
-
-    LaunchedEffect(postId) {
-        commentViewModel.onEvent(CommentEvent.LoadComments(postId))
-    }
-
-    // Handle post deletion - navigate back when deleted
-    LaunchedEffect(postState.postDeleted) {
-        if (postState.postDeleted) {
-            onBackClick()
-        }
-    }
-
+    LaunchedEffect(postId) { commentViewModel.onEvent(CommentEvent.LoadComments(postId)) }
+    LaunchedEffect(postState.postDeleted) { if (postState.postDeleted) onBackClick() }
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { lastVisible ->
                 val total = listState.layoutInfo.totalItemsCount
-                if (
-                    lastVisible == total - 1 &&
-                    commentState.hasMoreComments &&
-                    !commentState.isLoadingMore
-                ) {
+                if (lastVisible == total - 1 && commentState.hasMoreComments && !commentState.isLoadingMore) {
                     commentViewModel.onEvent(CommentEvent.LoadMoreComments)
                 }
             }
     }
 
+    // Scroll to the discussion/comments section when requested via deep link (?scrollTo=comments)
+    val discussionIndex = remember(postState.post) {
+        postState.post?.let { p ->
+            var idx = 1 // hero item is always index 0
+            if (p.description.isNotBlank()) idx++
+            if (p.links.isNotEmpty()) idx++
+            if (p.fileUrls.isNotEmpty()) idx++
+            if (p.tags.isNotEmpty()) idx++
+            idx++ // engagement bar
+            idx   // discussion header
+        } ?: Int.MAX_VALUE
+    }
+    var hasScrolledToComment by remember { mutableStateOf(false) }
+    LaunchedEffect(scrollTo, discussionIndex, commentState.comments) {
+        if (!hasScrolledToComment && scrollTo.isNotBlank() && discussionIndex != Int.MAX_VALUE) {
+            if (scrollTo == "comments") {
+                listState.animateScrollToItem(discussionIndex)
+                hasScrolledToComment = true
+            } else if (commentState.comments.isNotEmpty()) {
+                val commentIndex = commentState.comments.indexOfFirst { topLevel ->
+                    topLevel.id == scrollTo || topLevel.replies.any { it.id == scrollTo }
+                }
+                if (commentIndex != -1) {
+                    listState.animateScrollToItem(discussionIndex + 1 + commentIndex)
+                    hasScrolledToComment = true
+                }
+            }
+        }
+    }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = when (postState.post?.type) {
-                            PostType.PROJECT.displayName -> "Project"
-                            PostType.EVENT.displayName -> "Event"
-                            else -> "Post"
-                        },
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { handleBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    // Show Edit/Delete buttons if user is author
-                    if (postState.isAuthor && postState.post != null) {
-                        IconButton(onClick = { onEditClick(postState.post!!.id) }) {
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "Edit Post",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        IconButton(onClick = { postViewModel.showDeleteConfirmation() }) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Delete Post",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        IconButton(onClick = { onManageRequestsClick(postState.post!!.id) }) {
-                            Icon(
-                                Icons.Rounded.ManageAccounts,
-                                contentDescription = "Manage",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+    val pullState = rememberPullToRefreshState()
+    val isDark = isSystemInDarkTheme()
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize().background(LiquidColors.BgBase).imePadding()) {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                postViewModel.refresh()
+                scope.launch {
+                    delay(2000)
+                    isRefreshing = false
+                }
+            },
+            state = pullState,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullState,
+                    isRefreshing = isRefreshing,
+                    containerColor = if (isDark) Color.Black else Color.White,
+                    color = LiquidColors.Primary,
+                    modifier = Modifier.align(Alignment.TopCenter)
                 )
-            )
-        },
+            }
+        ) {
+        when {
+            postState.isLoading && postState.post == null -> {
+                com.exa.android.reflekt.loopit.presentation.main.post.components.PostDetailShimmer()
+            }
+            postState.error != null -> {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(postState.error ?: "Error", color = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.height(Spacing.small))
+                    Button(onClick = { postViewModel.refresh() }) { Text("Retry") }
+                }
+            }
+            else -> postState.post?.let { post ->
+                // EVENT → dedicated layout
+                if (post.type == PostType.EVENT.displayName && post.eventDetails != null) {
+                    val hasAppliedToAny = remember(postState.enrollmentStatuses, postState.isRegistered) {
+                        postState.enrollmentStatuses.values.any {
+                            it == EnrollmentStatus.PENDING || it == EnrollmentStatus.ACCEPTED
+                        } || postState.isRegistered
+                    }
+                    EventDetailContent(
+                        post = post,
+                        currentUserId = currentUserId,
+                        isRegistered = postState.isRegistered,
+                        isAuthor = postState.isAuthor,
+                        onRegisterClick = { postViewModel.openEventRegistrationDialog() },
+                        onBackClick = { handleBack() },
+                        onShareClick = { postViewModel.openShareSheet() },
+                        onFavoriteClick = { postViewModel.onLikeClick(post.id, post.likes.contains(currentUserId)) },
+                        onChatClick = { if (!post.isAnonymous) onChatClick(post.createdBy, post.title) },
+                        onUserClick = { if (!post.isAnonymous) onUserClick(post.createdBy) },
+                        onManageClick = { onManageRequestsClick(post.id) },
+                        onViewAllParticipants = { onViewAllParticipants(post.id, post.title) },
+                        onToggleEventClosure = { isClosed -> postViewModel.toggleEventClosure(isClosed) },
+                        onUpdateCapacity = { newCapacity -> postViewModel.updateEventCapacity(newCapacity) },
+                        onOptionsClick = { postViewModel.openPostOptions() },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    return@let
+                }
 
-        bottomBar = {
-            if(curTab == 0) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    state = listState,
+                    contentPadding = PaddingValues(bottom = 160.dp)
+                ) {
+                    // ── 1. Hero + nav + metadata (event-detail style) ─────────────────────
+                    item {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                        ) {
+                            if (post.imageUrls.isNotEmpty()) {
+                                HeroCarousel(
+                                    images = post.imageUrls,
+                                    onImageClick = { index ->
+                                        postViewModel.onImageClick(post.imageUrls, index, post.userInfo, post.description)
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                PostStylizedPlaceholder(category = post.tags.firstOrNull(), postType = post.type)
+                            }
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color.Black.copy(alpha = 0.45f),
+                                                Color.Transparent,
+                                                LiquidColors.BgBase
+                                            )
+                                        )
+                                    )
+                            )
+                            // Floating nav
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .statusBarsPadding()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                PdHeroNavBtn(Icons.AutoMirrored.Filled.ArrowBack, "Back") { handleBack() }
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    val isLiked = post.likes.contains(currentUserId)
+                                    PdHeroNavBtn(
+                                        icon = if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                        cd = "Like",
+                                        tint = if (isLiked) Color.Red else Color.White
+                                    ) { postViewModel.onLikeClick(post.id, isLiked) }
+                                    PdHeroNavBtn(Icons.Rounded.Share, "Share") { postViewModel.openShareSheet() }
+                                    PdHeroNavBtn(Icons.Rounded.MoreVert, "Options") { postViewModel.openPostOptions() }
+                                }
+                            }
+                            // Type + first-tag badges at bottom of hero
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                EventBadge(text = post.type, isPrimary = true)
+                                post.tags.firstOrNull()?.let { EventBadge(text = it, isPrimary = false) }
+                            }
+                        }
+                        // Metadata below hero
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                        ) {
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = post.title,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = LiquidColors.TextPrimary,
+                                lineHeight = 36.sp
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Schedule,
+                                    contentDescription = null,
+                                    tint = LiquidColors.Primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = com.exa.android.reflekt.loopit.core.utils.formatTimeAgo(post.createdAt?.toDate()?.time ?: System.currentTimeMillis()),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = LiquidColors.TextSecondary
+                                )
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            HorizontalDivider(color = LiquidColors.Border)
+                            Spacer(Modifier.height(12.dp))
+                            PostAuthorRow(
+                                post = post,
+                                onUserClick = { if (!post.isAnonymous) onUserClick(post.createdBy) }
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            HorizontalDivider(color = LiquidColors.Border)
+                        }
+                    }
+
+                    // ── 2. About / Description ────────────────────────────────
+                    if (post.description.isNotBlank()) {
+                        item {
+                            PostAboutSection(
+                                text = post.description,
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 20.dp, bottom = 24.dp)
+                            )
+                        }
+                    }
+
+                    // ── 2b. Poll ──────────────────────────────────────────────
+                    if (post.pollOptions.isNotEmpty()) {
+                        item {
+                            PollOptionsSection(
+                                post = post,
+                                currentUserId = currentUserId,
+                                onVote = { optionIndex -> postViewModel.onVoteClick(optionIndex) },
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                        }
+                    }
+
+                    // ── 3. Links ──────────────────────────────────────────────
+                    if (post.links.isNotEmpty()) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(bottom = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                post.links.forEach { link ->
+                                    LinkPreview(url = link, modifier = Modifier.fillMaxWidth())
+                                }
+                            }
+                        }
+                    }
+
+                    // ── 4. Files ──────────────────────────────────────────────
+                    if (post.fileUrls.isNotEmpty()) {
+                        item {
+                            Box(
+                                Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(bottom = 16.dp)
+                            ) {
+                                FileAttachmentsList(post.fileUrls)
+                            }
+                        }
+                    }
+
+                    // ── 5. Tags ───────────────────────────────────────────────
+                    if (post.tags.isNotEmpty()) {
+                        item {
+                            FlowRow(
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .padding(bottom = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                post.tags.forEach { tag ->
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            "#$tag",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── 6. Engagement bar ─────────────────────────────────────
+                    item {
+                        PostEngagementBar(
+                            post = post,
+                            currentUserId = currentUserId,
+                            onLikeClick = { postViewModel.onLikeClick(post.id, post.likes.contains(currentUserId)) },
+                            onCommentClick = { commentViewModel.onEvent(CommentEvent.FocusInput) },
+                            onLinkClick = { postViewModel.sharePost(context) },
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                    }
+
+                    // ── 7. Discussion ─────────────────────────────────────────
+                    item {
+                        Text(
+                            "Discussion (${commentState.comments.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = LiquidColors.TextPrimary,
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 8.dp, bottom = 16.dp)
+                        )
+                    }
+                    commentListContent(commentState, currentUserId, commentViewModel, onUserClick)
+                }
+            }
+        }
+        } // end PullToRefreshBox
+
+        // ── Fixed comment input bar at the bottom ─────────────────────────────
+        postState.post?.let { post ->
+            if (post.type != PostType.EVENT.displayName) {
                 Column(
                     Modifier
+                        .align(Alignment.BottomCenter)
                         .fillMaxWidth()
+                        .background(LiquidColors.BgBase)
                         .navigationBarsPadding()
                         .imePadding()
                 ) {
                     CommentInput(commentState, commentViewModel, focusRequester)
                 }
             }
-        },
-
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            when {
-                postState.isLoading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-
-                postState.error != null -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = postState.error ?: "Unknown error",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(
-                            onClick = { /* Retry */ },
-                            modifier = Modifier.padding(top = Spacing.medium)
-                        ) {
-                            Text("Retry")
-                        }
-                    }
-                }
-
-                else -> {
-                    postState.post?.let { post ->
-                        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-                            // COMPACT USER HEADER (Social media style)
-                            item {
-//                                CompactUserHeader(
-//                                    post = post,
-//                                    onUserClick = { /* Navigate to user profile */ }
-//                                )
-
-                                // User Info Header
-                                if (post.userInfo != null) {
-                                    UserInfoHeader(
-                                        userInfo = post.userInfo,
-                                        postViews = post.viewsCount,
-                                        timestamp = post.createdAt?.toDate()?.time
-                                            ?: System.currentTimeMillis(),
-                                        postType = post.type,
-                                        onClick = {onUserClick(post.createdBy)}
-                                    )
-                                } else {
-                                    // Fallback if user info not loaded
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(Spacing.medium),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Placeholder avatar
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    MaterialTheme.colorScheme.primary.copy(
-                                                        alpha = 0.2f
-                                                    )
-                                                )
-                                        )
-
-                                        Spacer(modifier = Modifier.width(Spacing.small))
-
-                                        Column {
-                                            Text(
-                                                text = post.createdByName.ifEmpty { "Unknown User" },
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                text = post.type,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
-                                }
-
-                            }
-
-//                            if (!showTabs) {
-//                                item {
-//                                    OverviewTab(post, currentUserId, onImageClick = {index->
-//                                        postViewModel.onImageClick(post.imageUrls, index, post.userInfo, post.description)
-//                                    })
-//                                }
-//                            }
-
-                            // TABS FOR PROJECT/EVENT (Overview + Details)
-                            if (showTabs) {
-                                item {
-                                    TabRow(
-                                        selectedTabIndex = curTab,
-                                        containerColor = MaterialTheme.colorScheme.background
-                                    ) {
-                                        Tab(
-                                            selected = curTab == 0,
-                                            onClick = {
-                                                curTab = 0
-                                            },
-                                            text = { Text("Overview") }
-                                        )
-                                        Tab(
-                                            selected = curTab == 1,
-                                            onClick = {
-                                                curTab = 1
-                                            },
-                                            text = {
-                                                Text(
-                                                    if (post.type == PostType.PROJECT.displayName)
-                                                        "Roles"
-                                                    else
-                                                        "Event Info"
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-
-//                                item {
-//                                    HorizontalPager(
-//                                        state = pagerState,
-//                                        //modifier = Modifier.heightIn(min = 300.dp)
-//                                    ) { page ->
-//                                        when (page) {
-//                                            0 ->
-                                if (curTab == 0) {
-                                    item {
-                                        OverviewTab(
-                                            post = post, currentUserId, onImageClick = { index ->
-                                                postViewModel.onImageClick(
-                                                    post.imageUrls,
-                                                    index,
-                                                    post.userInfo,
-                                                    post.description
-                                                )
-                                            },
-                                            onLikeClick = { postViewModel.onLikeClick(post.id, post.likes.contains(currentUserId)) },
-                                            onCommentClick = { commentViewModel.onEvent(CommentEvent.FocusInput) },
-                                            onShareClick = { TODO() }
-                                        )
-                                    }
-                                } else {
-                                    if (post.type == PostType.PROJECT.displayName) {
-                                        item {
-                                            val hasAppliedToAny = remember(postState.enrollmentStatuses, postState.isRegistered) {
-                                                postState.enrollmentStatuses.values.any {
-                                                    it == EnrollmentStatus.PENDING || it == EnrollmentStatus.ACCEPTED
-                                                } || postState.isRegistered
-                                            }
-
-                                            ProjectDetailsTab(
-                                                roles = post.projectRoles,
-                                                enrollmentStatuses = postState.enrollmentStatuses,
-                                                isAuthor = postState.isAuthor,
-                                                onEnrollClick = { roleId ->
-                                                    postViewModel.openEnrollmentDialog(roleId)
-                                                },
-                                                onToggleRoleClosure = { roleId, isClosed ->
-                                                    postViewModel.toggleRoleClosure(roleId, isClosed)
-                                                },
-                                                hasAppliedToAny = hasAppliedToAny
-                                            )
-                                        }
-                                    } else {
-                                        item {
-                                            val hasAppliedToAny = remember(postState.enrollmentStatuses, postState.isRegistered) {
-                                                postState.enrollmentStatuses.values.any {
-                                                    it == EnrollmentStatus.PENDING || it == EnrollmentStatus.ACCEPTED
-                                                } || postState.isRegistered
-                                            }
-
-                                            post.eventDetails?.let { eventDetails ->
-                                                ModernEventDetailsTab(
-                                                    eventDetails = eventDetails,
-                                                    eventTitle = post.title,
-                                                    isRegistered = postState.isRegistered,
-                                                    isAuthor = postState.isAuthor,
-                                                    onRegisterClick = { postViewModel.openEventRegistrationDialog() },
-                                                    onToggleClosure = { isClosed ->
-                                                        postViewModel.toggleEventClosure(isClosed)
-                                                    },
-                                                    hasAppliedToAny = hasAppliedToAny
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-
-                            if(curTab == 0) {
-//                            // COMMENTS SECTION
-                                item {
-                                    Column(Modifier.fillMaxWidth()) {
-                                        CommentHeader(commentState.comments.size)
-                                    }
-                                }
-
-                                commentListContent(commentState, currentUserId, commentViewModel, onUserClick)
-                            }
-                        }
-                    }
-                }
-            }
         }
+    }
 
+}
 
-        // Dialogs
-        if (postState.showEnrollmentDialog && postState.selectedRoleForEnrollment != null) {
-            EnrollmentRequestDialog(
-                role = postState.selectedRoleForEnrollment!!,
-                onDismiss = { postViewModel.closeEnrollmentDialog() },
-                onSubmit = { message ->
-                    postViewModel.enrollInRole(postState.selectedRoleForEnrollment!!.id, message)
-                },
-                isLoading = postState.isProcessingEnrollment
-            )
-        }
-
-        if (postState.showEventRegDialog && postState.post != null && postState.post!!.eventDetails != null) {
-            EventRegistrationDialog(
-                eventDetails = postState.post!!.eventDetails!!,
-                eventTitle = postState.post!!.title,
-                onDismiss = { postViewModel.closeEventRegistrationDialog() },
-                onSubmit = { message ->
-                    postViewModel.registerForEvent()
-                    postViewModel.closeEventRegistrationDialog()
-                },
-                isLoading = postState.isProcessingEnrollment
-            )
-        }
-
-        // Delete Confirmation Dialog
-        if (postState.showDeleteDialog && postState.post != null) {
-            DeleteConfirmationDialog(
-                postTitle = postState.post!!.title,
-                onDismiss = { postViewModel.dismissDeleteDialog() },
-                onConfirm = { postViewModel.deletePost() },
-                isDeleting = postState.isDeleting
-            )
-        }
-
-
-        if (showDiscardDialog) {
-            DiscardDialog(
-                title = "Discard comment?",
-                message = "You have an unsaved comment. Do you want to leave without posting?",
-                discardText = "Discard",
-                keepText = "Keep editing",
-                onDiscard = {
-                    if (commentState.replyingToComment != null) {
-                        commentViewModel.onEvent(CommentEvent.CancelReply)
-                    }
-                    if (commentState.newCommentText.isNotEmpty()) {
-                        commentViewModel.onEvent(CommentEvent.UpdateCommentText(""))
-                    }
-                    showDiscardDialog = false
-                    onBackClick()
-                },
-                onKeep = { showDiscardDialog = false }
-            )
-        }
-
-        // Image Viewer with User Info and Caption
-        if (postState.showImageViewer) {
-            ImageViewer(
-                images = postState.selectedImages,
-                initialPage = postState.selectedImageIndex,
-                user = postState.selectedImageUser,
-                caption = postState.selectedImageCaption,
-                onDismiss = postViewModel::onDismissImageViewer
-            )
-        }
+// ── Hero nav button ───────────────────────────────────────────────────────────
+@Composable
+fun PdHeroNavBtn(icon: ImageVector, cd: String, tint: Color = Color.White, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.20f))
+            .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape)
+            .clickableWithNoIndication(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, cd, tint = tint, modifier = Modifier.size(20.dp))
     }
 }
 
-
+// ── About / Description section ───────────────────────────────────────────────
 @Composable
-private fun OverviewTab(post: Post, curUserId : String, onImageClick : (Int) -> Unit, onLikeClick: () -> Unit, onCommentClick: () -> Unit, onShareClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
-        verticalArrangement = Arrangement.Center
-    ) {
-        // TITLE (if present)
-        if (post.title.isNotBlank()) {
-            Text(
-                text = post.title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = Spacing.small)
-            )
-        }
-
-        // DESCRIPTION (Text before images)
-        if (post.description.isNotBlank()) {
-            Text(
-                text = post.description,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(vertical = Spacing.small)
-            )
-        }
-
-
-        //Links Preview
-        if (post.links.isNotEmpty()) {
-            //Spacer(modifier = Modifier.height(Spacing.small))
-            post.links.forEach { link ->
-                LinkPreview(
-                    url = link,
-                    modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.extraSmall)
+private fun PostAboutSection(text: String, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(true) }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            "About",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = LiquidColors.TextPrimary
+        )
+        Spacer(Modifier.height(12.dp))
+        MarkdownText(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = LiquidColors.TextSecondary,
+            lineHeight = 20.sp,
+            maxLines = if (expanded) Int.MAX_VALUE else 5,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.animateContentSize()
+        )
+        if (text.length > 160) {
+            Row(
+                modifier = Modifier
+                    .clickableWithNoIndication { expanded = !expanded }
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (expanded) "Show Less" else "Read More",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
-
-        // COMPACT IMAGE DISPLAY
-        if (post.imageUrls.isNotEmpty()) {
-            MediaContent(post.imageUrls, onImageClick = onImageClick)
-        }
-
-        //PDF (if available)
-        if(post.fileUrls.isNotEmpty()){
-            FileAttachmentsList(post.fileUrls)
-        }
-
-        // TAGS
-        if (post.tags.isNotEmpty()) {
-            CompactTagsRow(tags = post.tags)
-        }
-
-        Spacing.small
-
-        // POST ACTIONS (Like, Comment, Share
-        CompactInteractionRow (
-            post = post,
-            currentUserId = curUserId,
-            onLikeClick = onLikeClick,
-            onCommentClick = onCommentClick,
-            onShareClick = onShareClick
-        )
-
-        HorizontalDivider(thickness = 8.dp, color = MaterialTheme.colorScheme.surfaceVariant)
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+// ── Engagement bar ────────────────────────────────────────────────────────────
 @Composable
-private fun CompactTagsRow(tags: List<String>) {
-    FlowRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        tags.forEach { tag ->
-            SuggestionChip(
-                onClick = { },
-                label = { Text("#$tag", style = MaterialTheme.typography.labelSmall) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun CompactInteractionRow(
+private fun PostEngagementBar(
     post: Post,
     currentUserId: String,
     onLikeClick: () -> Unit,
     onCommentClick: () -> Unit,
-    onShareClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(Spacing.small),
-        horizontalArrangement = Arrangement.SpaceAround
-    ) {
-        // Like Button
-        val isLiked = post.likes.contains(currentUserId)
-        InteractionButton(
-            icon = if (isLiked) Icons.Rounded.ThumbUp else Icons.Rounded.ThumbUpOffAlt,
-            count = post.likesCount,
-            label = "Like",
-            isActive = isLiked,
-            activeColor = LikeColorActive,
-            onClick = onLikeClick
-        )
-
-        // Comment
-        InteractionButton(
-            icon = Icons.Rounded.ChatBubbleOutline,
-            count = post.commentsCount,
-            label = "Comment",
-            activeColor = CommentColor,
-            onClick = onCommentClick
-        )
-
-//        // Repost
-//        InteractionButton(
-//            icon = Icons.Rounded.Repeat,
-//            count = post.sharesCount,
-//            label = "Repost",
-//            activeColor = AccentDark,
-//            onClick = onRepostClick
-//        )
-
-        // Share
-        InteractionButton(
-            icon = Icons.Rounded.Share,
-            count = 0,
-            label = "Share",
-            activeColor = ShareColor,
-            onClick = onShareClick
-        )
-
-//
-//        // Views count
-//        Row(
-//            horizontalArrangement = Arrangement.spacedBy(4.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Icon(
-//                Icons.Default.Visibility,
-//                contentDescription = null,
-//                modifier = Modifier.size(16.dp),
-//                tint = MaterialTheme.colorScheme.onSurfaceVariant
-//            )
-//            Text(
-//                text = formatCount(post.viewsCount),
-//                style = MaterialTheme.typography.labelSmall,
-//                color = MaterialTheme.colorScheme.onSurfaceVariant
-//            )
-//        }
-    }
-}
-
-@Composable
-private fun CompactActionButton(
-    icon: ImageVector,
-    count: Int,
-    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    onClick: () -> Unit
-) {
-    IconButton(onClick = onClick) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(24.dp)
-            )
-            if (count > 0) {
-                Text(
-                    text = formatCount(count),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = color
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProjectDetailsTab(
-    roles: List<ProjectRole>,
-    enrollmentStatuses: Map<String, EnrollmentStatus>,
-    isAuthor: Boolean,
-    onEnrollClick: (String) -> Unit,
-    onToggleRoleClosure: (String, Boolean) -> Unit,
-    hasAppliedToAny: Boolean
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.medium)
-    ) {
-        roles.forEach { role ->
-            RoleCardCompact(
-                role = role,
-                enrollmentStatus = enrollmentStatuses[role.id],
-                isAuthor = isAuthor,
-                onEnrollClick = { onEnrollClick(role.id) },
-                onToggleClosure = { isClosed -> onToggleRoleClosure(role.id, isClosed) },
-                hasAppliedToAny = hasAppliedToAny
-            )
-        }
-    }
-}
-
-@Composable
-private fun RoleCardCompact(
-    role: ProjectRole,
-    enrollmentStatus: EnrollmentStatus?,
-    isAuthor: Boolean,
-    onEnrollClick: () -> Unit,
-    onToggleClosure: (Boolean) -> Unit,
-    hasAppliedToAny: Boolean
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(Spacing.medium)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(role.roleName, fontWeight = FontWeight.Bold)
-                    role.technology?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                
-                Column(horizontalAlignment = Alignment.End) {
-                     Text(
-                        "${role.positionsFilled}/${role.positionsNeeded}",
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    if (role.isManuallyClosed) {
-                         Text(
-                            "Closed",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
-            
-            // Author Toggle
-            if (isAuthor) {
-                Spacer(modifier = Modifier.height(Spacing.small))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Accepting Applications", style = MaterialTheme.typography.bodySmall)
-                    Switch(
-                        checked = !role.isManuallyClosed,
-                        onCheckedChange = { isOpen -> onToggleClosure(!isOpen) },
-                        //scale = 0.8f
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.small))
-
-            if (enrollmentStatus != null && enrollmentStatus != EnrollmentStatus.NOT_ENROLLED) {
-                EnrollmentStatusBadge(status = enrollmentStatus)
-            } else {
-                 val isFull = role.positionsFilled >= role.positionsNeeded
-                 val isClosed = role.isManuallyClosed
-                 
-                 val buttonText = when {
-                     isClosed -> "Application Closed"
-                     isFull -> "Role Full"
-                     hasAppliedToAny -> "Already Applied"
-                     else -> "Apply"
-                 }
-                 
-                 val isEnabled = !isClosed && !isFull && !hasAppliedToAny
-
-                Button(
-                    onClick = onEnrollClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = isEnabled,
-                    colors = ButtonDefaults.buttonColors(
-                        disabledContainerColor = if (isClosed) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        disabledContentColor = if (isClosed) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(buttonText)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModernEventDetailsTab(
-    eventDetails: EventDetails,
-    eventTitle: String,
-    isRegistered: Boolean,
-    isAuthor: Boolean,
-    onRegisterClick: () -> Unit,
-    onToggleClosure: (Boolean) -> Unit,
-    hasAppliedToAny: Boolean
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Spacing.medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.medium)
-    ) {
-        // Date & Time Card
-        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(Spacing.medium),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
-            ) {
-                Icon(Icons.Rounded.CalendarToday, null, tint = MaterialTheme.colorScheme.primary)
-                Column {
-                    Text(
-                        "When",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        formatEventDate(eventDetails.eventDate),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    eventDetails.eventTime?.let {
-                        Text(it, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        }
-
-        // Location Card
-        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(Spacing.medium),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
-            ) {
-                Icon(
-                    if (eventDetails.isVirtual) Icons.Rounded.Laptop else Icons.Rounded.LocationOn,
-                    null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Column {
-                    Text(
-                        "Where",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        eventDetails.getLocationDisplay(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-
-        // Capacity
-        if (eventDetails.capacity != null) {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.padding(Spacing.medium),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
-                ) {
-                    Icon(Icons.Rounded.People, null, tint = MaterialTheme.colorScheme.primary)
-                    Column {
-                        Text(
-                            "Attendees",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "${eventDetails.registeredCount} / ${eventDetails.capacity} registered",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        LinearProgressIndicator(
-                            progress = { eventDetails.registeredCount.toFloat() / eventDetails.capacity },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp)
-                        )
-                    }
-                }
-            }
-        }
-        
-        // Author Toggle
-        if (isAuthor) {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                 Row(
-                    modifier = Modifier.padding(Spacing.medium),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                         Text(
-                            "Registration Status",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                         Text(
-                            if (eventDetails.isManuallyClosed) "Closed" else "Open",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                             color = if (eventDetails.isManuallyClosed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Switch(
-                        checked = !eventDetails.isManuallyClosed,
-                        onCheckedChange = { isOpen -> onToggleClosure(!isOpen) }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Register Button
-        val isFull = eventDetails.isFull()
-        val isClosed = eventDetails.isManuallyClosed
-        val isDeadlinePassed = !eventDetails.isRegistrationOpen() && !isClosed && !isFull
-        
-        val buttonText = when {
-            isRegistered -> "Already Registered"
-            isClosed -> "Registration Closed"
-            isFull -> "Event Full"
-            isDeadlinePassed -> "Registration Ended"
-            hasAppliedToAny -> "Already Applied (One Request Limit)"
-            else -> "Register for Event"
-        }
-        
-        val isEnabled = !isRegistered && eventDetails.isRegistrationOpen() && !hasAppliedToAny
-
-        Button(
-            onClick = onRegisterClick,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = isEnabled,
-            colors = ButtonDefaults.buttonColors(
-                disabledContainerColor = if (isClosed) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = if (isClosed) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        ) {
-            Text(buttonText)
-        }
-    }
-}
-
-
-// HELPER COMPOSABLE
-
-@Composable
-private fun CompactUserHeader(
-    post: Post,
-    onUserClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(Spacing.medium),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Avatar
-        val avatarUrl = post.userInfo?.avatarUrl
-        if (avatarUrl != null) {
-            AsyncImage(
-                model = avatarUrl,
-                contentDescription = "Profile",
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = post.createdByName.firstOrNull()?.uppercase() ?: "?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = post.createdByName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = formatTimeAgo(post.createdAt?.toDate()),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text("•", style = MaterialTheme.typography.bodySmall)
-                Text(
-                    text = post.type,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        IconButton(onClick = { /* More options */ }) {
-            Icon(Icons.Default.MoreVert, "More")
-        }
-    }
-}
-
-@Composable
-private fun CompactImageDisplay(
-    images: List<String>,
+    onLinkClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (images.isEmpty()) return
-
-    AsyncImage(
-        model = images.first(),
-        contentDescription = "Post image",
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(max = 400.dp),
-        contentScale = ContentScale.Crop
-    )
+    val isLiked = post.likes.contains(currentUserId)
+    Column(modifier = modifier.fillMaxWidth()) {
+        HorizontalDivider(color = LiquidColors.Border, thickness = 1.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.large)) {
+                Row(
+                    modifier = Modifier
+                        .clickableWithNoIndication(onClick = onLikeClick)
+                        .padding(Spacing.extraSmall),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Rounded.ThumbUp else Icons.Rounded.ThumbUpOffAlt,
+                        contentDescription = "Like",
+                        tint = if (isLiked) MaterialTheme.colorScheme.error else LiquidColors.TextSecondary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = formatCount(maxOf(0, post.likesCount)),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (isLiked) MaterialTheme.colorScheme.error else LiquidColors.TextSecondary
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .clickableWithNoIndication(onClick = onCommentClick)
+                        .padding(Spacing.extraSmall),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChatBubbleOutline,
+                        contentDescription = "Comment",
+                        tint = LiquidColors.TextSecondary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    if (post.commentsCount > 0) {
+                        Text(
+                            text = formatCount(post.commentsCount),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = LiquidColors.TextSecondary
+                        )
+                    }
+                }
+            }
+            Icon(
+                imageVector = Icons.Rounded.Share,
+                contentDescription = "Share",
+                tint = LiquidColors.TextSecondary,
+                modifier = Modifier
+                    .size(22.dp)
+                    .clickableWithNoIndication(onClick = onLinkClick)
+            )
+        }
+        HorizontalDivider(color = LiquidColors.Border, thickness = 1.dp)
+    }
 }
 
-// Helper functions
-private fun formatTimeAgo(date: Date?): String {
-    if (date == null) return ""
-    val now = Date()
-    val diff = now.time - date.time
-    val hours = diff / (1000 * 60 * 60)
+// ── Post hero badge ───────────────────────────────────────────────────────────
+@Composable
+private fun PostHeroBadge(text: String, isPrimary: Boolean) {
+    val accent = Color(0xFF8B5CF6)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50.dp))
+            .background(if (isPrimary) accent else Color.White.copy(alpha = 0.2f))
+            .border(
+                1.dp,
+                if (isPrimary) Color.Transparent else Color.White.copy(alpha = 0.2f),
+                RoundedCornerShape(50.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            letterSpacing = 0.8.sp
+        )
+    }
+}
+
+// ── Post stylized placeholder ─────────────────────────────────────────────────
+@Composable
+private fun PostStylizedPlaceholder(category: String?, postType: String? = null) {
+    val isDark = isSystemInDarkTheme()
+    val dotColor = if (isDark) Color(0x2613B6EC) else Color(0x3513B6EC)
+    val surface = LiquidColors.Surface
+    val bgBase = LiquidColors.BgBase
+    val icon = getPostCategoryIcon(category, postType)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(surface, bgBase))))
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val spacing = 20.dp.toPx()
+            val radius = 1.dp.toPx()
+            val cols = (size.width / spacing).toInt() + 1
+            val rows = (size.height / spacing).toInt() + 1
+            repeat(cols + 1) { col ->
+                repeat(rows + 1) { row ->
+                    drawCircle(color = dotColor, radius = radius, center = Offset(col * spacing, row * spacing))
+                }
+            }
+        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = LiquidColors.Primary.copy(alpha = 0.08f),
+            modifier = Modifier
+                .size(200.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = 30.dp, y = 30.dp)
+                .rotate(15f)
+        )
+        Box(
+            modifier = Modifier.align(Alignment.Center).padding(top = 32.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .rotate(3f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(listOf(LiquidColors.Primary, Color(0xFF67E8F9)))),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(48.dp))
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(0f to Color.Transparent, 0.6f to Color.Transparent, 1f to bgBase)
+                    )
+                )
+        )
+    }
+}
+
+private fun getPostCategoryIcon(category: String?, postType: String? = null): ImageVector {
+    return when (category?.lowercase()?.trim()) {
+        "design", "ui/ux", "ux", "art", "creative" -> Icons.Rounded.Palette
+        "tech", "technology", "cs", "coding", "programming", "development" -> Icons.Rounded.Code
+        "study", "education", "academic", "learning" -> Icons.Rounded.School
+        "business", "finance", "startup", "entrepreneurship" -> Icons.Rounded.Business
+        "sports", "fitness", "health", "wellness" -> Icons.Rounded.FitnessCenter
+        "music" -> Icons.Rounded.MusicNote
+        "science", "research" -> Icons.Rounded.Science
+        "social", "community", "networking" -> Icons.Rounded.Groups
+        else -> if (postType == PostType.POLL.displayName) Icons.Rounded.Poll else Icons.AutoMirrored.Rounded.Article
+    }
+}
+
+// ── Post author row ───────────────────────────────────────────────────────────
+@Composable
+private fun PostAuthorRow(post: Post, onUserClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (!post.isAnonymous) Modifier.clickableWithNoIndication(onClick = onUserClick) else Modifier),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        if (post.isAnonymous) {
+            AnonymousAvatar(size = 40.dp)
+        } else {
+            val avatarUrl = post.userInfo?.avatarUrl
+            if (!avatarUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(LiquidColors.Primary.copy(alpha = 0.2f))
+                        .border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = post.createdByName.firstOrNull()?.uppercase() ?: "?",
+                        color = LiquidColors.Primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = "Posted by",
+                style = MaterialTheme.typography.labelSmall,
+                color = LiquidColors.TextSecondary
+            )
+            if (post.isAnonymous) {
+                Text(
+                    text = "Anonymous",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = LiquidColors.TextPrimary
+                )
+            } else {
+                val chips = listOfNotNull(
+                    post.userInfo?.branch?.ifBlank { null }?.let { abbreviateStream(it) },
+                    post.userInfo?.section?.ifBlank { null },
+                    post.userInfo?.year?.ifBlank { null }
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = post.userInfo?.name ?: post.createdByName,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = LiquidColors.TextPrimary
+                    )
+                    chips.forEach { PostAcademicChip(it) }
+                }
+                val bio = post.userInfo?.bio
+                if (!bio.isNullOrBlank()) {
+                    Text(
+                        text = bio,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontStyle = FontStyle.Italic,
+                        color = LiquidColors.TextSecondary.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostAcademicChip(label: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(LiquidColors.Primary.copy(alpha = 0.10f))
+            .border(1.dp, LiquidColors.Primary.copy(alpha = 0.20f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 9.sp,
+            color = LiquidColors.Primary,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+private fun postDetailTimeAgo(timestamp: Timestamp?): String {
+    if (timestamp == null) return "Recently"
+    val diff = System.currentTimeMillis() - timestamp.toDate().time
+    val mins = diff / 60_000
+    val hours = mins / 60
     val days = hours / 24
+    val weeks = days / 7
+    val months = days / 30
+    val years = days / 365
     return when {
-        days > 0 -> "${days}d ago"
-        hours > 0 -> "${hours}h ago"
-        else -> "Just now"
+        years >= 1  -> if (years == 1L) "1 year ago"  else "$years years ago"
+        months >= 1 -> if (months == 1L) "1 month ago" else "$months months ago"
+        weeks >= 1  -> if (weeks == 1L) "1 week ago"  else "$weeks weeks ago"
+        days >= 1   -> "${days}d ago"
+        hours >= 1  -> "${hours}h ago"
+        mins >= 1   -> "${mins}m ago"
+        else        -> "Just now"
     }
 }
 
 private fun formatCount(count: Int): String = when {
     count >= 1_000_000 -> "${count / 1_000_000}M"
-    count >= 1_000 -> "${count / 1_000}K"
-    else -> count.toString()
+    count >= 1_000     -> "${count / 1_000}K"
+    else               -> count.toString()
 }
 
 private fun formatEventDate(timestamp: Timestamp?): String {
     if (timestamp == null) return "TBA"
-    val date = timestamp.toDate()
-    val formatter = SimpleDateFormat("EEE, MMM dd, yyyy", Locale.getDefault())
-    return formatter.format(date)
+    return SimpleDateFormat("EEE, MMM dd, yyyy", Locale.getDefault()).format(timestamp.toDate())
 }

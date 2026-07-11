@@ -2,7 +2,7 @@ package com.exa.android.reflekt.loopit.presentation.main.post.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -29,7 +29,7 @@ fun EnrolledUserAvatar(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.clickable(onClick = onClick)
+        modifier = modifier.clickableWithNoIndication(onClick = onClick)
     ) {
         AsyncImage(
             model = userImageUrl ?: "https://ui-avatars.com/api/?name=$userName",
@@ -63,7 +63,7 @@ fun EmptySlotIndicator(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.clickable(onClick = onClick)
+        modifier = modifier.clickableWithNoIndication(onClick = onClick)
     ) {
         Surface(
             modifier = Modifier.size(48.dp),

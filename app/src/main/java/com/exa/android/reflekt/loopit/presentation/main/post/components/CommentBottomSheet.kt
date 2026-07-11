@@ -17,6 +17,7 @@ import com.exa.android.reflekt.loopit.presentation.main.post.screen.CommentUiEve
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.CommentViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
 /**
  * Bottom sheet for displaying and managing comments
@@ -91,10 +92,10 @@ fun CommentBottomSheet(
     ModalBottomSheet(
         onDismissRequest = { viewModel.onEvent(CommentEvent.DismissRequested) },
         modifier = modifier,
-        sheetState = sheetState, //rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surface,
+        sheetState = sheetState,
+        containerColor = LiquidColors.BgBase,
     ) {
-         CommentSection(postId, viewModel, focusRequester, onUserClick)
+        CommentSection(postId, viewModel, focusRequester, onUserClick)
     }
 }
 
@@ -164,7 +165,7 @@ fun CommentSection(
             }
         }
 
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         CommentInput(state,viewModel, focusRequester)
     }

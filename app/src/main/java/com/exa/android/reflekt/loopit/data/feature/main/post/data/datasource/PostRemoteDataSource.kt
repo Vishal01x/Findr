@@ -147,7 +147,11 @@ class PostRemoteDataSource @Inject constructor(
     }
     
     /**
-     * Toggle like on a post
+     * Toggle like on a post.
+     * Direct field update (arrayUnion/arrayRemove + increment) instead of a transaction:
+     * a transaction always forces a server round trip for its read before it can write, while
+     * a plain update() is applied to Firestore's local cache immediately, so the existing
+     * snapshot listener (getPostsStream/getProjectUpdates) reflects it instantly.
      */
     suspend fun toggleLike(
         postId: String,
@@ -155,8 +159,6 @@ class PostRemoteDataSource @Inject constructor(
         isCurrentlyLiked: Boolean
     ): Result<Unit> {
         return try {
-            val postRef = postsCollection.document(postId)
-
             val update = if (isCurrentlyLiked) {
                 mapOf(
                     PostConstants.PostFields.LIKES to FieldValue.arrayRemove(userId),
@@ -168,9 +170,25 @@ class PostRemoteDataSource @Inject constructor(
                     PostConstants.PostFields.LIKES_COUNT to FieldValue.increment(1)
                 )
             }
+            postsCollection.document(postId).update(update).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
-            postRef.update(update).await()
-
+    /**
+     * Vote (or change vote / un-vote) on a poll post.
+     * The caller (repository) recomputes the full [updatedPollOptions] from the locally-known
+     * poll state, so this is a single direct field update with no preceding read - keeps the
+     * write on the fast, locally-echoed path instead of a transaction, which always forces a
+     * server round trip before it can apply anything.
+     */
+    suspend fun voteOnPoll(postId: String, updatedPollOptions: List<Map<String, Any?>>): Result<Unit> {
+        return try {
+            postsCollection.document(postId)
+                .update(PostConstants.PostFields.POLL_OPTIONS, updatedPollOptions)
+                .await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

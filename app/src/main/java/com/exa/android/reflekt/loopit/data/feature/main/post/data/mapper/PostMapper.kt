@@ -4,6 +4,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostConstants
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 
 /**
  * Mapper for converting between Post domain model and Firestore representation
@@ -22,6 +23,13 @@ object PostMapper {
                 "positionsNeeded" to role.positionsNeeded,
                 "positionsFilled" to role.positionsFilled,
                 "description" to role.description
+            )
+        }
+
+        val pollOptionsList = post.pollOptions.map { option ->
+            mapOf(
+                "text" to option.text,
+                "votes" to option.votes
             )
         }
 
@@ -44,7 +52,7 @@ object PostMapper {
             PostConstants.PostFields.DESCRIPTION to post.description,
             PostConstants.PostFields.ROLES_NEEDED to post.rolesNeeded,
             PostConstants.PostFields.TAGS to post.tags,
-            PostConstants.PostFields.CREATED_AT to post.createdAt,
+            PostConstants.PostFields.CREATED_AT to (post.createdAt ?: FieldValue.serverTimestamp()),
             PostConstants.PostFields.CREATED_BY to post.createdBy,
             PostConstants.PostFields.CREATED_BY_NAME to post.createdByName,
             PostConstants.PostFields.ENROLLED_PERSONS to post.enrolledPersons,
@@ -58,7 +66,9 @@ object PostMapper {
             PostConstants.PostFields.TITLE_LOWER to post.title.lowercase(),
             PostConstants.PostFields.PROJECT_ROLES to projectRolesList, // New
             PostConstants.PostFields.EVENT_DETAILS to eventDetailsMap, // New
-            PostConstants.PostFields.VIEWS_COUNT to post.viewsCount // New
+            PostConstants.PostFields.POLL_OPTIONS to pollOptionsList, // New
+            PostConstants.PostFields.VIEWS_COUNT to post.viewsCount,
+            PostConstants.PostFields.IS_ANONYMOUS to post.isAnonymous
         )
     }
     
@@ -74,7 +84,15 @@ object PostMapper {
                 technology = roleMap["technology"] as? String,
                 positionsNeeded = (roleMap["positionsNeeded"] as? Long)?.toInt() ?: 1,
                 positionsFilled = (roleMap["positionsFilled"] as? Long)?.toInt() ?: 0,
-                description = roleMap["description"] as? String
+                description = roleMap["description"] as? String,
+                isManuallyClosed = roleMap["isManuallyClosed"] as? Boolean ?: false
+            )
+        } ?: emptyList()
+
+        val pollOptionsList = (map[PostConstants.PostFields.POLL_OPTIONS] as? List<Map<String, Any?>>)?.map { optionMap ->
+            com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PollOption(
+                text = optionMap["text"] as? String ?: "",
+                votes = (optionMap["votes"] as? List<String>) ?: emptyList()
             )
         } ?: emptyList()
 
@@ -114,9 +132,11 @@ object PostMapper {
             rolesNeeded = map[PostConstants.PostFields.ROLES_NEEDED] as? List<String> ?: emptyList(),
             projectRoles = projectRolesList, // New
             eventDetails = eventDetails, // New
+            pollOptions = pollOptionsList, // New
             likes = map[PostConstants.PostFields.LIKES] as? List<String> ?: emptyList(),
             enrolledPersons = map[PostConstants.PostFields.ENROLLED_PERSONS] as? Map<String, String> ?: emptyMap(),
-            requestedPersons = map[PostConstants.PostFields.REQUESTED_PERSONS] as? Map<String, String> ?: emptyMap()
+            requestedPersons = map[PostConstants.PostFields.REQUESTED_PERSONS] as? Map<String, String> ?: emptyMap(),
+            isAnonymous = map[PostConstants.PostFields.IS_ANONYMOUS] as? Boolean ?: false
         )
     }
     

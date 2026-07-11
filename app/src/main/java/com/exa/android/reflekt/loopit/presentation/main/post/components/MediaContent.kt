@@ -3,8 +3,10 @@ package com.exa.android.reflekt.loopit.presentation.main.post.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.theme.Spacing
+import kotlinx.coroutines.delay
 
 /**
  * Dynamic image grid layout component
@@ -37,15 +41,30 @@ fun MediaContent(
     videoUrl: String? = null,
     onImageClick: (Int) -> Unit = {},
     onVideoClick: () -> Unit = {},
+    compactSingleImage: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     when {
         images.isNotEmpty() -> {
-            DynamicImageGrid(
-                images = images,
-                onImageClick = onImageClick,
-                modifier = modifier
-            )
+            if (compactSingleImage && images.size == 1) {
+                AsyncImage(
+                    model = images[0],
+                    contentDescription = "Post image",
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .height(200.dp)
+                        .clickableWithNoIndication { onImageClick(0) },
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                DynamicImageGrid(
+                    images = images,
+                    onImageClick = onImageClick,
+                    modifier = modifier
+                )
+            }
         }
         videoUrl != null -> {
             VideoThumbnail(
@@ -107,7 +126,7 @@ private fun SingleImageLayout(
         modifier = modifier
             .fillMaxWidth()
             .height(300.dp)
-            .clickable(onClick = onClick),
+            .clickableWithNoIndication(onClick = onClick),
         contentScale = ContentScale.Crop
     )
 }
@@ -131,7 +150,7 @@ private fun TwoImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(index) },
+                    .clickableWithNoIndication { onImageClick(index) },
                 contentScale = ContentScale.Crop
             )
         }
@@ -157,7 +176,7 @@ private fun ThreeImageLayout(
             modifier = Modifier
                 .weight(2f)
                 .fillMaxHeight()
-                .clickable { onImageClick(0) },
+                .clickableWithNoIndication { onImageClick(0) },
             contentScale = ContentScale.Crop
         )
         
@@ -174,7 +193,7 @@ private fun ThreeImageLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .clickable { onImageClick(1) },
+                    .clickableWithNoIndication { onImageClick(1) },
                 contentScale = ContentScale.Crop
             )
             
@@ -184,7 +203,7 @@ private fun ThreeImageLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .clickable { onImageClick(2) },
+                    .clickableWithNoIndication { onImageClick(2) },
                 contentScale = ContentScale.Crop
             )
         }
@@ -218,7 +237,7 @@ private fun FourImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(0) },
+                    .clickableWithNoIndication { onImageClick(0) },
                 contentScale = ContentScale.Crop
             )
 
@@ -228,7 +247,7 @@ private fun FourImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(1) },
+                    .clickableWithNoIndication { onImageClick(1) },
                 contentScale = ContentScale.Crop
             )
         }
@@ -246,7 +265,7 @@ private fun FourImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(2) },
+                    .clickableWithNoIndication { onImageClick(2) },
                 contentScale = ContentScale.Crop
             )
 
@@ -256,7 +275,7 @@ private fun FourImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(3) },
+                    .clickableWithNoIndication { onImageClick(3) },
                 contentScale = ContentScale.Crop
             )
         }
@@ -291,7 +310,7 @@ private fun MultiImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(0) },
+                    .clickableWithNoIndication { onImageClick(0) },
                 contentScale = ContentScale.Crop
             )
             
@@ -301,7 +320,7 @@ private fun MultiImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(1) },
+                    .clickableWithNoIndication { onImageClick(1) },
                 contentScale = ContentScale.Crop
             )
         }
@@ -319,7 +338,7 @@ private fun MultiImageLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onImageClick(2) },
+                    .clickableWithNoIndication { onImageClick(2) },
                 contentScale = ContentScale.Crop
             )
             
@@ -334,7 +353,7 @@ private fun MultiImageLayout(
                     contentDescription = "More images",
                     modifier = Modifier
                         .fillMaxSize()
-                        .clickable { onImageClick(3) },
+                        .clickableWithNoIndication { onImageClick(3) },
                     contentScale = ContentScale.Crop
                 )
                 
@@ -343,7 +362,7 @@ private fun MultiImageLayout(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.6f))
-                        .clickable { onImageClick(3) },
+                        .clickableWithNoIndication { onImageClick(3) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -353,6 +372,76 @@ private fun MultiImageLayout(
                         color = Color.White
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Hero image display for PostDetailScreen.
+ * - No images: caller is responsible for not calling this.
+ * - 1 image: full-width single image.
+ * - 2+ images: HorizontalPager carousel with dot indicators.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun HeroCarousel(
+    images: List<String>,
+    onImageClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (images.isEmpty()) return
+    if (images.size == 1) {
+        AsyncImage(
+            model = images[0],
+            contentDescription = null,
+            modifier = modifier
+                .fillMaxWidth()
+                .clickableWithNoIndication { onImageClick(0) },
+            contentScale = ContentScale.Crop
+        )
+        return
+    }
+    val pagerState = rememberPagerState { images.size }
+    // Continuous auto-advance: loops every 2s independently of manual swipes
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(2_000L)
+            val next = (pagerState.currentPage + 1) % images.size
+            pagerState.animateScrollToPage(next)
+        }
+    }
+    Box(modifier = modifier) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            AsyncImage(
+                model = images[page],
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickableWithNoIndication { onImageClick(page) },
+                contentScale = ContentScale.Crop
+            )
+        }
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(images.size) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (pagerState.currentPage == index) Color.White
+                            else Color.White.copy(alpha = 0.5f)
+                        )
+                )
             }
         }
     }
@@ -369,7 +458,7 @@ private fun VideoThumbnail(
             .height(300.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(Color.Black)
-            .clickable(onClick = onVideoClick),
+            .clickableWithNoIndication(onClick = onVideoClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(

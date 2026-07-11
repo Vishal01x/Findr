@@ -15,6 +15,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.domain.usecase.Enro
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.usecase.RegisterForEventUseCase
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,7 +24,7 @@ data class PostDetailUiState(
     val post: Post? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val enrollmentStatuses: Map<String, EnrollmentStatus> = emptyMap(), // roleId -> status
+    val enrollmentStatuses: Map<String, EnrollmentStatus> = emptyMap(),
     val isRegistered: Boolean = false,
     val toastMessage: String? = null,
     val isAuthor: Boolean = false,
@@ -33,6 +34,13 @@ data class PostDetailUiState(
     val selectedRoleForEnrollment: ProjectRole? = null,
     val showEventRegDialog: Boolean = false,
     val isProcessingEnrollment: Boolean = false,
+
+    // Invite
+    val showUserSearch: Boolean = false,
+
+    // Event capacity
+    val showCapacityDialog: Boolean = false,
+    val isCapacityUpdating: Boolean = false,
 
     // Delete states
     val showDeleteDialog: Boolean = false,
@@ -45,6 +53,12 @@ data class PostDetailUiState(
     val selectedImageIndex: Int = 0,
     val selectedImageUser : PostUserInfo? = null,
     val selectedImageCaption : String? = null,
+
+    // Sheet / overlay states
+    val showPostOptionsSheet: Boolean = false,
+    val showShareSheet: Boolean = false,
+    val showReportSheet: Boolean = false,
+    val showRegistrationSuccess: Boolean = false,
 )
 
 @HiltViewModel
@@ -66,7 +80,7 @@ class PostDetailViewModel @Inject constructor(
     val uiState: StateFlow<PostDetailUiState> = _uiState.asStateFlow()
 
     init {
-        loadPost()
+        loadPostAndObserve()
         incrementViewCount()
     }
 
@@ -76,18 +90,57 @@ class PostDetailViewModel @Inject constructor(
         }
     }
 
-    private fun loadPost() {
+    private fun loadPostAndObserve() {
         viewModelScope.launch {
+            // One-shot initial load to get enriched post (with userInfo)
             postRepository.getPostById(postId)
                 .onSuccess { post ->
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
-                            post = post, 
+                            post = post,
                             isLoading = false,
                             isAuthor = post.createdBy == currentUserId
                         )
                     }
-                    // Load enrollment/registration statuses
+                    loadEnrollmentStatuses(post)
+                    loadRegistrationStatus(post)
+                    // Now subscribe to real-time updates, preserving userInfo from initial load
+                    observePostUpdates(post.userInfo)
+                }
+                .onFailure { error ->
+                    _uiState.update { it.copy(error = error.message, isLoading = false) }
+                }
+        }
+    }
+
+    private fun observePostUpdates(cachedUserInfo: PostUserInfo?) {
+        viewModelScope.launch {
+            postRepository.getProjectUpdates(postId).collect { result ->
+                result.onSuccess { updatedPost ->
+                    _uiState.update {
+                        it.copy(
+                            post = updatedPost.copy(userInfo = updatedPost.userInfo ?: cachedUserInfo),
+                            isAuthor = updatedPost.createdBy == currentUserId
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun refresh() { loadPost() }
+
+    private fun loadPost() {
+        viewModelScope.launch {
+            postRepository.getPostById(postId)
+                .onSuccess { post ->
+                    _uiState.update {
+                        it.copy(
+                            post = post,
+                            isLoading = false,
+                            isAuthor = post.createdBy == currentUserId
+                        )
+                    }
                     loadEnrollmentStatuses(post)
                     loadRegistrationStatus(post)
                 }
@@ -124,7 +177,8 @@ class PostDetailViewModel @Inject constructor(
     }
 
     fun openEnrollmentDialog(roleId: String) {
-        val role = _uiState.value.post?.projectRoles?.find { it.id == roleId }
+        val roles = _uiState.value.post?.projectRoles ?: emptyList()
+        val role = roles.find { it.id == roleId } ?: roles.firstOrNull()
         _uiState.update {
             it.copy(
                 showEnrollmentDialog = true,
@@ -249,9 +303,7 @@ class PostDetailViewModel @Inject constructor(
             // Register
             registerForEventUseCase(postId)
                 .onSuccess {
-                    showToast("Registered successfully!")
-                    _uiState.update { it.copy(isRegistered = true) }
-                    // Reload post to get updated registration count
+                    _uiState.update { it.copy(isRegistered = true, showRegistrationSuccess = true) }
                     loadPost()
                 }
                 .onFailure { error ->
@@ -263,31 +315,31 @@ class PostDetailViewModel @Inject constructor(
     fun toggleEventClosure(isClosed: Boolean) {
         viewModelScope.launch {
             val post = _uiState.value.post ?: return@launch
-            // Optimistic update
             val updatedEvent = post.eventDetails?.copy(isManuallyClosed = isClosed)
-            // _uiState.update { it.copy(post = post.copy(eventDetails = updatedEvent)) } 
-            
+            _uiState.update { it.copy(post = post.copy(eventDetails = updatedEvent)) }
+
             postRepository.updateEventClosureStatus(postId, isClosed)
-                .onSuccess {
-                    showToast(if (isClosed) "Registration closed" else "Registration opened")
-                    loadPost()
-                }
-                .onFailure { error ->
+                .onSuccess { showToast(if (isClosed) "Registration closed" else "Registration opened") }
+                .onFailure {
                     showToast("Failed to update status")
-                    loadPost() // Revert
+                    _uiState.update { it.copy(post = post) } // revert
                 }
         }
     }
     
     fun toggleRoleClosure(roleId: String, isClosed: Boolean) {
         viewModelScope.launch {
-             postRepository.updateRoleClosureStatus(postId, roleId, isClosed)
-                .onSuccess {
-                    showToast(if (isClosed) "Role closed" else "Role opened")
-                    loadPost()
-                }
-                .onFailure { error ->
+            val post = _uiState.value.post ?: return@launch
+            val updatedRoles = post.projectRoles.map {
+                if (it.id == roleId) it.copy(isManuallyClosed = isClosed) else it
+            }
+            _uiState.update { it.copy(post = post.copy(projectRoles = updatedRoles)) }
+
+            postRepository.updateRoleClosureStatus(postId, roleId, isClosed)
+                .onSuccess { showToast(if (isClosed) "Role closed" else "Role opened") }
+                .onFailure {
                     showToast("Failed to update status")
+                    _uiState.update { it.copy(post = post) } // revert
                 }
         }
     }
@@ -369,13 +421,110 @@ class PostDetailViewModel @Inject constructor(
     }
 
     /**
-     * Share the current post
+     * Cast/change/retract a poll vote. observePostUpdates' live listener reflects the
+     * updated vote counts back into [uiState] automatically, same as likes.
      */
+    fun onVoteClick(optionIndex: Int) {
+        viewModelScope.launch {
+            val userId = auth.currentUser?.uid ?: return@launch
+            val post = _uiState.value.post ?: return@launch
+            postRepository.voteOnPoll(post.id, userId, optionIndex, post.pollOptions)
+        }
+    }
+
+    // Deferred share payload — starts as soon as the sheet opens so the intent
+    // fires instantly when the user taps "Share via…".
+    private var sharePrepDeferred: kotlinx.coroutines.Deferred<com.exa.android.reflekt.loopit.core.utils.ShareData>? = null
+
+    fun prepareShare(context: android.content.Context) {
+        val post = _uiState.value.post ?: return
+        sharePrepDeferred?.cancel()
+        sharePrepDeferred = viewModelScope.async {
+            com.exa.android.reflekt.loopit.core.utils.ShareUtils.prepareShareData(context, post)
+        }
+    }
+
     fun sharePost(context: android.content.Context) {
         viewModelScope.launch {
+            showToast("Creating share preview, Please wait…")
             val post = _uiState.value.post ?: return@launch
-            com.exa.android.reflekt.loopit.core.utils.ShareUtils.sharePost(context, post)
+            val data = sharePrepDeferred?.await()
+                ?: com.exa.android.reflekt.loopit.core.utils.ShareUtils.prepareShareData(context, post)
+            com.exa.android.reflekt.loopit.core.utils.ShareUtils.executeShare(context, data)
         }
+    }
+
+    // ==================== INVITE ====================
+
+    fun onInviteClick() {
+        _uiState.update { it.copy(showUserSearch = true) }
+    }
+
+    fun onUserSearchDismissed() {
+        _uiState.update { it.copy(showUserSearch = false) }
+    }
+
+    // ==================== EVENT CAPACITY ====================
+
+    fun showCapacityDialog() {
+        _uiState.update { it.copy(showCapacityDialog = true) }
+    }
+
+    fun dismissCapacityDialog() {
+        _uiState.update { it.copy(showCapacityDialog = false) }
+    }
+
+    fun updateEventCapacity(newCapacity: Int) {
+        viewModelScope.launch {
+            val currentCapacity = _uiState.value.post?.eventDetails?.registeredCount ?: 0
+            if (newCapacity <= currentCapacity) {
+                showToast("Capacity must be greater than current registrations ($currentCapacity)")
+                return@launch
+            }
+            _uiState.update { it.copy(isCapacityUpdating = true, showCapacityDialog = false) }
+            postRepository.updateEventCapacity(postId, newCapacity)
+                .onSuccess { showToast("Capacity updated to $newCapacity") }
+                .onFailure { showToast("Failed to update capacity") }
+            _uiState.update { it.copy(isCapacityUpdating = false) }
+        }
+    }
+
+    fun editRole(updatedRole: com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole) {
+        viewModelScope.launch {
+            postRepository.updateProjectRole(postId, updatedRole)
+                .onSuccess { showToast("Role updated") }
+                .onFailure { showToast("Failed to update role") }
+        }
+    }
+
+    // ==================== SHEET / DIALOG CONTROLS ====================
+
+    fun openPostOptions() {
+        _uiState.update { it.copy(showPostOptionsSheet = true) }
+    }
+
+    fun dismissPostOptions() {
+        _uiState.update { it.copy(showPostOptionsSheet = false) }
+    }
+
+    fun openShareSheet() {
+        _uiState.update { it.copy(showShareSheet = true) }
+    }
+
+    fun dismissShareSheet() {
+        _uiState.update { it.copy(showShareSheet = false) }
+    }
+
+    fun openReportSheet() {
+        _uiState.update { it.copy(showReportSheet = true) }
+    }
+
+    fun dismissReportSheet() {
+        _uiState.update { it.copy(showReportSheet = false) }
+    }
+
+    fun dismissRegistrationSuccess() {
+        _uiState.update { it.copy(showRegistrationSuccess = false) }
     }
 
     private fun showToast(message: String) {

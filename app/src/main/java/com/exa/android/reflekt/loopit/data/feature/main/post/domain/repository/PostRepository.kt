@@ -4,6 +4,7 @@ import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventRegistration
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PollOption
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostUserInfo
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Reply
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
@@ -38,6 +39,19 @@ interface PostRepository {
     fun getProjectUpdates(projectId: String): Flow<Result<Post>>
 
     suspend fun toggleLike(projectId: String, userId: String, isCurrentlyLiked : Boolean): Result<Unit>
+
+    /**
+     * Cast (or change) a vote on a poll post. Voting the same option again removes the vote.
+     * A user can only ever have one active vote across all options for a given poll.
+     * [currentPollOptions] is the caller's locally-known poll state (from the currently
+     * displayed [Post]) - passing it in lets the write skip a Firestore read entirely.
+     */
+    suspend fun voteOnPoll(
+        postId: String,
+        userId: String,
+        optionIndex: Int,
+        currentPollOptions: List<PollOption>
+    ): Result<Unit>
 
     // ==================== ENROLLMENT OPERATIONS ====================
 
@@ -237,4 +251,27 @@ interface PostRepository {
      * Update manual closure status for a role
      */
     suspend fun updateRoleClosureStatus(postId: String, roleId: String, isClosed: Boolean): Result<Unit>
+
+    /**
+     * Update event capacity (author only)
+     */
+    suspend fun updateEventCapacity(postId: String, newCapacity: Int): Result<Unit>
+
+    /**
+     * Send a project invitation push notification to a user
+     */
+    suspend fun inviteUserToProject(
+        postId: String,
+        projectTitle: String,
+        invitedUserId: String,
+        invitedFcmToken: String,
+        inviterName: String,
+        roleName: String?
+    ): Result<Unit>
+
+    /**
+     * Update a project role's editable fields (name, description, technology, positionsNeeded)
+     * preserves positionsFilled and isManuallyClosed
+     */
+    suspend fun updateProjectRole(postId: String, updatedRole: com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole): Result<Unit>
 }

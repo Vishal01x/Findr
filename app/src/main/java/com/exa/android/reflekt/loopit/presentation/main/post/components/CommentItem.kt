@@ -26,7 +26,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import com.exa.android.reflekt.loopit.core.utils.LinkUtils
+import com.exa.android.reflekt.loopit.core.utils.openLinkIntent
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 import com.exa.android.reflekt.loopit.theme.*
 import com.google.firebase.auth.FirebaseAuth
 
@@ -49,6 +57,7 @@ fun CommentItem(
     modifier: Modifier = Modifier
 ) {
 
+    val context = LocalContext.current
     var isExpandedText by remember { mutableStateOf(false) }
     val maxLines = if (isExpandedText) Int.MAX_VALUE else 3
     
@@ -155,15 +164,52 @@ fun CommentItem(
                         }
 
                         // Comment text
-                        Text(
-                            text = comment.text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                        val annotatedText = buildAnnotatedString {
+                            var lastIndex = 0
+
+                            LinkUtils.findUrls(comment.text).forEach { urlSpan ->
+                                if (urlSpan.start > lastIndex) {
+                                    append(comment.text.substring(lastIndex, urlSpan.start))
+                                }
+
+                                pushStyle(
+                                    SpanStyle(
+                                        color = LiquidColors.Primary,
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                )
+                                append(comment.text.substring(urlSpan.start, urlSpan.end))
+                                pop()
+
+                                addStringAnnotation(
+                                    tag = "URL",
+                                    annotation = urlSpan.url,
+                                    start = urlSpan.start,
+                                    end = urlSpan.end
+                                )
+
+                                lastIndex = urlSpan.end
+                            }
+
+                            if (lastIndex < comment.text.length) {
+                                append(comment.text.substring(lastIndex))
+                            }
+                        }
+
+                        ClickableText(
+                            text = annotatedText,
+                            style = MaterialTheme.typography.bodyMedium.copy(color = LiquidColors.TextSecondary),
                             maxLines = maxLines,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
                                 .padding(top = 4.dp)
-                                .animateContentSize()
+                                .animateContentSize(),
+                            onClick = { offset ->
+                                annotatedText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                                    .firstOrNull()?.let { annotation ->
+                                        openLinkIntent(annotation.item, context)
+                                    }
+                            }
                         )
 
                         // Show "Read more" if content is long

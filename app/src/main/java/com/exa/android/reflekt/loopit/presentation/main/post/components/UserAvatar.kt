@@ -3,6 +3,7 @@ package com.exa.android.reflekt.loopit.presentation.main.post.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ fun UserAvatar(
     imageUrl: String?,
     userName: String,
     size: AvatarSize = AvatarSize.Medium,
+    shape: Shape = CircleShape,
     modifier: Modifier = Modifier
 ) {
     val initials = getInitials(userName)
@@ -37,7 +39,7 @@ fun UserAvatar(
     Box(
         modifier = modifier
             .size(size.dp)
-            .clip(CircleShape)
+            .clip(shape)
             .then(
                 if (imageUrl.isNullOrBlank()) {
                     Modifier.background(
@@ -78,8 +80,11 @@ enum class AvatarSize(val dp: Dp, val fontSize: Int) {
     ExtraSmall(24.dp, 10),
     Small(32.dp, 12),
     Medium(40.dp, 16),
+    ChatHeader(44.dp, 18),
     Large(56.dp, 20),
-    ExtraLarge(80.dp, 28)
+    Pinned(64.dp, 24),
+    ExtraLarge(80.dp, 28),
+    Profile(100.dp, 36)
 }
 
 /**

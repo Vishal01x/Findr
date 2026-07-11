@@ -29,10 +29,12 @@ data class Post(
     val rolesNeeded: List<String> = emptyList(), // Deprecated: Use projectRoles instead
     val projectRoles: List<ProjectRole> = emptyList(), // New: Detailed role requirements
     val eventDetails: EventDetails? = null, // New: Event-specific details
+    val pollOptions: List<PollOption> = emptyList(), // New: Poll-specific options + votes
     val likes: List<String> = emptyList(),
     val comments: List<Comment> = emptyList(),
     val enrolledPersons: Map<String, String> = emptyMap(),
     val requestedPersons: Map<String, String> = emptyMap(),
+    val isAnonymous: Boolean = false,  // author identity hidden from feed
     
     // UI-only field (not stored in Firestore) - enriched by repository
     @Exclude val userInfo: PostUserInfo? = null
@@ -73,6 +75,19 @@ data class Post(
      */
     fun isOwnedBy(userId: String): Boolean {
         return createdBy == userId
+    }
+
+    /**
+     * Total votes cast across all poll options.
+     */
+    fun totalPollVotes(): Int = pollOptions.sumOf { it.votes.size }
+
+    /**
+     * Index of the option [userId] voted for, or null if they haven't voted.
+     */
+    fun userPollVoteIndex(userId: String): Int? {
+        if (userId.isBlank()) return null
+        return pollOptions.indexOfFirst { it.isVotedBy(userId) }.takeIf { it >= 0 }
     }
 }
 

@@ -21,6 +21,7 @@ import com.exa.android.reflekt.loopit.theme.Spacing
 fun RolesDetailSection(
     roles: List<ProjectRole>,
     enrollmentStatuses: Map<String, EnrollmentStatus> = emptyMap(),
+    hasAppliedToProject: Boolean = false,
     onEnrollClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -43,6 +44,7 @@ fun RolesDetailSection(
             DetailedRoleCard(
                 role = role,
                 enrollmentStatus = enrollmentStatuses[role.id] ?: EnrollmentStatus.NOT_ENROLLED,
+                hasAppliedToProject = hasAppliedToProject,
                 onEnrollClick = { onEnrollClick(role.id) }
             )
         }
@@ -56,6 +58,7 @@ fun RolesDetailSection(
 private fun DetailedRoleCard(
     role: ProjectRole,
     enrollmentStatus: EnrollmentStatus,
+    hasAppliedToProject: Boolean = false,
     onEnrollClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -63,15 +66,19 @@ private fun DetailedRoleCard(
     val fillPercentage = (role.positionsFilled.toFloat() / role.positionsNeeded).coerceIn(0f, 1f)
     
     // Determine button state
-    val buttonText = when {
-        isFilled -> "Role Full"
-        enrollmentStatus == EnrollmentStatus.ACCEPTED -> "Enrolled"
-        enrollmentStatus == EnrollmentStatus.PENDING -> "Request Pending"
-        enrollmentStatus == EnrollmentStatus.REJECTED -> "Request Rejected"
-        else -> "Enroll for this Role"
-    }
+    val isEnrolled = enrollmentStatus == EnrollmentStatus.ACCEPTED
+    val isPending = enrollmentStatus == EnrollmentStatus.PENDING
     
-    val buttonEnabled = enrollmentStatus == EnrollmentStatus.NOT_ENROLLED && !isFilled
+    // If user has applied to ANY role, they can't enroll in others
+    val buttonEnabled = !isFilled && !hasAppliedToProject && enrollmentStatus == EnrollmentStatus.NOT_ENROLLED
+    
+    val buttonText = when {
+        isEnrolled -> "Enrolled"
+        isPending -> "Pending"
+        hasAppliedToProject -> "Already Applied"
+        isFilled -> "Role Filled"
+        else -> "Enroll in Role"
+    }
     
     val buttonIcon = when {
         enrollmentStatus == EnrollmentStatus.ACCEPTED -> Icons.Default.CheckCircle

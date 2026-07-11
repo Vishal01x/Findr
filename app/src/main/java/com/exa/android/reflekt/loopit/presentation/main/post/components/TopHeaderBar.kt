@@ -1,10 +1,8 @@
 package com.exa.android.reflekt.loopit.presentation.main.post.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -14,218 +12,317 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.core.utils.showToast
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.theme.*
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 
-/**
- * Modern social media style header with glassmorphism and gradient effects
- */
 @Composable
 fun TopHeaderBar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     selectedFilter: PostType?,
     onFilterSelected: (PostType) -> Unit,
+    isSearchActive: Boolean = false,
+    onSearchActivate: () -> Unit = {},
+    onSearchDeactivate: () -> Unit = {},
     visible: Boolean = true,
-    onProfileClick : () -> Unit,
+    userName: String = "User",
+    userProfileUrl: String? = null,
+    unreadNotificationCount: Int = 0,
+    onProfileClick: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val slideProgress by animateFloatAsState(
+        targetValue = if (visible) 0f else -1f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "header_slide"
+    )
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "header_alpha"
+    )
 
-    val context = LocalContext.current
+    val headerBg = MaterialTheme.colorScheme.surface
+    val divider = LiquidColors.GlassBorder
 
-    AnimatedVisibility(
-        visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+    Box(
         modifier = modifier
-    ) {
-        // Gradient background with glassmorphism
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-                        )
-                    )
+            .graphicsLayer {
+                translationY = slideProgress * size.height
+                this.alpha = alpha
+            }
+            .fillMaxWidth()
+            .background(headerBg)
+            .drawBehind {
+                drawLine(
+                    color = divider,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
                 )
-                .windowInsetsPadding(WindowInsets.statusBars)
+            }
+            .windowInsetsPadding(WindowInsets.statusBars)
+    ) {
+        if (isSearchActive) {
+            SearchActiveHeader(
+                query = searchQuery,
+                onQueryChange = onSearchQueryChange,
+                onBack = onSearchDeactivate
+            )
+        } else {
+            NormalHeader(
+                searchQuery = searchQuery,
+                selectedFilter = selectedFilter,
+                onFilterSelected = onFilterSelected,
+                onSearchActivate = onSearchActivate,
+                userName = userName,
+                userProfileUrl = userProfileUrl,
+                unreadNotificationCount = unreadNotificationCount,
+                onProfileClick = onProfileClick,
+                onNotificationClick = onNotificationClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchActiveHeader(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.small, vertical = Spacing.small),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = "Back",
+                tint = LiquidColors.TextPrimary
+            )
+        }
+
+        Surface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.medium, vertical = Spacing.small)
+                    .padding(horizontal = Spacing.medium, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Top Row: Logo + Icons
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Spacing.small),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // App Logo/Title
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(
-//                                            GradientPurpleStart,
-//                                            GradientPurpleEnd
-                                            HeaderGradientStart,
-                                            HeaderGradientEnd
-                                        )
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "F",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-
-                        Text(
-                            text = "Findr",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Action Icons
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { showToast(context,"No notifications yet") },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            BadgedBox(
-                                badge = {
-//                                    Badge(
-//                                        containerColor = SecondaryDark,
-//                                        modifier = Modifier.size(8.dp)
-//                                    )
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-
-//                        IconButton(
-//                            onClick = { /* Handle messages */ },
-//                            modifier = Modifier.size(40.dp)
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Rounded.Mail,
-//                                contentDescription = "Messages",
-//                                tint = MaterialTheme.colorScheme.onSurface,
-//                                modifier = Modifier.size(24.dp)
-//                            )
-//                        }
-
-                        // Profile Picture
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(
-//                                            GradientPinkStart,
-//                                            GradientPinkEnd
-
-                                            HeaderGradientStart,
-                                            HeaderGradientEnd
-                                        )
-                                    )
-                                )
-                                .clickable { onProfileClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Search Bar
-                ModernSearchBar(
-                    query = searchQuery,
-                    onQueryChange = onSearchQueryChange,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Spacing.small)
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = LiquidColors.TextSecondary,
+                    modifier = Modifier.size(20.dp)
                 )
-
-                // Filter Chips
-                Row(
+                Spacer(modifier = Modifier.width(Spacing.small))
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-                ) {
-                    PostType.values().forEach { type ->
-                        ModernFilterChip(
-                            label = type.displayName,
-                            selected = selectedFilter == type || (selectedFilter == null && type == PostType.ALL),
-                            onClick = { onFilterSelected(type) }
-                        )
+                        .weight(1f)
+                        .focusRequester(focusRequester),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = LiquidColors.TextPrimary
+                    ),
+                    cursorBrush = SolidColor(LiquidColors.Primary),
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        if (query.isEmpty()) {
+                            Text(
+                                text = "Search posts, people...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = LiquidColors.TextSecondary
+                            )
+                        }
+                        innerTextField()
                     }
-                }
+                )
+            }
+        }
+
+        if (query.isNotEmpty()) {
+            IconButton(onClick = { onQueryChange("") }) {
+                Icon(
+                    imageVector = Icons.Rounded.Clear,
+                    contentDescription = "Clear",
+                    tint = LiquidColors.TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ModernSearchBar(
+private fun NormalHeader(
+    searchQuery: String,
+    selectedFilter: PostType?,
+    onFilterSelected: (PostType) -> Unit,
+    onSearchActivate: () -> Unit,
+    userName: String,
+    userProfileUrl: String?,
+    unreadNotificationCount: Int = 0,
+    onProfileClick: () -> Unit,
+    onNotificationClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.medium)
+            .padding(top = Spacing.small, bottom = Spacing.small)
+    ) {
+        // Row 1: Logo on left, notification + avatar on right
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = Spacing.small),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(LiquidColors.Primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "F",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                Text(
+                    text = "Findr",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = LiquidColors.TextPrimary
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                BadgedBox(
+                    badge = {
+                        if (unreadNotificationCount > 0) {
+                            Badge {
+                                Text(
+                                    text = if (unreadNotificationCount > 99) "99+" else unreadNotificationCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    IconButton(
+                        onClick = onNotificationClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Notifications,
+                            contentDescription = "Notifications",
+                            tint = LiquidColors.TextPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clickable { onProfileClick() }
+                        .padding(4.dp)
+                ) {
+                    UserAvatar(
+                        imageUrl = userProfileUrl,
+                        userName = userName,
+                        size = AvatarSize.Small
+                    )
+                }
+            }
+        }
+
+        // Row 2: Tappable search bar (activates search mode on click)
+        SearchTapTarget(
+            query = searchQuery,
+            onClick = onSearchActivate,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = Spacing.small)
+        )
+
+        // Row 3: Filter chips
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+        ) {
+            PostType.values().forEach { type ->
+                ModernFilterChip(
+                    label = type.displayName,
+                    selected = selectedFilter == type || (selectedFilter == null && type == PostType.ALL),
+                    onClick = { onFilterSelected(type) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchTapTarget(
     query: String,
-    onQueryChange: (String) -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = 0.dp
     ) {
         Row(
@@ -237,33 +334,14 @@ private fun ModernSearchBar(
             Icon(
                 imageVector = Icons.Rounded.Search,
                 contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = LiquidColors.TextSecondary,
                 modifier = Modifier.size(20.dp)
             )
-
             Spacer(modifier = Modifier.width(Spacing.small))
-
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                singleLine = true,
-                decorationBox = { innerTextField ->
-                    if (query.isEmpty()) {
-                        Text(
-                            text = "Search posts, people, tags...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    innerTextField()
-                }
+            Text(
+                text = if (query.isNotEmpty()) query else "Search posts, people...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (query.isNotEmpty()) LiquidColors.TextPrimary else LiquidColors.TextSecondary
             )
         }
     }
@@ -276,46 +354,19 @@ private fun ModernFilterChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val gradients = listOf(
-//        listOf(GradientPurpleStart, GradientPurpleEnd),
-//        listOf(GradientPinkStart, GradientPinkEnd),
-//        listOf(GradientTealStart, GradientTealEnd),
-//        listOf(GradientVibeStart, GradientVibeEnd)
-        GradientPrimaryStart, GradientPrimaryEnd
-    )
-
-    val gradientIndex = label.hashCode() % gradients.size
-    val gradient = gradients //gradients[gradientIndex.coerceAtLeast(0)]
-
     Surface(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = if (selected) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant.copy(
-            alpha = 0.5f
-        ),
-        border = if (selected) null else null
+        color = if (selected) LiquidColors.Primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+        border = if (selected) androidx.compose.foundation.BorderStroke(1.dp, LiquidColors.Primary) else null
     ) {
-        Box(
-            modifier = Modifier
-                .then(
-                    if (selected) {
-                        Modifier.background(
-                            Brush.linearGradient(
-                                colors = gradient
-                            )
-                        )
-                    } else {
-                        Modifier
-                    }
-                )
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
+        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (selected) LiquidColors.Primary else LiquidColors.TextSecondary
             )
         }
     }

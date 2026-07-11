@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,15 +13,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.liquidTopBarColors
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.presentation.main.post.components.*
-import com.exa.android.reflekt.loopit.presentation.main.post.create.components.LinkInputSection
+import com.exa.android.reflekt.loopit.presentation.main.post.create.components.*
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.*
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.NotificationPermissionHandler
 
 /**
  * Main Create Post Screen
@@ -35,9 +45,16 @@ fun CreatePostScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    // Notification permission trigger — fires when user publishes a post
+    var notifPermissionTrigger by remember { mutableStateOf(false) }
+    NotificationPermissionHandler(trigger = notifPermissionTrigger) {
+        notifPermissionTrigger = false
+    }
+
     // Handle successful post creation
     LaunchedEffect(state.postCreatedSuccessfully) {
         if (state.postCreatedSuccessfully) {
+            notifPermissionTrigger = true
             onPostCreated()
         }
     }
@@ -46,6 +63,7 @@ fun CreatePostScreen(
         viewModel.uiEvent.collect {event->
             when(event){
                 CreatePostUiEvent.PopBack -> onBack()
+                is CreatePostUiEvent.ShowSnackbar -> {} // Handled by individual create screens or ignored here
             }
 
         }
@@ -78,7 +96,9 @@ fun CreatePostScreen(
         viewModel.onEvent(CreatePostEvent.OnBackPressed)
     }
 
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize().background(LiquidColors.BgBase)) {
+        Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Create Post") },
@@ -94,7 +114,8 @@ fun CreatePostScreen(
                     ) {
                         Text("Post")
                     }
-                }
+                },
+                colors = liquidTopBarColors()
             )
         }
     ) { paddingValues ->
@@ -119,6 +140,12 @@ fun CreatePostScreen(
                 description = state.description,
                 onTitleChange = { viewModel.onEvent(CreatePostEvent.OnTitleChanged(it)) },
                 onDescriptionChange = { viewModel.onEvent(CreatePostEvent.OnDescriptionChanged(it)) }
+            )
+
+            // Anonymous toggle
+            AnonymousToggleRow(
+                isAnonymous = state.isAnonymous,
+                onToggle = { viewModel.onEvent(CreatePostEvent.OnToggleAnonymous) }
             )
 
             // Media Attachments
@@ -250,5 +277,77 @@ fun CreatePostScreen(
                 }
             }
         }
+        }
+    }
+}
+
+@Composable
+private fun AnonymousToggleRow(
+    isAnonymous: Boolean,
+    onToggle: () -> Unit
+) {
+    val borderColor = if (isAnonymous)
+        LiquidColors.Primary.copy(alpha = 0.5f)
+    else
+        LiquidColors.GlassBorder
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                if (isAnonymous) LiquidColors.Primary.copy(alpha = 0.08f)
+                else LiquidColors.GlassSurface
+            )
+            .border(1.dp, borderColor, RoundedCornerShape(14.dp))
+            .clickable { onToggle() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Incognito avatar preview
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isAnonymous) LiquidColors.Primary.copy(alpha = 0.2f)
+                    else MaterialTheme.colorScheme.surfaceVariant
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isAnonymous) Icons.Rounded.VisibilityOff else Icons.Rounded.Person,
+                contentDescription = null,
+                tint = if (isAnonymous) LiquidColors.Primary else LiquidColors.TextSecondary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Post Anonymously",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isAnonymous) LiquidColors.Primary else LiquidColors.TextPrimary
+            )
+            Text(
+                text = if (isAnonymous)
+                    "Your name and photo will be hidden from everyone"
+                else
+                    "Others will see your name and profile photo",
+                style = MaterialTheme.typography.bodySmall,
+                color = LiquidColors.TextSecondary
+            )
+        }
+
+        Switch(
+            checked = isAnonymous,
+            onCheckedChange = { onToggle() },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = LiquidColors.Primary
+            )
+        )
     }
 }

@@ -1,9 +1,13 @@
 package com.exa.android.reflekt.loopit.data.feature.main.post.domain.usecase
 
 import android.net.Uri
+import android.content.Context
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.repository.PostRepository
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
+import com.exa.android.reflekt.loopit.fcm.Topics
+import com.exa.android.reflekt.loopit.fcm.sendPostNotification
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 /**
@@ -13,7 +17,8 @@ import javax.inject.Inject
 class CreatePostUseCase @Inject constructor(
     private val postRepository: PostRepository,
     private val validatePostUseCase: ValidatePostUseCase,
-    private val uploadMediaUseCase: UploadMediaUseCase
+    private val uploadMediaUseCase: UploadMediaUseCase,
+    @ApplicationContext private val context: Context
 ) {
     /**
      * Creates a post with media uploads
@@ -62,7 +67,14 @@ class CreatePostUseCase @Inject constructor(
                 fileUrls = fileUrls
             )
             
-            postRepository.createPost(postWithMedia, profile)
+            val result = postRepository.createPost(postWithMedia, profile)
+            
+            if (result.isSuccess) {
+                // Send push notification to all subscribers
+                sendPostNotification(context, Topics.Post, postWithMedia, profile)
+            }
+            
+            result
         } catch (e: Exception) {
             Result.failure(Exception("Failed to create post: ${e.message}"))
         }

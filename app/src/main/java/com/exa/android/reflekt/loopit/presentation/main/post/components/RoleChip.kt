@@ -2,7 +2,7 @@ package com.exa.android.reflekt.loopit.presentation.main.post.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,7 +50,7 @@ fun RoleChip(
                 color = borderColor,
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable(enabled = !isFull || isEnrolled) { onClick() },
+            .clickableWithNoIndication(enabled = !isFull || isEnrolled) { onClick() },
         color = backgroundColor,
         shape = RoundedCornerShape(8.dp)
     ) {

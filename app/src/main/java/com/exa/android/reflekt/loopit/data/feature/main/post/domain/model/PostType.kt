@@ -11,6 +11,7 @@ enum class PostType(
     POST("Post"),
     PROJECT("Project"),
     EVENT("Event"),
+    POLL("Poll"),
     HELP("Bug Fix"),
     COLLABORATION("Collab"),
     OTHER("Other");

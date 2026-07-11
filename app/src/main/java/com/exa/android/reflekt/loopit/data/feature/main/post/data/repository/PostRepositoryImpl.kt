@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.data.feature.main.post.data.repository
 
 import android.content.Context
 import android.util.Log
+import com.exa.android.reflekt.loopit.core.env.AppCollections
 import com.exa.android.reflekt.loopit.core.network.Response
 import com.exa.android.reflekt.loopit.data.feature.main.chat.data.repository.UserRepository
 import com.exa.android.reflekt.loopit.data.feature.main.post.data.datasource.CommentRemoteDataSource
@@ -12,21 +13,28 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.data.mapper.PostMap
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EnrollmentStatus
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.EventRegistration
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PollOption
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostConstants
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostUserInfo
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.RegistrationStatus
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Reply
+import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.ProjectRole
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.RoleEnrollment
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.toPostUserInfo
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.repository.PostRepository
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
 import com.exa.android.reflekt.loopit.fcm.sendComment
+import com.exa.android.reflekt.loopit.fcm.sendProjectInvitation
 import com.exa.android.reflekt.loopit.fcm.sendProjectNotification
 import com.exa.android.reflekt.loopit.fcm.sendReply
 import com.exa.android.reflekt.loopit.fcm.sendRequestUpdate
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.InAppNotificationHelper
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.model.NotificationType as NotificationType
+import com.exa.android.reflekt.loopit.data.feature.main.notification.domain.model.NotificationCategory
+import com.exa.android.reflekt.loopit.presentation.navigation.component.PostRoute
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -80,18 +88,32 @@ class PostRepositoryImpl @Inject constructor(
         userId: String?,
         postType: String?
     ): Flow<Result<List<Post>>> {
+        // Pass empty query to Firestore — text search is done client-side after enrichment
+        // so we can match against title, description, AND userInfo.name.
         return postDataSource.getPostsStream(
-            searchQuery,
-            rolesFilter,
-            tagsFilter,
-            showMyProjectsOnly,
-            userId,
-            postType
+            searchQuery = "",
+            rolesFilter = rolesFilter,
+            tagsFilter = tagsFilter,
+            showMyProjectsOnly = showMyProjectsOnly,
+            userId = userId,
+            typeFilter = postType
         ).map { result ->
             result.map { postMaps ->
                 val posts = postMaps.mapNotNull { PostMapper.fromMap(it) }
-                // Enrich posts with user details
-                enrichPostsWithUserInfo(posts)
+                val enriched = enrichPostsWithUserInfo(posts)
+                if (searchQuery.isBlank()) {
+                    enriched
+                } else {
+                    val keywords = searchQuery.trim().lowercase()
+                        .split("\\s+".toRegex()).filter { it.isNotBlank() }
+                    enriched.filter { post ->
+                        keywords.any { kw ->
+                            post.title.lowercase().contains(kw) ||
+                            post.description.lowercase().contains(kw) ||
+                            post.userInfo?.name?.lowercase()?.contains(kw) == true
+                        }
+                    }
+                }
             }
         }
     }
@@ -150,6 +172,37 @@ class PostRepositoryImpl @Inject constructor(
             postDataSource.toggleLike(projectId, userId, isCurrentlyLiked)
         } catch (e: Exception) {
             Log.e(TAG, "Error toggling like", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun voteOnPoll(
+        postId: String,
+        userId: String,
+        optionIndex: Int,
+        currentPollOptions: List<PollOption>
+    ): Result<Unit> {
+        return try {
+            if (optionIndex !in currentPollOptions.indices) {
+                return Result.failure(Exception("Invalid poll option"))
+            }
+
+            // A user can only ever hold one active vote: strip them from every option,
+            // then re-add to optionIndex - unless that's exactly where they already were,
+            // which acts as an un-vote.
+            val hadVoteHere = currentPollOptions[optionIndex].isVotedBy(userId)
+            val updatedOptions = currentPollOptions.mapIndexed { index, option ->
+                val newVotes = if (index == optionIndex && !hadVoteHere) {
+                    option.votes + userId
+                } else {
+                    option.votes - userId
+                }
+                mapOf("text" to option.text, "votes" to newVotes)
+            }
+
+            postDataSource.voteOnPoll(postId, updatedOptions)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error voting on poll", e)
             Result.failure(e)
         }
     }
@@ -329,9 +382,24 @@ class PostRepositoryImpl @Inject constructor(
 
             if (result.isSuccess) {
                 // Send notification
+                val deepLink = "findr://project/${post.id}?scrollTo=${commentWithId.id}"
                 userRepository.getUserFcm(post.createdBy)?.let { fcm ->
-                    sendComment(context, fcm, post.id, profile, comment.text)
+                    sendComment(context, fcm, post.id, profile, comment.text, link = deepLink)
                 }
+                InAppNotificationHelper.sendNotification(
+                    firestore = firestore,
+                    recipientId = post.createdBy,
+                    type = NotificationType.COMMENT,
+                    category = NotificationCategory.SOCIAL,
+                    title = "${profile.name} commented on your post",
+                    message = comment.text,
+                    senderName = profile.name,
+                    senderImageUrl = profile.profilePicture,
+                    projectImageUrl = post.imageUrls.firstOrNull(),
+                    senderId = profile.uid,
+                    targetId = post.id,
+                    route = "project_detail/${post.id}?scrollTo=${commentWithId.id}"
+                )
             }
 
             result
@@ -442,9 +510,23 @@ class PostRepositoryImpl @Inject constructor(
 
             if (result.isSuccess) {
                 // Send notification
+                val deepLink = "findr://project/$postId?scrollTo=${reply.id}"
                 userRepository.getUserFcm(parentCommentSenderId)?.let { fcm ->
-                    sendReply(context, fcm, postId, profile, reply.text)
+                    sendReply(context, fcm, postId, profile, reply.text, link = deepLink)
                 }
+                InAppNotificationHelper.sendNotification(
+                    firestore = firestore,
+                    recipientId = parentCommentSenderId,
+                    type = NotificationType.COMMENT,
+                    category = NotificationCategory.SOCIAL,
+                    title = "${profile.name} replied to your comment",
+                    message = reply.text,
+                    senderName = profile.name,
+                    senderImageUrl = profile.profilePicture,
+                    senderId = profile.uid,
+                    targetId = postId,
+                    route = "project_detail/$postId?scrollTo=${reply.id}"
+                )
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -601,9 +683,17 @@ class PostRepositoryImpl @Inject constructor(
         enrollment: RoleEnrollment
     ): Result<Unit> {
         return try {
-            firestore.collection("enrollments")
-                .add(enrollment)
-                .await()
+            val batch = firestore.batch()
+            
+            // Add enrollment document
+            val enrollRef = firestore.collection(AppCollections.ENROLLMENTS).document()
+            batch.set(enrollRef, enrollment)
+            
+            // Update requestedPersons on the post so the feed cards know the user has applied
+            val postRef = firestore.collection(PostConstants.Collections.PROJECTS).document(enrollment.postId)
+            batch.update(postRef, "requestedPersons.${enrollment.userId}", enrollment.roleId)
+            
+            batch.commit().await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error enrolling in role", e)
@@ -615,9 +705,22 @@ class PostRepositoryImpl @Inject constructor(
         registration: EventRegistration
     ): Result<Unit> {
         return try {
-            firestore.collection("registrations")
-                .add(registration)
-                .await()
+            val postRef = firestore.collection(PostConstants.Collections.PROJECTS)
+                .document(registration.postId)
+            firestore.runTransaction { transaction ->
+                val postSnap = transaction.get(postRef)
+                @Suppress("UNCHECKED_CAST")
+                val eventData = postSnap.get("eventDetails") as? Map<*, *>
+                val isManuallyClosed = eventData?.get("isManuallyClosed") as? Boolean ?: false
+                val capacity = (eventData?.get("capacity") as? Long)?.toInt()
+                val registeredCount = (eventData?.get("registeredCount") as? Long)?.toInt() ?: 0
+                if (isManuallyClosed) throw Exception("Registration is closed")
+                if (capacity != null && registeredCount >= capacity) throw Exception("Event is full")
+
+                val registrationRef = firestore.collection(AppCollections.REGISTRATIONS).document()
+                transaction.set(registrationRef, registration)
+                transaction.update(postRef, "eventDetails.registeredCount", FieldValue.increment(1))
+            }.await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error registering for event", e)
@@ -629,7 +732,7 @@ class PostRepositoryImpl @Inject constructor(
         postId: String
     ): Result<List<RoleEnrollment>> {
         return try {
-            val enrollments = firestore.collection("enrollments")
+            val enrollments = firestore.collection(AppCollections.ENROLLMENTS)
                 .whereEqualTo("postId", postId)
                 .get()
                 .await()
@@ -645,7 +748,7 @@ class PostRepositoryImpl @Inject constructor(
 //        postId: String
 //    ): Result<List<EventRegistration>> {
 //        return try {
-//            val registrations = firestore.collection("registrations")
+//            val registrations = firestore.collection(AppCollections.REGISTRATIONS)
 //                .whereEqualTo("postId", postId)
 //                .get()
 //                .await()
@@ -662,13 +765,56 @@ class PostRepositoryImpl @Inject constructor(
         status: EnrollmentStatus
     ): Result<Unit> {
         return try {
-            firestore.collection("enrollments")
-                .document(enrollmentId)
-                .update(mapOf(
-                    "status" to status,
-                    "respondedAt" to FieldValue.serverTimestamp()
-                ))
-                .await()
+            val enrollmentRef = firestore.collection(AppCollections.ENROLLMENTS).document(enrollmentId)
+            firestore.runTransaction { transaction ->
+                // ── PHASE 1: ALL READS FIRST ──────────────────────────────────
+                val enrollmentSnap = transaction.get(enrollmentRef)
+                val postId = enrollmentSnap.getString("postId")
+                val userId = enrollmentSnap.getString("userId")
+                val roleName = enrollmentSnap.getString("roleName") ?: ""
+                val roleId = enrollmentSnap.getString("roleId") ?: ""
+
+                // Read postSnap up-front (before any writes) if we'll need it
+                val postRef = if (!postId.isNullOrBlank()) {
+                    firestore.collection(PostConstants.Collections.PROJECTS).document(postId)
+                } else null
+                val postSnap = postRef?.let { transaction.get(it) }
+
+                // ── PHASE 2: ALL WRITES AFTER ─────────────────────────────────
+                transaction.update(
+                    enrollmentRef, mapOf(
+                        "status" to status.name,
+                        "respondedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+
+                if (postRef != null && postSnap != null && !userId.isNullOrBlank()) {
+                    when (status) {
+                        EnrollmentStatus.ACCEPTED -> {
+                            transaction.update(postRef, "enrolledPersons.$userId", roleName)
+                            transaction.update(postRef, "requestedPersons.$userId", FieldValue.delete())
+                            // Atomically increment positionsFilled for the matching role
+                            @Suppress("UNCHECKED_CAST")
+                            val roles = postSnap.get(PostConstants.PostFields.PROJECT_ROLES)
+                                    as? List<HashMap<String, Any>> ?: emptyList()
+                            val updatedRoles = roles.map { role ->
+                                if (role["id"] == roleId) {
+                                    val newRole = HashMap(role)
+                                    val filled = (newRole["positionsFilled"] as? Long)?.toInt() ?: 0
+                                    newRole["positionsFilled"] = (filled + 1).toLong()
+                                    newRole
+                                } else role
+                            }
+                            transaction.update(postRef, PostConstants.PostFields.PROJECT_ROLES, updatedRoles)
+                        }
+                        EnrollmentStatus.REJECTED -> {
+                            transaction.update(postRef, "enrolledPersons.$userId", FieldValue.delete())
+                            transaction.update(postRef, "requestedPersons.$userId", FieldValue.delete())
+                        }
+                        else -> {}
+                    }
+                }
+            }.await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error updating enrollment status", e)
@@ -682,7 +828,7 @@ class PostRepositoryImpl @Inject constructor(
         userId: String
     ): Result<Boolean> {
         return try {
-            val enrollments = firestore.collection("enrollments")
+            val enrollments = firestore.collection(AppCollections.ENROLLMENTS)
                 .whereEqualTo("postId", postId)
                 .whereEqualTo("roleId", roleId)
                 .whereEqualTo("userId", userId)
@@ -701,7 +847,7 @@ class PostRepositoryImpl @Inject constructor(
         userId: String
     ): Result<Boolean> {
         return try {
-            val registrations = firestore.collection("registrations")
+            val registrations = firestore.collection(AppCollections.REGISTRATIONS)
                 .whereEqualTo("postId", postId)
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("status", RegistrationStatus.REGISTERED)
@@ -764,7 +910,7 @@ class PostRepositoryImpl @Inject constructor(
         userId: String
     ): Result<EnrollmentStatus> {
         return try {
-            val enrollments = firestore.collection("enrollments")
+            val enrollments = firestore.collection(AppCollections.ENROLLMENTS)
                 .whereEqualTo("postId", postId)
                 .whereEqualTo("roleId", roleId)
                 .whereEqualTo("userId", userId)
@@ -829,7 +975,7 @@ class PostRepositoryImpl @Inject constructor(
     
     override suspend fun getRegistrationsForEvent(postId: String): Result<List<EventRegistration>> {
         return try {
-            val registrations = firestore.collection("registrations")
+            val registrations = firestore.collection(AppCollections.REGISTRATIONS)
                 .whereEqualTo("postId", postId)
                 .whereEqualTo("status", "REGISTERED")
                 .get()
@@ -895,6 +1041,80 @@ class PostRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error updating role closure status", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateEventCapacity(postId: String, newCapacity: Int): Result<Unit> {
+        return try {
+            firestore.collection(PostConstants.Collections.PROJECTS)
+                .document(postId)
+                .update("eventDetails.capacity", newCapacity)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating event capacity", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun inviteUserToProject(
+        postId: String,
+        projectTitle: String,
+        invitedUserId: String,
+        invitedFcmToken: String,
+        inviterName: String,
+        roleName: String?
+    ): Result<Unit> {
+        return try {
+            sendProjectInvitation(context, invitedFcmToken, projectTitle, inviterName, roleName, postId)
+            val body = if (roleName != null)
+                "$inviterName invited you to join \"$projectTitle\" as $roleName"
+            else
+                "$inviterName invited you to join \"$projectTitle\""
+            InAppNotificationHelper.sendNotification(
+                firestore = firestore,
+                recipientId = invitedUserId,
+                type = NotificationType.INVITATION,
+                category = NotificationCategory.PLACEMENTS,
+                title = "You've been invited!",
+                message = body,
+                senderName = inviterName,
+                senderId = auth.currentUser?.uid ?: "",
+                targetId = postId
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending project invitation", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateProjectRole(postId: String, updatedRole: ProjectRole): Result<Unit> {
+        return try {
+            val postRef = firestore.collection(PostConstants.Collections.PROJECTS).document(postId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(postRef)
+                @Suppress("UNCHECKED_CAST")
+                val roles = snapshot.get(PostConstants.PostFields.PROJECT_ROLES) as? List<HashMap<String, Any>> ?: emptyList()
+                val updatedRoles = roles.map { role ->
+                    if (role["id"] == updatedRole.id) {
+                        hashMapOf(
+                            "id" to updatedRole.id,
+                            "roleName" to updatedRole.roleName,
+                            "description" to (updatedRole.description ?: ""),
+                            "technology" to (updatedRole.technology ?: ""),
+                            "positionsNeeded" to updatedRole.positionsNeeded.toLong(),
+                            "positionsFilled" to (role["positionsFilled"] as? Long ?: 0L),
+                            "isManuallyClosed" to (role["isManuallyClosed"] as? Boolean ?: false)
+                        )
+                    } else role
+                }
+                transaction.update(postRef, PostConstants.PostFields.PROJECT_ROLES, updatedRoles)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating project role", e)
             Result.failure(e)
         }
     }

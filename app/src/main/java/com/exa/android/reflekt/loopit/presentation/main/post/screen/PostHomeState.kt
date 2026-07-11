@@ -4,6 +4,7 @@ import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Commen
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Post
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostType
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.PostUserInfo
+import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.profileUser
 
 /**
  * State for Post Home Screen
@@ -28,7 +29,22 @@ data class PostHomeState(
     val selectedImageUser : PostUserInfo? = null,
     val selectedImageCaption : String? = null,
 
+    // Enrollment dialog state
+    val showEnrollmentDialog: Boolean = false,
+    val selectedPostForEnrollment: Post? = null,
+    val isProcessingEnrollment: Boolean = false,
+    val toastMessage: String? = null,
+
     // Post Edit and Delete state
     val showDeleteDialog: Boolean = false,
-    val postToDelete: Post? = null
+    val postToDelete: Post? = null,
+
+    // Share sheet state
+    val showShareSheet: Boolean = false,
+    val sharePost: Post? = null,
+
+    // Search mode state
+    val isSearchActive: Boolean = false,
+    val userResults: List<profileUser> = emptyList(),
+    val isSearchingUsers: Boolean = false
 )

@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,6 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.exa.android.reflekt.loopit.theme.Spacing
+import com.exa.android.reflekt.loopit.presentation.main.component.dialog.NotificationPermissionHandler
+import com.exa.android.reflekt.loopit.presentation.main.component.textfield.liquidTextFieldColors
 
 /**
  * Fixed bottom comment input bar
@@ -38,6 +40,11 @@ fun FixedCommentInput(
     onCancelReply: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    // Notification permission trigger — fires when user submits a comment
+    var notifPermissionTrigger by remember { mutableStateOf(false) }
+    NotificationPermissionHandler(trigger = notifPermissionTrigger) {
+        notifPermissionTrigger = false
+    }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -142,16 +149,16 @@ fun FixedCommentInput(
                 enabled = !isLoading,
                 maxLines = 4,
                 shape = RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                ),
+                colors = liquidTextFieldColors(),
                 textStyle = MaterialTheme.typography.bodyMedium
             )
             
             // Send button
             IconButton(
-                onClick = onSendClick,
+                onClick = {
+                    notifPermissionTrigger = true
+                    onSendClick()
+                },
                 enabled = commentText.isNotBlank() && !isLoading,
                 modifier = Modifier
                     .size(48.dp)

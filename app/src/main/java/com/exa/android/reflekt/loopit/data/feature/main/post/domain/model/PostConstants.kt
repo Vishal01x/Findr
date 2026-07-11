@@ -1,17 +1,19 @@
 package com.exa.android.reflekt.loopit.data.feature.main.post.domain.model
 
+import com.exa.android.reflekt.loopit.core.env.AppCollections
+
 /**
  * Constants for Post module
  * Centralizes all field names, collection names, and limits
  */
 object PostConstants {
-    
-    // Firestore Collections
+
+    // Firestore Collections — top-level resolved per environment, subcollections are fixed
     object Collections {
-        const val PROJECTS = "projects"
-        const val COMMENTS = "comments"
-        const val METADATA = "metadata"
-        const val REPLIES = "replies"
+        val PROJECTS   get() = AppCollections.PROJECTS
+        val COMMENTS   get() = AppCollections.COMMENTS
+        val METADATA   get() = AppCollections.METADATA
+        val REPLIES    get() = AppCollections.REPLIES
     }
     
     // Firestore Documents
@@ -43,8 +45,10 @@ object PostConstants {
         const val REQUESTED_PERSONS = "requestedPersons"
         const val PROJECT_ROLES = "projectRoles" // New
         const val EVENT_DETAILS = "eventDetails" // New
-        const val FILE_URLS = "fileUrls" // New
-        const val VIEWS_COUNT = "viewsCount" // New
+        const val POLL_OPTIONS = "pollOptions" // New
+        const val FILE_URLS = "fileUrls"
+        const val VIEWS_COUNT = "viewsCount"
+        const val IS_ANONYMOUS = "isAnonymous"
     }
     
     // Comment Fields
@@ -94,6 +98,8 @@ object PostConstants {
         const val MAX_COMMENT_LENGTH = 500
         const val MAX_COMMENT_NESTING_LEVEL = 3
         const val MAX_PROJECT_ROLES = 10  // New: Maximum roles per project
+        const val MIN_POLL_OPTIONS = 2    // New: Minimum poll options
+        const val MAX_POLL_OPTIONS = 5    // New: Maximum poll options
     }
     
     // Validation Messages

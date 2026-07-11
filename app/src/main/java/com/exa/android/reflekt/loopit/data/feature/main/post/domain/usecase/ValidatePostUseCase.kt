@@ -74,12 +74,22 @@ class ValidatePostUseCase @Inject constructor() {
                 if (eventDetails == null) {
                     return Result.failure(Exception("Event details are required for event posts"))
                 }
-                
+
                 if (!eventDetails.isValid()) {
                     return Result.failure(Exception("Invalid event details. Date and location/meeting link are required."))
                 }
             }
-            
+
+            PostType.POLL -> {
+                val validOptions = post.pollOptions.filter { it.text.isNotBlank() }
+                if (validOptions.size < PostConstants.Limits.MIN_POLL_OPTIONS) {
+                    return Result.failure(Exception("A poll needs at least ${PostConstants.Limits.MIN_POLL_OPTIONS} options"))
+                }
+                if (validOptions.size > PostConstants.Limits.MAX_POLL_OPTIONS) {
+                    return Result.failure(Exception("Maximum ${PostConstants.Limits.MAX_POLL_OPTIONS} poll options allowed"))
+                }
+            }
+
             else -> {
                 // No specific validation for other types
             }

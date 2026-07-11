@@ -17,9 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.exa.android.reflekt.loopit.data.feature.main.post.domain.model.Comment
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.CommentEvent
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.CommentState
 import com.exa.android.reflekt.loopit.presentation.main.post.screen.CommentViewModel
@@ -99,17 +101,15 @@ fun LazyListScope.commentListContent(
 
 
 @Composable
-fun CommentHeader(commentCount : Int){
+fun CommentHeader(commentCount: Int) {
     Text(
-        text = if (commentCount > 0)
-            "Comments (${commentCount})"
-        else "Comments",
+        text = if (commentCount > 0) "Comments ($commentCount)" else "Comments",
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
+        color = LiquidColors.TextPrimary,
         modifier = Modifier.padding(Spacing.medium)
     )
-
-    HorizontalDivider()
+    HorizontalDivider(color = LiquidColors.GlassBorder)
 }
 
 @Composable
@@ -189,37 +189,48 @@ fun AddCommentReplyInput(
                 value = text,
                 onValueChange = onTextChange,
                 modifier = Modifier.weight(1f).focusRequester(focusRequester),
-                placeholder = { Text(if (isReply) "Add a reply..." else "Add a comment...") },
+                placeholder = {
+                    Text(
+                        if (isReply) "Add a reply…" else "Add a comment…",
+                        color = LiquidColors.TextMuted
+                    )
+                },
                 enabled = !isLoading,
                 maxLines = 3,
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(24.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = LiquidColors.TextPrimary,
+                    unfocusedTextColor = LiquidColors.TextPrimary,
+                    focusedBorderColor = LiquidColors.Primary,
+                    unfocusedBorderColor = LiquidColors.GlassBorder,
+                    focusedContainerColor = LiquidColors.GlassSurface,
+                    unfocusedContainerColor = LiquidColors.GlassSurface,
+                    cursorColor = LiquidColors.Primary
+                )
             )
 
             IconButton(
                 onClick = onSend,
                 enabled = text.isNotBlank() && !isLoading,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(44.dp)
                     .background(
-                        if (text.isNotBlank()) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant,
+                        if (text.isNotBlank()) LiquidColors.Primary else LiquidColors.GlassSurface,
                         CircleShape
                     )
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = if (text.isNotBlank()) Color.White else LiquidColors.TextSecondary
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Rounded.Send,
                         contentDescription = "Send",
-                        tint = if (text.isNotBlank())
-                            MaterialTheme.colorScheme.onPrimary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (text.isNotBlank()) Color.White else LiquidColors.TextSecondary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -329,24 +340,22 @@ fun RenderCommentWithReplies(
 
 @Composable
 fun ReplyingIndicator(name: String, onCancel: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(LiquidColors.Primary.copy(alpha = 0.07f))
+            .padding(horizontal = Spacing.medium, vertical = Spacing.small),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.small),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Replying to ${name}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
-            )
-            TextButton(onClick = onCancel) {
-                Text("Cancel")
-            }
+        Text(
+            text = "Replying to $name",
+            style = MaterialTheme.typography.bodySmall,
+            color = LiquidColors.Primary,
+            fontWeight = FontWeight.SemiBold
+        )
+        TextButton(onClick = onCancel) {
+            Text("Cancel", color = LiquidColors.TextSecondary)
         }
     }
 }
@@ -356,30 +365,27 @@ fun ReplyingIndicator(name: String, onCancel: () -> Unit) {
 fun EmptyState() {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(Spacing.large),
+            .fillMaxWidth()
+            .padding(vertical = 40.dp, horizontal = Spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(
             imageVector = Icons.Rounded.ChatBubbleOutline,
             contentDescription = "No comments",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(48.dp)
+            tint = LiquidColors.Primary.copy(alpha = 0.5f),
+            modifier = Modifier.size(44.dp)
         )
-
-        Spacer(modifier = Modifier.height(Spacing.small))
-
         Text(
             text = "No comments yet",
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontWeight = FontWeight.SemiBold,
+            color = LiquidColors.TextPrimary
         )
-
         Text(
             text = "Be the first to comment!",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            color = LiquidColors.TextSecondary
         )
     }
 }
@@ -389,30 +395,29 @@ fun EmptyState() {
 fun CommentError(error: String?, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(Spacing.large),
+            .fillMaxWidth()
+            .padding(vertical = 40.dp, horizontal = Spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(
             imageVector = Icons.Rounded.ErrorOutline,
             contentDescription = "Error",
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(48.dp)
+            tint = LiquidColors.Red,
+            modifier = Modifier.size(44.dp)
         )
-
-        Spacer(modifier = Modifier.height(Spacing.small))
-
         Text(
             text = error ?: "Failed to load comments",
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error
+            color = LiquidColors.Red
         )
-
-        Spacer(modifier = Modifier.height(Spacing.medium))
-
-        Button(onClick = onClick) {
-            Text("Retry")
+        Spacer(Modifier.height(4.dp))
+        Button(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(containerColor = LiquidColors.Primary),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Retry", color = Color.White)
         }
     }
 }
