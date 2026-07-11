@@ -1,5 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.auth.components
 
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -145,4 +146,16 @@ private fun StepLine(
             .background(lineColor)
             .padding(bottom = 16.dp)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StepIndicatorPreview() {
+    MaterialTheme {
+        StepIndicator(
+            currentStep = 1,
+            totalSteps = 3,
+            stepLabels = listOf("Basic", "Education", "Experience")
+        )
+    }
 }

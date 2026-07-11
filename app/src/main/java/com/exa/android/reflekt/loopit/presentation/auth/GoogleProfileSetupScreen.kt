@@ -453,11 +453,13 @@ private fun GoogleChipSelector(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true, selected = isSel,
-                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                            borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                             selectedBorderColor = androidx.compose.ui.graphics.Color.Transparent
                         )
                     )
@@ -468,7 +470,7 @@ private fun GoogleChipSelector(
 }
 
 @Composable
-private fun SetupItem(index: Int, content: @Composable () -> Unit) {
+private fun SetupItem(index: Int, content: @Composable ColumnScope.() -> Unit) {
     val visible = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(index * 80L)
@@ -476,9 +478,9 @@ private fun SetupItem(index: Int, content: @Composable () -> Unit) {
     }
     AnimatedVisibility(
         visible = visible.value,
-        enter = slideInVertically { it / 3 } + fadeIn(),
+        enter = fadeIn(tween(300)),
         exit = fadeOut()
     ) {
-        content()
+        Column(content = content)
     }
 }

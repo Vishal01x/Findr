@@ -7,9 +7,12 @@ import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.Exp
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileData
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.ProfileHeaderData
 import com.exa.android.reflekt.loopit.data.feature.main.profile.domain.model.SocialLinks
+import com.exa.android.reflekt.loopit.core.env.AppCollections
+import com.exa.android.reflekt.loopit.core.env.EnvironmentManager
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
@@ -25,6 +28,7 @@ import javax.inject.Inject
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<Unit>
     suspend fun signInWithGoogle(idToken: String): Result<FirebaseUser>
+    /** Returns Result.success(true) if an existing unverified account was resumed instead of creating a new one. */
     suspend fun signUp(
         email: String,
         password: String,
@@ -39,7 +43,7 @@ interface AuthRepository {
         companyName: String,
         ctc: String,
         experience: String,
-    ): Result<Unit>
+    ): Result<Boolean>
     fun getCurrentUser(): FirebaseUser?
     suspend fun sendEmailVerification()
     fun logout(onSuccess: () -> Unit)
@@ -70,7 +74,9 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun login(email: String, password: String): Result<Unit> {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
-            if (!result.user?.isEmailVerified!!) {
+            // Staging skips email verification to allow quick test account logins
+            val verified = EnvironmentManager.isStaging || result.user?.isEmailVerified == true
+            if (!verified) {
                 auth.signOut()
                 Result.failure(Exception("Please verify your email before logging in."))
             } else {
@@ -99,7 +105,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun createOrUpdateGoogleUserProfile(user: FirebaseUser): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val uid = user.uid
-            val userDocRef = firestore.collection("users").document(uid)
+            val userDocRef = firestore.collection(AppCollections.USERS).document(uid)
             val snapshot = userDocRef.get().await()
             
             if (!snapshot.exists()) {
@@ -130,7 +136,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun isProfileComplete(uid: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val snapshot = firestore.collection("users").document(uid).get().await()
+            val snapshot = firestore.collection(AppCollections.USERS).document(uid).get().await()
             // Explicit flag set by saveGoogleUserProfile or signUp
             if (snapshot.getBoolean("profileComplete") == true) return@withContext true
             // Fallback: existing email-registered users have collegeName or companyName in profileHeader
@@ -158,7 +164,7 @@ class AuthRepositoryImpl @Inject constructor(
         selectedRoles: List<String>
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userDocRef = firestore.collection("users").document(uid)
+            val userDocRef = firestore.collection(AppCollections.USERS).document(uid)
             val snapshot = userDocRef.get().await()
             val existingHeader = snapshot.get("profileData.profileHeader") as? Map<*, *>
 
@@ -224,7 +230,7 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             result.user?.sendEmailVerification()?.await()
-            val userDocRef = firestore.collection("users").document(result.user?.uid ?: "")
+            val userDocRef = firestore.collection(AppCollections.USERS).document(result.user?.uid ?: "")
             val profileHeader = ProfileHeaderData(
                 uid = result.user?.uid ?: "",
                 email = email,
@@ -258,7 +264,7 @@ class AuthRepositoryImpl @Inject constructor(
                 experienceInfo = experienceInfo
             )
 
-            Firebase.firestore.runTransaction { transaction ->
+            firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(userDocRef)
 
                 // Check if document exists
@@ -290,6 +296,114 @@ class AuthRepositoryImpl @Inject constructor(
     }*/
 
 
+    private fun buildProfileData(
+        uid: String,
+        email: String,
+        name: String,
+        role: String,
+        isStudent: Boolean,
+        collegeName: String,
+        branch: String,
+        course: String,
+        year: String,
+        location: String,
+        companyName: String,
+        ctc: String,
+        experience: String,
+        createdAt: Timestamp
+    ): ProfileData {
+        val profileHeader = ProfileHeaderData(
+            uid = uid,
+            email = email,
+            name = name,
+            role = role,
+            isStudent = isStudent,
+            collegeName = collegeName,
+            branch = branch,
+            course = course,
+            year = year,
+            location = location,
+            companyName = companyName,
+            ctc = ctc,
+            experience = experience,
+            createdAt = createdAt,
+            socialLinks = SocialLinks(email = email)
+        )
+        val collegeInfo = CollegeInfo(
+            instituteName = collegeName,
+            branch = branch,
+            course = course,
+            year = year
+        )
+        val experienceInfo = ExperienceInfo(
+            companyName = companyName,
+            experience = experience,
+            ctc = ctc
+        )
+        return ProfileData(
+            profileHeader = profileHeader,
+            collegeInfo = collegeInfo,
+            experienceInfo = experienceInfo
+        )
+    }
+
+    // Reached when signup collides with an existing, unverified account for the same email.
+    // Resumes that account instead of failing, so the user isn't stuck unable to re-register.
+    private suspend fun resumeUnverifiedSignUp(
+        email: String,
+        password: String,
+        name: String,
+        role: String,
+        isStudent: Boolean,
+        collegeName: String,
+        branch: String,
+        course: String,
+        year: String,
+        location: String,
+        companyName: String,
+        ctc: String,
+        experience: String
+    ): Result<Boolean> {
+        return try {
+            val signInResult = auth.signInWithEmailAndPassword(email, password).await()
+            val user = signInResult.user
+                ?: return Result.failure(Exception("Sign-in failed: user is null"))
+
+            if (user.isEmailVerified) {
+                auth.signOut()
+                return Result.failure(Exception("This email is already registered and verified. Please log in instead."))
+            }
+
+            val uid = user.uid
+            val userDocRef = firestore.collection(AppCollections.USERS).document(uid)
+            val existingHeader = userDocRef.get().await().get("profileData.profileHeader") as? Map<*, *>
+            val createdAt = existingHeader?.get("createdAt") as? Timestamp ?: Timestamp.now()
+
+            val profile = buildProfileData(
+                uid, email, name, role, isStudent, collegeName, branch, course,
+                year, location, companyName, ctc, experience, createdAt
+            )
+            userDocRef.set(
+                mapOf(
+                    "profileData" to profile,
+                    "name" to name,
+                    "profilePicture" to ""
+                ),
+                SetOptions.merge()
+            ).await()
+
+            user.sendEmailVerification().await()
+            Result.success(true)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Resume unverified sign-up failed: ${e.localizedMessage}", e)
+            Result.failure(Exception(
+                "This email is already registered but not verified. Use the password from your " +
+                    "first sign-up attempt, then verify your email. Forgot it? Reset it from the " +
+                    "login screen, or change it later in Settings."
+            ))
+        }
+    }
+
     override suspend fun signUp(
         email: String,
         password: String,
@@ -304,55 +418,29 @@ class AuthRepositoryImpl @Inject constructor(
         companyName: String,
         ctc: String,
         experience: String
-    ): Result<Unit> = withContext(Dispatchers.IO) {
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+            val authResult = try {
+                auth.createUserWithEmailAndPassword(email, password).await()
+            } catch (e: FirebaseAuthUserCollisionException) {
+                return@withContext resumeUnverifiedSignUp(
+                    email, password, name, role, isStudent, collegeName, branch, course,
+                    year, location, companyName, ctc, experience
+                )
+            }
             val firebaseUser = authResult.user
                 ?: return@withContext Result.failure(Exception("User creation failed: user is null"))
 
             firebaseUser.sendEmailVerification().await()
 
             val uid = firebaseUser.uid
-            val userDocRef = firestore.collection("users").document(uid)
-
-            val profileHeader = ProfileHeaderData(
-                uid = uid,
-                email = email,
-                name = name,
-                role = role,
-                isStudent = isStudent,
-                collegeName = collegeName,
-                branch = branch,
-                course = course,
-                year = year,
-                location = location,
-                companyName = companyName,
-                ctc = ctc,
-                experience = experience,
-                createdAt = Timestamp.now(),
-                socialLinks = SocialLinks(email = email)
+            val userDocRef = firestore.collection(AppCollections.USERS).document(uid)
+            val profile = buildProfileData(
+                uid, email, name, role, isStudent, collegeName, branch, course,
+                year, location, companyName, ctc, experience, Timestamp.now()
             )
 
-            val collegeInfo = CollegeInfo(
-                instituteName = collegeName,
-                branch = branch,
-                course = course,
-                year = year
-            )
-
-            val experienceInfo = ExperienceInfo(
-                companyName = companyName,
-                experience = experience,
-                ctc = ctc
-            )
-
-            val profile = ProfileData(
-                profileHeader = profileHeader,
-                collegeInfo = collegeInfo,
-                experienceInfo = experienceInfo
-            )
-
-            Firebase.firestore.runTransaction { transaction ->
+            firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(userDocRef)
 
                 if (!snapshot.exists()) {
@@ -363,13 +451,13 @@ class AuthRepositoryImpl @Inject constructor(
                     //transaction.set( userDocRef,"lastNotifiedAt" to FieldValue.serverTimestamp())
                     firestoreService.registerFCMToken()
                 } else {
-                    transaction.update(userDocRef, "profileData.profileHeader", profileHeader)
+                    transaction.update(userDocRef, "profileData.profileHeader", profile.profileHeader)
                     transaction.update(userDocRef, "name", name)
 
                     firestoreService.registerFCMToken()
                 }
             }.await() // Important to wait on transaction completion
-            Result.success(Unit)
+            Result.success(false)
         } catch (e: Exception) {
             Log.e("FirestoreService", "Sign up failed: ${e.localizedMessage}", e)
             Result.failure(e)

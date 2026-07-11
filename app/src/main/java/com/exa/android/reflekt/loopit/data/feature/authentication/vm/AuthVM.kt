@@ -62,13 +62,41 @@ class AuthVM @Inject constructor(
             val currentUser = repository.getCurrentUser()
             if (currentUser != null && currentUser.isEmailVerified) {
                 preferenceHelper.saveUserId(currentUser.uid)
-                val isComplete = repository.isProfileComplete(currentUser.uid)
-                loginState.value = loginState.value.copy(
-                    isCheckingAuth = false,
-                    loginSuccess = isComplete,
-                    needsProfileSetup = !isComplete,
-                    email = currentUser.email ?: ""
-                )
+
+                // Firebase Auth already restores the session locally (no network call), so the
+                // only slow part is Firestore's isProfileComplete() lookup. Use the cached
+                // SharedPreferences flag from the last check to decide instantly, then refresh
+                // it from Firestore in the background instead of blocking the login screen.
+                val cachedComplete = preferenceHelper.getProfileComplete(currentUser.uid)
+                if (cachedComplete != null) {
+                    loginState.value = loginState.value.copy(
+                        isCheckingAuth = false,
+                        loginSuccess = cachedComplete,
+                        needsProfileSetup = !cachedComplete,
+                        email = currentUser.email ?: ""
+                    )
+                    // Silent background refresh - only reacts if the cached value was stale.
+                    launch {
+                        val freshComplete = repository.isProfileComplete(currentUser.uid)
+                        preferenceHelper.saveProfileComplete(currentUser.uid, freshComplete)
+                        if (freshComplete != cachedComplete) {
+                            loginState.value = loginState.value.copy(
+                                loginSuccess = freshComplete,
+                                needsProfileSetup = !freshComplete
+                            )
+                        }
+                    }
+                } else {
+                    // First time checking this user on this device - no cache yet, must wait.
+                    val isComplete = repository.isProfileComplete(currentUser.uid)
+                    preferenceHelper.saveProfileComplete(currentUser.uid, isComplete)
+                    loginState.value = loginState.value.copy(
+                        isCheckingAuth = false,
+                        loginSuccess = isComplete,
+                        needsProfileSetup = !isComplete,
+                        email = currentUser.email ?: ""
+                    )
+                }
             } else {
                 loginState.value = loginState.value.copy(isCheckingAuth = false)
             }
@@ -99,7 +127,13 @@ class AuthVM @Inject constructor(
     fun onSignUpEvent(event: SignUpEvent) {
         when (event) {
             is SignUpEvent.EmailChanged -> signUpState.value =
-                signUpState.value.copy(email = event.email)
+                signUpState.value.copy(email = event.email, emailError = null)
+
+            is SignUpEvent.EmailValidationFailed -> signUpState.value =
+                signUpState.value.copy(emailError = "Please enter a valid email address")
+
+            is SignUpEvent.ClearMessages -> signUpState.value =
+                signUpState.value.copy(errorMessage = null, infoMessage = null)
 
             is SignUpEvent.PasswordChanged -> signUpState.value =
                 signUpState.value.copy(password = event.password)
@@ -237,6 +271,7 @@ class AuthVM @Inject constructor(
                     firestoreService.registerFCMToken()
                     val userId = repository.getCurrentUser()?.uid ?: ""
                     preferenceHelper.saveUserId(userId)
+                    preferenceHelper.saveProfileComplete(userId, true)
                     loginState.value = loginState.value.copy(
                         loginSuccess = true,
                         errorMessage = null
@@ -263,6 +298,7 @@ class AuthVM @Inject constructor(
                     repository.createOrUpdateGoogleUserProfile(user)
                     preferenceHelper.saveUserId(user.uid)
                     val isComplete = repository.isProfileComplete(user.uid)
+                    preferenceHelper.saveProfileComplete(user.uid, isComplete)
                     loginState.value = loginState.value.copy(
                         isGoogleLoading = false,
                         loginSuccess = isComplete,
@@ -301,6 +337,7 @@ class AuthVM @Inject constructor(
             when {
                 result.isSuccess -> {
                     googleProfileSetupState.value = s.copy(isLoading = false)
+                    preferenceHelper.saveProfileComplete(uid, true)
                     loginState.value = loginState.value.copy(
                         loginSuccess = true,
                         needsProfileSetup = false
@@ -365,7 +402,6 @@ class AuthVM @Inject constructor(
                 ctc = signUpState.value.ctc,
                 experience = signUpState.value.experience,
             )
-            signUpState.value = signUpState.value.copy(isLoading = false)
 //            userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
             when {
                 result.isSuccess -> {
@@ -374,7 +410,17 @@ class AuthVM @Inject constructor(
 //                        userRepository.updateUserNameAndImage(signUpState.value.fullName, "")
 //                        firestoreService.registerFCMToken()
 //                    }
+                    val resumedExistingAccount = result.getOrDefault(false)
+                    if (resumedExistingAccount) {
+                        signUpState.value = signUpState.value.copy(
+                            infoMessage = "This email is already registered but unverified. We've sent a new verification link.",
+                            errorMessage = null
+                        )
+                        // Keep isLoading true so the button stays disabled while the snackbar is visible
+                        delay(1500)
+                    }
                     signUpState.value = signUpState.value.copy(
+                        isLoading = false,
                         signUpSuccess = true,
                         errorMessage = null
                     )
@@ -382,6 +428,7 @@ class AuthVM @Inject constructor(
 
                 result.isFailure -> {
                     signUpState.value = signUpState.value.copy(
+                        isLoading = false,
                         errorMessage = result.exceptionOrNull()?.message
                     )
                 }
@@ -562,6 +609,7 @@ sealed class LoginEvent {
 
 data class SignUpState(
     val email: String = "",
+    val emailError: String? = null,
     val password: String = "",
     val fullName: String = "",
     val isStudent: Boolean = true,
@@ -577,6 +625,7 @@ data class SignUpState(
     val isLoading: Boolean = false,
     val signUpSuccess: Boolean = false,
     val errorMessage: String? = null,
+    val infoMessage: String? = null,
     val roleSuggestions: List<String> = emptyList(),
     val passwordVisible: Boolean = false,
     val selectedAccountType: String = "Personal",
@@ -589,6 +638,8 @@ data class SignUpState(
 
 sealed class SignUpEvent {
     data class EmailChanged(val email: String) : SignUpEvent()
+    object EmailValidationFailed : SignUpEvent()
+    object ClearMessages : SignUpEvent()
     data class PasswordChanged(val password: String) : SignUpEvent()
     data class FullNameChanged(val fullName: String) : SignUpEvent()  // Replaced firstName/lastName
     data class RoleChanged(val query: String) : SignUpEvent()

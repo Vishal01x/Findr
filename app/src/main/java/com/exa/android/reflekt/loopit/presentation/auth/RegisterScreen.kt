@@ -1,17 +1,19 @@
 package com.exa.android.reflekt.loopit.presentation.auth
 
-import android.widget.Toast
+import android.util.Patterns
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.exa.android.reflekt.library_ui.modifier.clickableWithNoIndication
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -21,10 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -32,17 +32,19 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
 import com.exa.android.reflekt.loopit.data.feature.authentication.vm.SignUpEvent
 import com.exa.android.reflekt.loopit.data.feature.authentication.vm.SignUpState
-import com.exa.android.reflekt.loopit.presentation.auth.components.AnimatedAuthBackground
-import com.exa.android.reflekt.loopit.presentation.auth.components.AuthTextField
 import kotlinx.coroutines.delay
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidColors
+import com.exa.android.reflekt.loopit.presentation.main.placement.components.LiquidMeshBackground
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+// ─── Entry ────────────────────────────────────────────────────────────────────
+
 @Composable
 fun SignUpScreen(
     viewModel: AuthVM = hiltViewModel(),
@@ -50,61 +52,70 @@ fun SignUpScreen(
     onTermsClick: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val state = viewModel.signUpState.value
-    val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
-    val isDark = isSystemInDarkTheme()
-
-    // 2 steps only: Personal → Details
-    var currentStep by remember { mutableIntStateOf(0) }
-    val totalSteps = 2
+    val state   by viewModel.signUpState
 
     LaunchedEffect(state.signUpSuccess) { if (state.signUpSuccess) onSignUpSuccess() }
+
+    SignUpScreenContent(
+        state          = state,
+        onEvent        = viewModel::onSignUpEvent,
+        onTermsClick   = onTermsClick,
+        onNavigateBack = onNavigateBack
+    )
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun SignUpScreenContent(
+    state: SignUpState,
+    onEvent: (SignUpEvent) -> Unit,
+    onTermsClick: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+    var currentStep by remember { mutableIntStateOf(0) }
+    val totalSteps  = 2
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarIsError by remember { mutableStateOf(false) }
+
     LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+        state.errorMessage?.let {
+            snackbarIsError = true
+            snackbarHostState.showSnackbar(it)
+            onEvent(SignUpEvent.ClearMessages)
+        }
+    }
+    LaunchedEffect(state.infoMessage) {
+        state.infoMessage?.let {
+            snackbarIsError = false
+            snackbarHostState.showSnackbar(it)
+            onEvent(SignUpEvent.ClearMessages)
+        }
     }
 
-    val enterAlpha = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { enterAlpha.animateTo(1f, tween(500)) }
-
-    AnimatedAuthBackground {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LiquidColors.BgBase)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = enterAlpha.value }
+                .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
-            // ─── Top Bar ───
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 4.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    if (currentStep > 0) currentStep-- else onNavigateBack()
-                }) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        "Back",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "Create Account",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.width(48.dp))
-            }
 
-            // ─── Step Progress Bar ───
-            MinimalStepBar(currentStep, totalSteps)
+            // ── Progress header ────────────────────────────────────────────
+            RegistrationHeader(
+                currentStep  = currentStep,
+                totalSteps   = totalSteps,
+                onSkip       = onNavigateBack
+            )
 
-            // ─── Step Content ───
+            // ── Step content ───────────────────────────────────────────────
             AnimatedContent(
                 targetState = currentStep,
                 transitionSpec = {
@@ -116,77 +127,144 @@ fun SignUpScreen(
                                 slideOutHorizontally { it / 2 } + fadeOut()
                 },
                 modifier = Modifier.weight(1f),
-                label = "step"
+                label    = "step"
             ) { step ->
                 when (step) {
-                    0 -> PersonalStep(viewModel, state, focusManager)
-                    1 -> DetailsStep(viewModel, state, focusManager, onTermsClick)
+                    0 -> PersonalStep(onEvent, state, focusManager)
+                    1 -> DetailsStep(onEvent, state, focusManager, onTermsClick)
                 }
             }
 
-            // ─── Bottom Action ───
-            BottomAction(
+            // ── Bottom navigation ──────────────────────────────────────────
+            RegistrationFooter(
                 currentStep = currentStep,
-                totalSteps = totalSteps,
-                isLoading = state.isLoading,
-                canProceed = when (currentStep) {
-                    0 -> state.fullName.isNotBlank() && state.email.isNotBlank() && state.password.length >= 8
+                totalSteps  = totalSteps,
+                isLoading   = state.isLoading,
+                canProceed  = when (currentStep) {
+                    0 -> state.fullName.isNotBlank() &&
+                            state.email.isNotBlank() &&
+                            state.password.length >= 8
                     1 -> if (state.isStudent) state.collegeName.isNotBlank()
-                    else state.companyName.isNotBlank()
+                         else state.companyName.isNotBlank()
                     else -> true
                 },
-                onBack = { currentStep-- },
-                onNext = { currentStep++ },
+                onBack   = { if (currentStep > 0) currentStep-- else onNavigateBack() },
+                onNext   = {
+                    if (currentStep == 0 && !Patterns.EMAIL_ADDRESS.matcher(state.email.trim()).matches()) {
+                        onEvent(SignUpEvent.EmailValidationFailed)
+                    } else {
+                        currentStep++
+                    }
+                },
                 onSubmit = {
                     focusManager.clearFocus()
-                    viewModel.onSignUpEvent(SignUpEvent.Submit)
+                    onEvent(SignUpEvent.Submit)
                 }
             )
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+        ) { data ->
+            ThemedSnackbar(message = data.visuals.message, isError = snackbarIsError)
         }
     }
 }
 
-// ─── Minimal Progress Bar ───
+// ─── Themed Snackbar ────────────────────────────────────────────────────────
+
 @Composable
-private fun MinimalStepBar(current: Int, total: Int) {
+private fun ThemedSnackbar(message: String, isError: Boolean) {
+    val accent = if (isError) LiquidColors.Red else LiquidColors.Primary
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 28.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(LiquidColors.GlassSurface)
+            .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(14.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        repeat(total) { i ->
-            val fraction by animateFloatAsState(
-                targetValue = if (i < current) 1f else if (i == current) 0.5f else 0f,
-                animationSpec = tween(400, easing = FastOutSlowInEasing),
-                label = "step_$i"
+        Icon(
+            imageVector = if (isError) Icons.Default.ErrorOutline else Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = accent,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            message,
+            fontSize = 14.sp,
+            color = LiquidColors.TextPrimary,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun RegistrationHeader(
+    currentStep: Int,
+    totalSteps: Int,
+    onSkip: () -> Unit
+) {
+    val fraction by animateFloatAsState(
+        targetValue      = (currentStep + 1f) / totalSteps.toFloat(),
+        animationSpec    = tween(400, easing = FastOutSlowInEasing),
+        label            = "progress"
+    )
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Row(
+            modifier            = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment   = Alignment.CenterVertically
+        ) {
+            Text(
+                "Step ${currentStep + 1} of $totalSteps",
+                fontSize   = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color      = LiquidColors.Primary
             )
+            Text(
+                "Skip",
+                fontSize = 13.sp,
+                color    = LiquidColors.TextSecondary,
+                modifier = Modifier.clickableWithNoIndication { onSkip() }
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Full-width progress bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(5.dp)
+                .clip(CircleShape)
+                .background(LiquidColors.Border)
+        ) {
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(4.dp)
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(fraction)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
+                    .background(LiquidColors.Primary)
+            )
         }
     }
 }
 
-// ════════════════════════════════════════
-//  Step 1: Personal Info
-// ════════════════════════════════════════
-@OptIn(ExperimentalLayoutApi::class)
+// ─── Step 1 – Personal Info ───────────────────────────────────────────────────
+
 @Composable
 private fun PersonalStep(
-    vm: AuthVM,
+    onEvent: (SignUpEvent) -> Unit,
     state: SignUpState,
     fm: androidx.compose.ui.focus.FocusManager
 ) {
@@ -196,147 +274,115 @@ private fun PersonalStep(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scroll)
-            .padding(horizontal = 28.dp)
+            .padding(horizontal = 24.dp)
             .imePadding()
     ) {
-        Spacer(Modifier.height(16.dp))
-        StaggeredItem(0) {
-            Text("Let's get started 👋", fontSize = 22.sp, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface)
-            Text("Tell us about yourself", fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-        }
+        Spacer(Modifier.height(8.dp))
 
-        Spacer(Modifier.height(28.dp))
+        // Title — always visible, no stagger (prevents overlap)
+        Text(
+            "Create Account",
+            fontSize   = 30.sp,
+            fontWeight = FontWeight.Bold,
+            color      = LiquidColors.TextPrimary
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Fill in your details to get started with Findr",
+            fontSize   = 15.sp,
+            color      = LiquidColors.TextSecondary,
+            lineHeight = 22.sp
+        )
 
-        StaggeredItem(1) {
-            AuthTextField(
-                value = state.fullName,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.FullNameChanged(it)) },
-                label = "Full Name",
-                leadingIcon = Icons.Default.Person,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
-            )
-        }
+        Spacer(Modifier.height(32.dp))
 
-        Spacer(Modifier.height(12.dp))
+        // All fields in one Column — spacing handled here, not via stagger
+        Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
 
-        StaggeredItem(2) {
-            AuthTextField(
-                value = state.email,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.EmailChanged(it)) },
-                label = "Email address",
-                leadingIcon = Icons.Default.Email,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
-            )
-        }
+            // Full Name
+            Column {
+                FieldLabel("Full Name")
+                Spacer(Modifier.height(8.dp))
+                RegTextField(
+                    value         = state.fullName,
+                    onValueChange = { onEvent(SignUpEvent.FullNameChanged(it)) },
+                    placeholder   = "Your full name",
+                    leadingIcon   = Icons.Default.Person,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction      = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
+                )
+            }
 
-        Spacer(Modifier.height(12.dp))
+            // Location
+            Column {
+                FieldLabel("Location")
+                Spacer(Modifier.height(8.dp))
+                RegTextField(
+                    value         = state.location,
+                    onValueChange = { onEvent(SignUpEvent.LocationChanged(it)) },
+                    placeholder   = "City, Country",
+                    leadingIcon   = Icons.Outlined.LocationOn,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction      = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
+                )
+            }
 
-        StaggeredItem(3) {
-            AuthTextField(
-                value = state.password,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.PasswordChanged(it)) },
-                label = "Password (min 8 characters)",
-                leadingIcon = Icons.Default.Lock,
-                visualTransformation = if (state.passwordVisible) VisualTransformation.None
-                else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { vm.onSignUpEvent(SignUpEvent.TogglePasswordVisibility) }) {
-                        Icon(
-                            if (state.passwordVisible) Icons.Default.Visibility
-                            else Icons.Default.VisibilityOff,
-                            "Toggle",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password, imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(onDone = { fm.clearFocus() })
-            )
-        }
-
-        // Password strength
-        if (state.password.isNotEmpty() && state.password.length < 12) {
-            Spacer(Modifier.height(8.dp))
-            StaggeredItem(4) { PasswordBar(state.password) }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        StaggeredItem(5) {
-            // Role selection
-            Text(
-                "What describes you best?",
-                fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(8.dp))
-
-            AuthTextField(
-                value = state.roleQuery,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.RoleChanged(it)) },
-                label = "Search roles (Developer, Designer…)",
-                leadingIcon = Icons.Default.Search,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { fm.clearFocus() })
-            )
-        }
-
-        if (state.roleSuggestions.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                state.roleSuggestions.take(8).forEach { role ->
-                    val sel = role in state.selectedRoles
-                    FilterChip(
-                        selected = sel,
-                        onClick = { vm.onSignUpEvent(SignUpEvent.SelectRole(role)) },
-                        label = { Text(role, fontSize = 12.sp) },
-                        leadingIcon = if (sel) {
-                            { Icon(Icons.Default.Check, null, Modifier.size(14.dp)) }
-                        } else null,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true, selected = sel,
-                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        )
+            // Email
+            Column {
+                FieldLabel("Email")
+                Spacer(Modifier.height(8.dp))
+                RegTextField(
+                    value         = state.email,
+                    onValueChange = { onEvent(SignUpEvent.EmailChanged(it)) },
+                    placeholder   = "you@google.com",
+                    leadingIcon   = Icons.Default.Email,
+                    isError       = state.emailError != null,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction    = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
+                )
+                if (state.emailError != null) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        state.emailError,
+                        fontSize = 12.sp,
+                        color    = Color(0xFFEF4444)
                     )
                 }
             }
-        }
 
-        if (state.selectedRoles.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                state.selectedRoles.forEach { role ->
-                    AssistChip(
-                        onClick = { vm.onSignUpEvent(SignUpEvent.SelectRole(role)) },
-                        label = { Text(role, fontSize = 12.sp) },
-                        trailingIcon = { Icon(Icons.Default.Close, "Remove", Modifier.size(12.dp)) },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                        )
-                    )
+            // Password
+            Column {
+                FieldLabel("Password")
+                Spacer(Modifier.height(8.dp))
+                RegTextField(
+                    value         = state.password,
+                    onValueChange = { onEvent(SignUpEvent.PasswordChanged(it)) },
+                    placeholder   = "Min. 8 characters",
+                    leadingIcon   = Icons.Default.Lock,
+                    visualTransformation = if (state.passwordVisible) VisualTransformation.None
+                                           else PasswordVisualTransformation(),
+                    trailingIcon  = if (state.passwordVisible) Icons.Default.Visibility
+                                    else Icons.Default.VisibilityOff,
+                    onTrailingClick = { onEvent(SignUpEvent.TogglePasswordVisibility) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction    = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { fm.clearFocus() })
+                )
+                // Strength bar always directly below the password field
+                if (state.password.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    PasswordStrengthBar(state.password)
                 }
             }
         }
@@ -345,12 +391,11 @@ private fun PersonalStep(
     }
 }
 
-// ════════════════════════════════════════
-//  Step 2: Academic / Professional Details
-// ════════════════════════════════════════
+// ─── Step 2 – Academic / Professional ─────────────────────────────────────────
+
 @Composable
 private fun DetailsStep(
-    vm: AuthVM,
+    onEvent: (SignUpEvent) -> Unit,
     state: SignUpState,
     fm: androidx.compose.ui.focus.FocusManager,
     onTermsClick: () -> Unit
@@ -361,316 +406,375 @@ private fun DetailsStep(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scroll)
-            .padding(horizontal = 28.dp)
+            .padding(horizontal = 24.dp)
             .imePadding()
     ) {
-        Spacer(Modifier.height(16.dp))
-        StaggeredItem(0) {
-            Text(
-                if (state.isStudent) "Education Details 🎓" else "Professional Details 💼",
-                fontSize = 22.sp, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                if (state.isStudent) "Tell us about your college" else "Where do you work?",
-                fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
-        }
+        Spacer(Modifier.height(8.dp))
 
-        Spacer(Modifier.height(20.dp))
+        // Title — always visible, no stagger (prevents overlap)
+        Text(
+            if (state.isStudent) "Academic Info" else "Professional Info",
+            fontSize   = 30.sp,
+            fontWeight = FontWeight.Bold,
+            color      = LiquidColors.TextPrimary
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (state.isStudent)
+                "Tell us where you study so we can connect you with your peers."
+            else
+                "Tell us about your professional background.",
+            fontSize   = 15.sp,
+            color      = LiquidColors.TextSecondary,
+            lineHeight = 22.sp
+        )
 
-        // Toggle
-        StaggeredItem(1) {
-            Row(
+        Spacer(Modifier.height(28.dp))
+
+        // Student / Professional toggle card
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .clickable { vm.onSignUpEvent(SignUpEvent.ToggleStudentStatus) }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .background(LiquidColors.GlassSurface)
+                .border(1.dp, LiquidColors.GlassBorder, RoundedCornerShape(14.dp))
+                .clickable { onEvent(SignUpEvent.ToggleStudentStatus) }
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (state.isStudent) "🎓" else "💼", fontSize = 20.sp)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    if (state.isStudent) "I'm a student" else "I'm a professional",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    verticalAlignment      = Alignment.CenterVertically,
+                    horizontalArrangement  = Arrangement.SpaceBetween,
+                    modifier               = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(LiquidColors.Primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(if (state.isStudent) "🎓" else "💼", fontSize = 20.sp)
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Text(
+                            if (state.isStudent) "I'm a Student" else "I'm a Professional",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize   = 16.sp,
+                            color      = LiquidColors.TextPrimary
+                        )
+                    }
+                    Switch(
+                        checked         = state.isStudent,
+                        onCheckedChange = { onEvent(SignUpEvent.ToggleStudentStatus) },
+                        colors          = SwitchDefaults.colors(
+                            checkedThumbColor  = Color.White,
+                            checkedTrackColor  = LiquidColors.Primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = LiquidColors.Border
+                        )
+                    )
+                }
             }
-            Switch(
-                checked = state.isStudent,
-                onCheckedChange = { vm.onSignUpEvent(SignUpEvent.ToggleStudentStatus) },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
-        }
 
-        }
-
-        Spacer(Modifier.height(20.dp))
-
+        // Conditional fields
         AnimatedContent(
-            targetState = state.isStudent,
-            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(180)) },
-            label = "toggle"
+            targetState  = state.isStudent,
+            transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
+            label        = "fields"
         ) { isStudent ->
-            if (isStudent) StudentFields(vm, state, fm, startIdx = 2) // Pass startIdx for continuation
-            else ProfessionalFields(vm, state, fm, startIdx = 2)
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                if (isStudent) StudentFields(onEvent, state, fm, startIdx = 2)
+                else ProfessionalFields(onEvent, state, fm, startIdx = 2)
+            }
         }
 
-        // Terms text at bottom
-        Spacer(Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Spacer(Modifier.height(24.dp))
+
+        // Terms
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
             Text(
                 "By creating an account, you agree to our ",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                fontSize = 12.sp,
+                color    = LiquidColors.TextSecondary
             )
             Text(
                 "Terms",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.primary,
+                fontSize   = 12.sp,
+                color      = LiquidColors.Primary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { onTermsClick() }
+                modifier   = Modifier.clickableWithNoIndication { onTermsClick() }
             )
         }
+
         Spacer(Modifier.height(16.dp))
     }
 }
 
-// ─── Student Fields ───
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun StudentFields(vm: AuthVM, state: SignUpState, fm: androidx.compose.ui.focus.FocusManager, startIdx: Int) {
-    val branches = listOf(
-        "Computer Science", "Information Technology", "Electronics & Communication",
-        "Electrical Engineering", "Mechanical Engineering", "Civil Engineering",
-        "Chemical Engineering", "Biotechnology", "Data Science", "AI & ML", "Other"
-    )
-    val courses = listOf(
-        "B.Tech", "B.E.", "BCA", "B.Sc", "MCA", "M.Tech", "MBA", "M.Sc",
-        "B.Com", "BBA", "Ph.D", "Diploma", "Other"
-    )
-    val years = listOf("1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Graduated")
+// ─── Student fields ───────────────────────────────────────────────────────────
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        StaggeredItem(startIdx) {
-            AuthTextField(
-                value = state.collegeName,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.CollegeNameChanged(it)) },
-                label = "College / University",
-                leadingIcon = Icons.Outlined.School,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
+@Composable
+private fun StudentFields(
+    onEvent: (SignUpEvent) -> Unit,
+    state: SignUpState,
+    fm: androidx.compose.ui.focus.FocusManager,
+    startIdx: Int
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column {
+            FieldLabel("College Name")
+            Spacer(Modifier.height(8.dp))
+            RegTextField(
+                value         = state.collegeName,
+                onValueChange = { onEvent(SignUpEvent.CollegeNameChanged(it)) },
+                placeholder   = "Select your college",
+                leadingIcon   = Icons.Outlined.School,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction      = ImeAction.Next
+                ),
                 keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
             )
         }
 
-        StaggeredItem(startIdx + 1) {
-            ChipSelector(
-                label = "Branch",
-                options = branches,
-                selected = state.branch,
-                onSelected = { vm.onSignUpEvent(SignUpEvent.BranchChanged(it)) }
+        Column {
+            FieldLabel("Branch / Major")
+            Spacer(Modifier.height(8.dp))
+            RegTextField(
+                value         = state.branch,
+                onValueChange = { onEvent(SignUpEvent.BranchChanged(it)) },
+                placeholder   = "Select your major",
+                leadingIcon   = Icons.Outlined.AccountTree,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction      = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
             )
         }
 
-        StaggeredItem(startIdx + 2) {
-            ChipSelector(
-                label = "Course",
-                options = courses,
-                selected = state.course,
-                onSelected = { vm.onSignUpEvent(SignUpEvent.CourseChanged(it)) }
-            )
-        }
-
-        StaggeredItem(startIdx + 3) {
-            ChipSelector(
-                label = "Year",
-                options = years,
-                selected = state.year,
-                onSelected = { vm.onSignUpEvent(SignUpEvent.YearChanged(it)) }
-            )
-        }
-
-        StaggeredItem(startIdx + 4) {
-            AuthTextField(
-                value = state.location,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.LocationChanged(it)) },
-                label = "City / Location",
-                leadingIcon = Icons.Outlined.LocationOn,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+        Column {
+            FieldLabel("Graduation Year")
+            Spacer(Modifier.height(8.dp))
+            RegTextField(
+                value         = state.year,
+                onValueChange = { onEvent(SignUpEvent.YearChanged(it)) },
+                placeholder   = "Year",
+                leadingIcon   = Icons.Outlined.DateRange,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction    = ImeAction.Done
+                ),
                 keyboardActions = KeyboardActions(onDone = { fm.clearFocus() })
             )
         }
-
-        Spacer(Modifier.height(8.dp))
     }
 }
 
-// ─── Professional Fields ───
+// ─── Professional fields ──────────────────────────────────────────────────────
+
 @Composable
-private fun ProfessionalFields(vm: AuthVM, state: SignUpState, fm: androidx.compose.ui.focus.FocusManager, startIdx: Int) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        StaggeredItem(startIdx) {
-            AuthTextField(
-                value = state.companyName,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.CompanyNameChanged(it)) },
-                label = "Company Name",
-                leadingIcon = Icons.Outlined.Business,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
+private fun ProfessionalFields(
+    onEvent: (SignUpEvent) -> Unit,
+    state: SignUpState,
+    fm: androidx.compose.ui.focus.FocusManager,
+    startIdx: Int
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column {
+            FieldLabel("Company Name")
+            Spacer(Modifier.height(8.dp))
+            RegTextField(
+                value         = state.companyName,
+                onValueChange = { onEvent(SignUpEvent.CompanyNameChanged(it)) },
+                placeholder   = "Where do you work?",
+                leadingIcon   = Icons.Outlined.Business,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction      = ImeAction.Next
+                ),
                 keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
             )
         }
 
-        StaggeredItem(startIdx + 1) {
-            AuthTextField(
-                value = state.location,
-                onValueChange = { vm.onSignUpEvent(SignUpEvent.LocationChanged(it)) },
-                label = "Location",
-                leadingIcon = Icons.Outlined.LocationOn,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Down) })
-            )
-        }
-
-        StaggeredItem(startIdx + 2) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AuthTextField(
-                    value = state.experience,
-                    onValueChange = { vm.onSignUpEvent(SignUpEvent.ExperienceChanged(it)) },
-                    label = "Experience (yrs)",
-                    leadingIcon = Icons.Outlined.Timeline,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Right) }),
-                    modifier = Modifier.weight(1f)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                FieldLabel("Experience (yrs)")
+                Spacer(Modifier.height(8.dp))
+                RegTextField(
+                    value         = state.experience,
+                    onValueChange = { onEvent(SignUpEvent.ExperienceChanged(it)) },
+                    placeholder   = "e.g. 2",
+                    leadingIcon   = Icons.Outlined.Timeline,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction    = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(onNext = { fm.moveFocus(FocusDirection.Right) })
                 )
-                AuthTextField(
-                    value = state.ctc,
-                    onValueChange = { vm.onSignUpEvent(SignUpEvent.CtcChanged(it)) },
-                    label = "CTC (LPA)",
-                    leadingIcon = Icons.Outlined.CurrencyRupee,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { fm.clearFocus() }),
-                    modifier = Modifier.weight(1f)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                FieldLabel("CTC (LPA)")
+                Spacer(Modifier.height(8.dp))
+                RegTextField(
+                    value         = state.ctc,
+                    onValueChange = { onEvent(SignUpEvent.CtcChanged(it)) },
+                    placeholder   = "e.g. 12",
+                    leadingIcon   = Icons.Outlined.CurrencyRupee,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction    = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { fm.clearFocus() })
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
     }
 }
+
+// ─── Reusable field ───────────────────────────────────────────────────────────
+
+@Composable
+private fun FieldLabel(text: String) {
+    Text(
+        text       = text,
+        fontSize   = 14.sp,
+        fontWeight = FontWeight.Medium,
+        color      = LiquidColors.TextPrimary
+    )
+}
+
+@Composable
+private fun RegTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    leadingIcon: ImageVector,
+    modifier: Modifier = Modifier,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingIcon: ImageVector? = null,
+    onTrailingClick: (() -> Unit)? = null,
+    isError: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    val borderColor by animateColorAsState(
+        targetValue   = if (isError) Color(0xFFEF4444) else if (isFocused) LiquidColors.Primary else LiquidColors.Border,
+        animationSpec = tween(200),
+        label         = "border"
+    )
+
+    BasicTextField(
+        value                = value,
+        onValueChange        = onValueChange,
+        modifier             = modifier.fillMaxWidth(),
+        singleLine           = true,
+        textStyle            = androidx.compose.ui.text.TextStyle(
+            color    = LiquidColors.TextPrimary,
+            fontSize = 15.sp
+        ),
+        visualTransformation = visualTransformation,
+        keyboardOptions      = keyboardOptions,
+        keyboardActions      = keyboardActions,
+        interactionSource    = interactionSource,
+        cursorBrush          = androidx.compose.ui.graphics.SolidColor(LiquidColors.Primary),
+        decorationBox        = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(LiquidColors.GlassSurface)
+                    .border(1.dp, borderColor, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector     = leadingIcon,
+                    contentDescription = null,
+                    tint            = if (isFocused) LiquidColors.Primary else LiquidColors.TextSecondary,
+                    modifier        = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    if (value.isEmpty()) {
+                        Text(placeholder, color = LiquidColors.TextSecondary, fontSize = 15.sp)
+                    }
+                    innerTextField()
+                }
+                if (trailingIcon != null) {
+                    IconButton(
+                        onClick  = { onTrailingClick?.invoke() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector     = trailingIcon,
+                            contentDescription = null,
+                            tint            = LiquidColors.TextSecondary,
+                            modifier        = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+// ─── Password strength bar ────────────────────────────────────────────────────
+
+@Composable
+private fun PasswordStrengthBar(password: String) {
+    val strength = when {
+        password.length >= 12 && password.any { it.isDigit() } && password.any { !it.isLetterOrDigit() } -> 3
+        password.length >= 8  && password.any { it.isDigit() } -> 2
+        password.length >= 6 -> 1
+        else -> 0
+    }
+    val label = arrayOf("Weak", "Fair", "Good", "Strong")[strength]
+    val color = arrayOf(Color(0xFFEF4444), Color(0xFFFF9800), LiquidColors.Primary, Color(0xFF22C55E))[strength]
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        repeat(4) { i ->
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(4.dp)
+                    .padding(horizontal = 2.dp)
+                    .clip(CircleShape)
+                    .background(if (i <= strength) color else LiquidColors.Border)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(label, fontSize = 12.sp, color = color, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+// ─── Staggered appear ─────────────────────────────────────────────────────────
 
 @Composable
 private fun StaggeredItem(index: Int, content: @Composable () -> Unit) {
     val visible = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        delay(index * 60L) // Stagger delay
+        delay(index * 60L)
         visible.value = true
     }
     AnimatedVisibility(
         visible = visible.value,
-        enter = slideInVertically { it / 3 } + fadeIn(),
-        exit = fadeOut()
-    ) {
-        content()
-    }
+        enter   = slideInVertically { it / 3 } + fadeIn(),
+        exit    = fadeOut()
+    ) { content() }
 }
 
-// ─── Chip Selector (replaces dropdowns) ───
-@OptIn(ExperimentalLayoutApi::class)
+// ─── Footer ───────────────────────────────────────────────────────────────────
+
 @Composable
-private fun ChipSelector(
-    label: String,
-    options: List<String>,
-    selected: String,
-    onSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column {
-        Text(
-            label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
-        )
-
-        if (selected.isNotBlank() && !expanded) {
-            // Show selected as a chip with edit option
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.clickable { expanded = true }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            selected,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            Icons.Default.Edit,
-                            "Change",
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            }
-        } else {
-            // Show chips grid
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                options.forEach { opt ->
-                    val isSel = opt == selected
-                    FilterChip(
-                        selected = isSel,
-                        onClick = {
-                            onSelected(opt)
-                            expanded = false
-                        },
-                        label = { Text(opt, fontSize = 12.sp) },
-                        leadingIcon = if (isSel) {
-                            { Icon(Icons.Default.Check, null, Modifier.size(14.dp)) }
-                        } else null,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true, selected = isSel,
-                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                            selectedBorderColor = Color.Transparent
-                        )
-                    )
-                }
-            }
-        }
-    }
-}
-
-// ─── Bottom Action ───
-@Composable
-private fun BottomAction(
+private fun RegistrationFooter(
     currentStep: Int,
     totalSteps: Int,
     isLoading: Boolean,
@@ -681,90 +785,83 @@ private fun BottomAction(
 ) {
     val isLast = currentStep == totalSteps - 1
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 28.dp, vertical = 12.dp)
-            .navigationBarsPadding(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .background(LiquidColors.GlassSurface)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
-        if (currentStep > 0) {
-            OutlinedButton(
-                onClick = onBack,
-                modifier = Modifier.height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, Modifier.size(18.dp))
-            }
-        }
-
-        Button(
-            onClick = { if (isLast) onSubmit() else onNext() },
-            modifier = Modifier
-                .weight(1f)
-                .height(52.dp),
-            enabled = canProceed && !isLoading,
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment     = Alignment.CenterVertically
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    Modifier.size(20.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
+            // Back button — outlined
+            OutlinedButton(
+                onClick  = onBack,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+                shape    = RoundedCornerShape(14.dp),
+                border   = BorderStroke(1.dp, LiquidColors.Border),
+                colors   = ButtonDefaults.outlinedButtonColors(
+                    contentColor = LiquidColors.TextPrimary
                 )
-            } else {
-                Text(
-                    if (isLast) "Create Account" else "Continue",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (!isLast) {
+            ) {
+                Text("Back", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            }
+
+            // Next / Complete — cyan
+            Button(
+                onClick  = { if (isLast) onSubmit() else onNext() },
+                enabled  = canProceed && !isLoading,
+                modifier = Modifier
+                    .weight(2f)
+                    .height(54.dp),
+                shape    = RoundedCornerShape(14.dp),
+                colors   = ButtonDefaults.buttonColors(
+                    containerColor         = LiquidColors.Primary,
+                    contentColor           = Color.White,
+                    disabledContainerColor = LiquidColors.Primary.copy(alpha = 0.4f),
+                    disabledContentColor   = Color.White.copy(alpha = 0.6f)
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier    = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color       = Color.White
+                    )
+                } else {
+                    Text(
+                        if (isLast) "Complete Setup" else "Next Step",
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 15.sp
+                    )
                     Spacer(Modifier.width(6.dp))
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.size(18.dp))
+                    Icon(
+                        imageVector     = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier        = Modifier.size(17.dp)
+                    )
                 }
             }
         }
     }
 }
 
-// ─── Password Strength Bar ───
-@Composable
-private fun PasswordBar(password: String) {
-    val strength = when {
-        password.length >= 12 && password.any { it.isDigit() } && password.any { !it.isLetterOrDigit() } -> 3
-        password.length >= 8 && password.any { it.isDigit() } -> 2
-        password.length >= 6 -> 1
-        else -> 0
-    }
-    val label = arrayOf("Weak", "Fair", "Good", "Strong")[strength]
-    val color = arrayOf(
-        MaterialTheme.colorScheme.error,
-        Color(0xFFFF9800),
-        MaterialTheme.colorScheme.tertiary,
-        Color(0xFF4CAF50)
-    )[strength]
+// ─── Preview ──────────────────────────────────────────────────────────────────
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(horizontal = 4.dp)
-    ) {
-        repeat(4) { i ->
-            Box(
-                Modifier
-                    .weight(1f)
-                    .height(3.dp)
-                    .padding(horizontal = 1.dp)
-                    .clip(CircleShape)
-                    .background(if (i <= strength) color else MaterialTheme.colorScheme.surfaceContainerHigh)
-            )
-        }
-        Spacer(Modifier.width(10.dp))
-        Text(label, fontSize = 11.sp, color = color, fontWeight = FontWeight.Medium)
+@Preview(showBackground = true, backgroundColor = 0xFF101D22, widthDp = 390, heightDp = 844)
+@Composable
+fun PreviewSignUpScreenContent() {
+    MaterialTheme {
+        SignUpScreenContent(
+            state          = SignUpState(),
+            onEvent        = {},
+            onTermsClick   = {},
+            onNavigateBack = {}
+        )
     }
 }
