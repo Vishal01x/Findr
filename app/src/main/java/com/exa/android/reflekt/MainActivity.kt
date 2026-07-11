@@ -22,21 +22,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,8 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,7 +56,10 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.exa.android.reflekt.loopit.core.env.EnvironmentManager
+import com.exa.android.reflekt.loopit.core.env.ShakeDetector
 import com.exa.android.reflekt.loopit.data.feature.authentication.vm.AuthVM
+import com.exa.android.reflekt.loopit.presentation.debug.EnvironmentSwitcherSheet
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.viewmodel.LocationViewModel
 import com.exa.android.reflekt.loopit.core.utils.application.MyLifecycleObserver
 import com.exa.android.reflekt.loopit.core.network.NetworkCallbackReceiver
@@ -74,13 +67,11 @@ import com.exa.android.reflekt.loopit.data.feature.main.chat.data.viewmodel.User
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.worker.LocationForegroundService
 import com.exa.android.reflekt.loopit.data.feature.main.map.data.worker.LocationWorker
 import com.exa.android.reflekt.loopit.fcm.DeepLinkHelper
-import com.exa.android.reflekt.loopit.presentation.auth.components.AnimatedAuthBackground
 import com.exa.android.reflekt.loopit.presentation.navigation.nav_graph.AppNavigation
 import com.exa.android.reflekt.loopit.presentation.navigation.component.HomeRoute
 import dagger.hilt.android.AndroidEntryPoint
 import com.exa.android.reflekt.loopit.core.notification.clearAllNotifications
 import com.exa.android.reflekt.loopit.theme.FindrTheme
-import io.getstream.meeting.room.compose.ui.AppTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -90,11 +81,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private var currentIntent by mutableStateOf<Intent?>(intent)
-    private lateinit var navController: NavController  // Define navController at class level
+    private lateinit var navController: NavController
     private lateinit var requestNotificationPermissionLauncher: ActivityResultLauncher<String>
     private var lifecycleObserver: MyLifecycleObserver? = null
+    val authViewModel: AuthVM by viewModels()
     val userViewModel: UserViewModel by viewModels()
     val locationViewModel: LocationViewModel by viewModels()
+    private var showEnvSheet by mutableStateOf(false)
+//    private lateinit var shakeDetector: ShakeDetector
 
 //    @Inject
 //    lateinit var signalInitializer: SignalInitializer
@@ -109,6 +103,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+
+//        shakeDetector = ShakeDetector(this) { showEnvSheet = true }
 
         // WindowCompat.setDecorFitsSystemWindows(window, false)
         val curUser = userViewModel.curUser
@@ -175,6 +171,12 @@ class MainActivity : ComponentActivity() {
                     navController = rememberNavController()
                     App(currentIntent)
                     updateStatus(this)
+                    if (EnvironmentManager.isStaging) {
+                        StagingBadge()
+                    }
+                    if (showEnvSheet) {
+                        EnvironmentSwitcherSheet(onDismiss = { showEnvSheet = false })
+                    }
                 }
             }
         }
@@ -307,11 +309,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+//        shakeDetector.start()
+    }
+
+    override fun onPause() {
+        super.onPause()
+//        shakeDetector.stop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        currentIntent = intent // Update the state
-
+        currentIntent = intent
     }
 
     override fun onRequestPermissionsResult(
@@ -338,14 +349,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun App(currentIntent: Intent?) {
-        val viewModel: AuthVM = hiltViewModel()
-        val loginState = viewModel.loginState.value
-
-        // Show branded splash while the auth state is being determined
-        if (loginState.isCheckingAuth) {
-            SplashUi()
-            return
-        }
+        val loginState = authViewModel.loginState.value
 
         val navController = rememberNavController()
 
@@ -370,77 +374,20 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    @Composable
-    private fun SplashUi() {
-        AnimatedAuthBackground {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val pulse = rememberInfiniteTransition("splash_pulse")
-                    val scale by pulse.animateFloat(
-                        initialValue = 1f,
-                        targetValue = 1.08f,
-                        animationSpec = infiniteRepeatable(
-                            tween(1200, easing = FastOutSlowInEasing),
-                            RepeatMode.Reverse
-                        ),
-                        label = "scale"
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .scale(scale)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🎓", fontSize = 52.sp)
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    Text(
-                        "Findr",
-                        fontSize = 38.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(6.dp))
-
-                    Text(
-                        "Your campus. Your network.",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                        letterSpacing = 0.3.sp
-                    )
+    private fun handleDeepLink(navController: NavController, intent: Intent) {
+        com.google.firebase.dynamiclinks.FirebaseDynamicLinks.getInstance()
+            .getDynamicLink(intent)
+            .addOnSuccessListener { pendingData ->
+                val deepLink = pendingData?.link
+                if (deepLink != null) {
+                    com.exa.android.reflekt.loopit.fcm.DeepLinkHelper.handleDeepLink(navController, deepLink)
+                } else {
+                    navController.handleDeepLink(intent)
                 }
             }
-        }
-    }
-
-    private fun handleDeepLink(navController: NavController, intent: Intent) {
-//        intent.data?.let { uri ->
-//            if (uri.toString().startsWith("findr://chat")) {
-//                val userId = uri.lastPathSegment ?: return@let
-//                navController.navigate(HomeRoute.ChatDetail.createRoute(userId)) {
-//                    popUpTo(HomeRoute.ChatList.route) { inclusive = false }
-//                    launchSingleTop = true
-//                }
-//            }
-//        }
-
-        navController.handleDeepLink(intent) // since deep link navigation is slow keep direct
+            .addOnFailureListener {
+                navController.handleDeepLink(intent)
+            }
     }
 
 
@@ -469,6 +416,29 @@ fun updateStatus(context: Context) {
     }
 }
 
+
+@Composable
+fun StagingBadge() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 8.dp, top = 4.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(androidx.compose.ui.graphics.Color(0xFFFF6B00))
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Text(
+                text = "STAGING",
+                color = androidx.compose.ui.graphics.Color.White,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
+            )
+        }
+    }
+}
 
 @Composable
 fun OnBackPressed(navController: NavController) {

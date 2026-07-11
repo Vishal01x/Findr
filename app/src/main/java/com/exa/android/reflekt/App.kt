@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorkerFactory
 import javax.inject.Inject
 import androidx.work.Configuration
+import com.exa.android.reflekt.loopit.core.env.EnvironmentManager
 
 @HiltAndroidApp
 class MyApp : Application(), Configuration.Provider {
@@ -24,6 +25,7 @@ class MyApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        EnvironmentManager.init(this)
         FirebaseApp.initializeApp(this)
         Places.initialize(applicationContext, this.getString(R.string.PLACE_API_KEY))
         if (BuildConfig.DEBUG) {
