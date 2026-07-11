@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.exa.android.reflekt",
+      "sha256_cert_fingerprints": [
+        "REPLACE_WITH_PLAY_CONSOLE_SHA256_FINGERPRINT",
+        "32:B3:39:AA:AA:27:67:11:75:C9:8D:52:7A:37:71:D0:55:58:D3:AA:1D:B6:DB:79:D7:72:73:52:FB:A5:B6:42"
+      ]
+    }
+  }
+]

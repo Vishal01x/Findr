@@ -1,0 +1,115 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "placement_companies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isLiveProcess", "order": "DESCENDING" },
+        { "fieldPath": "lastUpdated",   "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "batchYear",   "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type",        "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "batchYear",   "order": "ASCENDING" },
+        { "fieldPath": "type",        "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "batchYear",   "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "company",     "order": "ASCENDING" },
+        { "fieldPath": "batchYear",   "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "company",     "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "batchYear",   "order": "ASCENDING" },
+        { "fieldPath": "company",     "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type",        "order": "ASCENDING" },
+        { "fieldPath": "company",     "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "placed_students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "batchYear",   "order": "ASCENDING" },
+        { "fieldPath": "type",        "order": "ASCENDING" },
+        { "fieldPath": "company",     "order": "ASCENDING" },
+        { "fieldPath": "packageLpa",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feedback_submissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",      "order": "ASCENDING" },
+        { "fieldPath": "submittedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feedback_submissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",      "order": "ASCENDING" },
+        { "fieldPath": "batchYear",   "order": "ASCENDING" },
+        { "fieldPath": "submittedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feedback_submissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",      "order": "ASCENDING" },
+        { "fieldPath": "submittedAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
