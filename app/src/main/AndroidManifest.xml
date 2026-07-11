@@ -12,7 +12,7 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -39,56 +39,91 @@
         android:theme="@style/Theme.Reflekt"
         tools:targetApi="31">
         <activity
+            android:name=".loopit.presentation.main.placement.PlacementActivity"
+            android:exported="false" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/PLACE_API_KEY" />
+        <meta-data
+            android:name="androidx.work.WorkManagerInitializer"
+            android:value="androidx.startup"
+            tools:node="remove" />
+
+        <activity
             android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.Reflekt.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="@string/PLACE_API_KEY" />
-
-        <meta-data
-            android:name="androidx.work.WorkManagerInitializer"
-            android:value="androidx.startup" tools:node="remove" />
-
-
         <activity
             android:name=".MainActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@style/Theme.Reflekt"
             android:windowSoftInputMode="adjustResize"
-            tools:ignore="AppLinkUrlError">
+            android:launchMode="singleTask">
+            <!-- Custom scheme for FCM notifications and internal navigation -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="findr"/>
-                <data android:pathPrefix="/"/>
-                <data android:host="chat"/>
-                <data android:host="project"/>
-                <data android:host="post"/>
-                <data android:host="profile"/>
-                <data android:host="profile_views"/>
+                <data android:scheme="findr" />
+                <data android:pathPrefix="/" />
+                <data android:host="chat" />
+                <data android:host="project" />
+                <data android:host="post" />
+                <data android:host="profile" />
+                <data android:host="profile_views" />
+                <data android:host="company" />
             </intent-filter>
-            
-            <!-- HTTP/HTTPS App Links for clickable sharing -->
+
+            <!-- Firebase Dynamic Links domain -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="reflekt.page.link" />
+            </intent-filter>
+
+            <!-- Fallback deep link domain used inside the FDL link= parameter -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="reflekt.com" android:pathPrefix="/project/" />
+                <data android:scheme="https" android:host="reflekt.com" android:pathPrefix="/company/" />
+                <data android:scheme="https" android:host="reflekt.com" android:pathPrefix="/profile/" />
+            </intent-filter>
+
+            <!-- Firebase Hosting App Links (primary sharing domain) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="http"/>
-                <data android:scheme="https"/>
-                <data android:host="findr.app"/>
-                <data android:pathPrefix="/post/"/>
+                <data android:scheme="https" />
+                <data android:host="social-media-ab0cc.web.app" />
+                <data android:pathPrefix="/post/" />
+            </intent-filter>
+
+            <!-- findr.app domain (if you own it and point it to Firebase Hosting) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="findr.app" />
+                <data android:pathPrefix="/post/" />
             </intent-filter>
         </activity>
 
@@ -123,20 +158,18 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
         <receiver
             android:name=".loopit.fcm.NotificationActionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="action_reply"/>
-                <action android:name="mark_as_read"/>
-                <action android:name="ignore"/>
-                <action android:name="action_accept"/>
-                <action android:name="action_reject"/>
-                <action android:name="action_update"/>
+                <action android:name="action_reply" />
+                <action android:name="mark_as_read" />
+                <action android:name="ignore" />
+                <action android:name="action_accept" />
+                <action android:name="action_reject" />
+                <action android:name="action_update" />
             </intent-filter>
         </receiver>
-
     </application>
 
 </manifest>

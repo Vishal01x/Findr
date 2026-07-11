@@ -11,7 +11,10 @@ import com.exa.android.reflekt.loopit.util.Constants.CLOUDINARY_BASE_URL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,7 +33,19 @@ class AuthModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseFirestore() = FirebaseFirestore.getInstance()
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        val db = FirebaseFirestore.getInstance()
+        // Enable offline persistence with 100 MB cache.
+        // Placement data will be served from disk on repeat visits,
+        // eliminating unnecessary network round-trips.
+        val cacheSettings = PersistentCacheSettings.newBuilder()
+            .setSizeBytes(100L * 1024L * 1024L) // 100 MB
+            .build()
+        db.firestoreSettings = FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(cacheSettings)
+            .build()
+        return db
+    }
 
     @Provides
     @Singleton
@@ -38,6 +53,10 @@ class AuthModule {
 
     @Provides
     fun provideFirebaseMessaging() = FirebaseMessaging.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage() = FirebaseStorage.getInstance()
 
 
     @Provides

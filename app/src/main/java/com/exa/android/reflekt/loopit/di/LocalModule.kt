@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import com.exa.android.reflekt.loopit.data.feature.main.link_data.metadata.local.LinkMetadataDatabase
+import com.exa.android.reflekt.loopit.data.feature.main.notification.data.local.NotificationDatabase
+import com.exa.android.reflekt.loopit.data.feature.main.notification.data.local.NotificationDao
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import dagger.Module
@@ -35,6 +37,19 @@ class LocalModule {
     @Provides
     @Singleton
     fun provideMetadataDao(database: LinkMetadataDatabase) = database.metadataDao()
+
+    @Provides
+    @Singleton
+    fun provideNotificationDatabase(@ApplicationContext context: Context): NotificationDatabase {
+        return Room.databaseBuilder(
+            context,
+            NotificationDatabase::class.java, "notification-db"
+        ).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationDao(database: NotificationDatabase): NotificationDao = database.notificationDao()
 
     @Provides
     fun provideCoroutineDispatcher(): CoroutineDispatcher = Dispatchers.IO

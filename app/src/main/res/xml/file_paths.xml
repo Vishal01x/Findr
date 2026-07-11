@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Allow access to the cache directory -->
+    <!-- Internal cache (context.cacheDir) -->
     <cache-path name="cache" path="." />
+
+    <!-- External cache (context.externalCacheDir) — used for share bitmaps -->
+    <external-cache-path name="external_cache" path="." />
 
     <!-- Grant access to files in internal app-specific storage -->
     <external-files-path
