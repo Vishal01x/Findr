@@ -1,0 +1,19 @@
+<lint-module
+    format="1"
+    dir="/Users/sysad/Downloads/Findr_old/library_ui"
+    name=":library_ui"
+    type="LIBRARY"
+    maven="Reflekt:library_ui:unspecified"
+    agpVersion="8.13.1"
+    buildFolder="build"
+    bootClassPath="/Users/sysad/Library/Android/sdk/platforms/android-36/android.jar:/Users/sysad/Library/Android/sdk/build-tools/35.0.0/core-lambda-stubs.jar"
+    javaSourceLevel="11"
+    compileTarget="android-36"
+    neverShrinking="true">
+  <lintOptions
+      abortOnError="true"
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="release"/>
+</lint-module>

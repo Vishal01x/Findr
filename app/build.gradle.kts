@@ -19,16 +19,16 @@ android {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.1.0"
+        versionCode = 9
+        versionName = "2.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -61,7 +61,7 @@ android {
     }
     splits {
         abi {
-            isEnable = true
+            isEnable = false
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
@@ -71,6 +71,7 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -83,6 +84,7 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.database)
+    implementation("com.google.firebase:firebase-storage:21.0.1")
     implementation(libs.firebase.auth.ktx)
     implementation(libs.androidx.runner)
     implementation(libs.androidx.runtime.livedata)
@@ -92,6 +94,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.auth)
+    implementation("com.google.firebase:firebase-dynamic-links-ktx:22.1.0")
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
@@ -175,6 +178,7 @@ dependencies {
 
     // new dependency
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.compose.markdown)
 
     // Kotlin + coroutines
     implementation(libs.androidx.work.runtime.ktx)
@@ -191,4 +195,6 @@ dependencies {
     // Google Sign-In for authentication
     implementation(libs.play.services.auth)
 
+    // internal libraries
+    implementation(project(":library_ui"))
 }

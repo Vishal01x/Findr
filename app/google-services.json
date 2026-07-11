@@ -15,11 +15,35 @@
       },
       "oauth_client": [
         {
+          "client_id": "557196817320-4b6g5vme5gd8p0sjjgaec6ks5cpv6ng1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.exa.android.reflekt",
+            "certificate_hash": "68ac1a9ada721ee4439f68c77b2455a957f42b50"
+          }
+        },
+        {
+          "client_id": "557196817320-aoca6s6gi2v6ff3vs85tjcmps11v88kd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.exa.android.reflekt",
+            "certificate_hash": "353d142b84616bf0b8c9bdbf987772fcc3976c99"
+          }
+        },
+        {
           "client_id": "557196817320-lu7si6gbvinfcje22rp3o29845527qs8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.exa.android.reflekt",
             "certificate_hash": "e9caa8f7a89f9803ae33471691f123d88d5b9e41"
+          }
+        },
+        {
+          "client_id": "557196817320-p0dtiptc20engetaos151ku84fhejssl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.exa.android.reflekt",
+            "certificate_hash": "7fb08d1ab2aac8ca6b3016676644fe749fc4f362"
           }
         },
         {
@@ -57,6 +81,14 @@
           "android_info": {
             "package_name": "com.example.reflekt",
             "certificate_hash": "e9caa8f7a89f9803ae33471691f123d88d5b9e41"
+          }
+        },
+        {
+          "client_id": "557196817320-r1anbk8cqp3fd38qifovob8n76iivkio.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.reflekt",
+            "certificate_hash": "7fb08d1ab2aac8ca6b3016676644fe749fc4f362"
           }
         },
         {
