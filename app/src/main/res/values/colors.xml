@@ -8,6 +8,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="notification_color">#FF4875E1</color>
+    <!-- Matches LiquidColors.BgBase light = Color(0xFFF1F5F9) -->
+    <color name="splash_bg">#F1F5F9</color>
     <!-- App primary colors — also used by splash screen and legacy Material theme refs -->
     <color name="colorPrimary">#FF1A1A2E</color>
     <color name="colorPrimaryDark">#FF16213E</color>

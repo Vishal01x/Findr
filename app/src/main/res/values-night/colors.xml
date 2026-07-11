@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches LiquidColors.BgBase dark = Color(0xFF101D22) -->
+    <color name="splash_bg">#101D22</color>
+</resources>
