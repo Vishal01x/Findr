@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.isGranted
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.widget.Autocomplete
 import com.google.maps.android.compose.MapProperties
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -149,14 +148,6 @@ fun MapScreen(navController: NavController, viewModel: LocationViewModel = hiltV
     // Observe the selected location from the ViewModel
     val selectedLocation by viewModel.selectedLocation.collectAsState()
 
-    val autocompleteLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val place = Autocomplete.getPlaceFromIntent(result.data)
-            // searchLocation = place.latLng?.let { LatLng(it.latitude, it.longitude) }
-        }
-    }
     //update
     val locationManager = remember {
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -451,7 +442,7 @@ fun SearchBar(
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
                 if (!Places.isInitialized()) {
-                    Places.initialize(context, context.getString(R.string.PLACE_API_KEY))
+                    Places.initializeWithNewPlacesApiEnabled(context, context.getString(R.string.PLACE_API_KEY))
                 }
 
                 val autocompleteAdapter = ArrayAdapter<String>(context, android.R.layout.simple_dropdown_item_1line)

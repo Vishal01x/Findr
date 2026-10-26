@@ -44,10 +44,17 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/PLACE_API_KEY" />
-        <meta-data
-            android:name="androidx.work.WorkManagerInitializer"
-            android:value="androidx.startup"
-            tools:node="remove" />
+        <!-- WorkManager is configured by MyApp (Configuration.Provider) so Hilt workers get injected -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <activity
             android:name=".SplashActivity"

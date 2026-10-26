@@ -26,8 +26,10 @@ fun MarkdownText(
     LibraryMarkdownText(
         markdown = text,
         modifier = modifier,
-        style = style.copy(lineHeight = lineHeight),
-        color = color,
+        style = style.copy(
+            color = if (color != Color.Unspecified) color else style.color,
+            lineHeight = lineHeight
+        ),
         maxLines = maxLines
     )
 }

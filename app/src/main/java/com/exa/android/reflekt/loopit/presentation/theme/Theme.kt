@@ -18,7 +18,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 //// Light Color Scheme (Updated)
 //private val LightColorScheme = lightColorScheme(
@@ -202,8 +201,6 @@ fun AppTheme(
     else -> LightColorScheme
   }
 
-  // Remember System UI Controller
-  val systemUiController = rememberSystemUiController()
 
 //  val useDarkIcons = true // dark icons = black icons
 //  val statusBarColor = AppColors.whiteBlue

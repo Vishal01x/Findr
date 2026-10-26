@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -182,8 +183,9 @@ fun EventDetailsCard(
 
 @Composable
 private fun DateBadge(date: Date) {
-    val day   = SimpleDateFormat("dd",  Locale.getDefault()).format(date)
-    val month = SimpleDateFormat("MMM", Locale.getDefault()).format(date).uppercase()
+    val locale = LocalConfiguration.current.locales[0]
+    val day   = SimpleDateFormat("dd",  locale).format(date)
+    val month = SimpleDateFormat("MMM", locale).format(date).uppercase(locale)
 
     Column(
         modifier = Modifier

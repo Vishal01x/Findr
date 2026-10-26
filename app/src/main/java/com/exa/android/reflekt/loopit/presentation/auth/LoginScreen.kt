@@ -1,7 +1,6 @@
 package com.exa.android.reflekt.loopit.presentation.auth
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -40,6 +39,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,9 +59,14 @@ import com.exa.android.reflekt.loopit.data.feature.authentication.vm.LoginState
 import com.exa.android.reflekt.loopit.presentation.auth.components.AnimatedAuthBackground
 import com.exa.android.reflekt.loopit.presentation.auth.components.AuthTextField
 import com.exa.android.reflekt.loopit.presentation.auth.components.GlassCard
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -82,19 +87,8 @@ fun LoginScreen(
         onLoginSuccess()
     }
 
-    val googleSignInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                account?.idToken?.let { viewModel.onLoginEvent(LoginEvent.GoogleSignIn(it)) }
-            } catch (e: ApiException) {
-                Toast.makeText(context, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    val scope = rememberCoroutineScope()
+    val webClientId = stringResource(R.string.default_web_client_id)
 
     LaunchedEffect(state.loginSuccess) {
         if (state.loginSuccess) {
@@ -129,13 +123,26 @@ fun LoginScreen(
         onEvent = viewModel::onLoginEvent,
         showGoogleSignIn = !EnvironmentManager.isStaging,
         onGoogleSignInClick = {
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(context.getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build()
-            val client = GoogleSignIn.getClient(context, gso)
-            client.signOut().addOnCompleteListener {
-                googleSignInLauncher.launch(client.signInIntent)
+            scope.launch {
+                val option = GetSignInWithGoogleOption.Builder(webClientId).build()
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(option)
+                    .build()
+                try {
+                    val credential = CredentialManager.create(context)
+                        .getCredential(context, request)
+                        .credential
+                    if (credential is CustomCredential &&
+                        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                    ) {
+                        val idToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
+                        viewModel.onLoginEvent(LoginEvent.GoogleSignIn(idToken))
+                    }
+                } catch (_: GetCredentialCancellationException) {
+                    // User dismissed the account picker
+                } catch (e: GetCredentialException) {
+                    Toast.makeText(context, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         },
         onNavigateToRegister = onNavigateToRegister,

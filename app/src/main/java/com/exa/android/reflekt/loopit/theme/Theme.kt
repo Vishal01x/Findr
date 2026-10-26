@@ -8,7 +8,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
@@ -83,13 +82,6 @@ fun FindrTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-
-            // Enable edge-to-edge display
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-
-            // Make status bar transparent
-            window.statusBarColor = Color.Transparent.toArgb()
-            window.navigationBarColor = Color.Transparent.toArgb()
 
             // Set status bar icons color based on theme
             val insetsController = WindowCompat.getInsetsController(window, view)

@@ -2,6 +2,7 @@ package com.exa.android.reflekt.loopit.presentation.main.chat.ChatDetail
 
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.tooling.preview.Preview
 import com.exa.android.reflekt.loopit.data.feature.main.chat.domain.Message
@@ -84,7 +85,7 @@ private fun PreviewShell(
         ChatDetailContent(
             uiState = uiState,
             callbacks = ChatDetailCallbacks(),
-            focusRequester = FocusRequester()
+            focusRequester = remember { FocusRequester() }
         )
     }
 }

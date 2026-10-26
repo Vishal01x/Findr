@@ -178,22 +178,15 @@ fun DetailChat(
         }
     }
 
-    // ── Status bar colour ───────────────────────────────────────────────────
+    // ── Status bar icons ────────────────────────────────────────────────────
+    // The bar itself is transparent (edge-to-edge); only the icon contrast is set here.
     val view = LocalView.current
-    val statusBarColor = MaterialTheme.colorScheme.background
     val isDarkTheme = isSystemInDarkTheme()
     DisposableEffect(isDarkTheme) {
         val window = (view.context as? android.app.Activity)?.window
             ?: return@DisposableEffect onDispose {}
-        val prevColor = window.statusBarColor
-        window.statusBarColor = android.graphics.Color.argb(
-            (statusBarColor.alpha * 255).toInt(),
-            (statusBarColor.red   * 255).toInt(),
-            (statusBarColor.green * 255).toInt(),
-            (statusBarColor.blue  * 255).toInt()
-        )
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
-        onDispose { window.statusBarColor = prevColor }
+        onDispose {}
     }
 
     // ── Media picker (sheet) ────────────────────────────────────────────────

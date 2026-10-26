@@ -1,17 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
     alias(libs.plugins.google.gms.google.services)
-    id("kotlin-parcelize")
+    alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.google.firebase.crashlytics)
 }
 
 android {
     namespace = "com.exa.android.reflekt"
-    compileSdk = 36
+    compileSdk = 37
     // Add this line to enable legacy Apache HTTP support
     //useLibrary("org.apache.http.legacy")
 
@@ -19,8 +18,8 @@ android {
         applicationId = "com.exa.android.reflekt"
         minSdk = 24
         targetSdk = 36
-        versionCode = 9
-        versionName = "2.0.1"
+        versionCode = 10
+        versionName = "2.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,12 +35,9 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
-    }
-    kotlinOptions {
-        jvmTarget = "11"
     }
     buildFeatures {
         buildConfig = true
@@ -57,6 +53,7 @@ android {
             excludes += "META-INF/NOTICE"
             excludes += "META-INF/NOTICE.txt"
             excludes += "mozilla/public-suffix-list.txt"
+            excludes += "META-INF/INDEX.LIST"
         }
     }
     splits {
@@ -80,21 +77,20 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.play.services.safetynet)
     implementation(libs.androidx.browser)
+    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.database)
-    implementation("com.google.firebase:firebase-storage:21.0.1")
-    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.storage)
     implementation(libs.androidx.runner)
     implementation(libs.androidx.runtime.livedata)
-    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.messaging)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.auth)
-    implementation("com.google.firebase:firebase-dynamic-links-ktx:22.1.0")
+    implementation(libs.firebase.dynamic.links)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
@@ -110,11 +106,6 @@ dependencies {
 
     implementation(libs.androidx.compose.material)
 
-    // system ui
-    implementation(libs.accompanist.systemuicontroller)
-    implementation(libs.accompanist.pager)
-    implementation(libs.accompanist.pager.indicators)
-
     //datastore
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.preferences.core)
@@ -126,7 +117,7 @@ dependencies {
 
     //Hilt
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 
 
     // hilt Navigation
@@ -140,7 +131,7 @@ dependencies {
     implementation(libs.jsoup)
 
     implementation(libs.androidx.room.runtime)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
     implementation(libs.gson)
@@ -156,11 +147,9 @@ dependencies {
     // image
     implementation(libs.glide)
     implementation(libs.landscapist.glide)
-    kapt("com.github.bumptech.glide:compiler:5.0.5")
 
 
     implementation(libs.places)
-    implementation(libs.places.ktx)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.timber)
 
@@ -183,6 +172,7 @@ dependencies {
     // Kotlin + coroutines
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     // security crypto
     implementation(libs.androidx.security.crypto)

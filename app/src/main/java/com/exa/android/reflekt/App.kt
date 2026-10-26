@@ -27,7 +27,7 @@ class MyApp : Application(), Configuration.Provider {
         super.onCreate()
         EnvironmentManager.init(this)
         FirebaseApp.initializeApp(this)
-        Places.initialize(applicationContext, this.getString(R.string.PLACE_API_KEY))
+        Places.initializeWithNewPlacesApiEnabled(applicationContext, this.getString(R.string.PLACE_API_KEY))
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }

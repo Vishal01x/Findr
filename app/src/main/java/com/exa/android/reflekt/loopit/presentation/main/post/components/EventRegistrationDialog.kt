@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -114,7 +115,7 @@ fun EventRegistrationDialog(
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = SimpleDateFormat("EEE, MMM dd, yyyy", Locale.getDefault())
+                                    text = SimpleDateFormat("EEE, MMM dd, yyyy", LocalConfiguration.current.locales[0])
                                         .format(eventDetails.eventDate.toDate()),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
